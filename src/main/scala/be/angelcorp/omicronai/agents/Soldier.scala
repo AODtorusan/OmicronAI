@@ -11,7 +11,7 @@ class Soldier( val aiPlayer: Player, val asset: Asset ) extends Agent {
 
   def receive = {
     case ExecuteActions( actions ) => actions.takeWhile( _.performAction( aiPlayer, this ) )
-    case GetAsset() => sender ! PackedAsset(asset)
+    case GetAsset() => sender ! asset
     case msg => logger.info( s"Asset received an unknown message: $msg" )
   }
 
@@ -22,4 +22,3 @@ class Soldier( val aiPlayer: Player, val asset: Asset ) extends Agent {
 sealed abstract class SoldierMessage
 case class LocationObserved(location: Location) extends SoldierMessage
 case class GetAsset()                           extends SoldierMessage
-case class PackedAsset( asset: Asset )          extends SoldierMessage

@@ -3,6 +3,8 @@ package be.angelcorp.omicronai
 import java.util
 import java.util.Comparator
 import collection.JavaConverters._
+import com.typesafe.scalalogging.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 abstract class AStar {
 
@@ -14,52 +16,45 @@ abstract class AStar {
 
   def findPath( origin: Location): AStarSolution = {
 
-    val open   = new util.TreeSet[AStarSolution]( new Comparator[AStarSolution]{
-      def compare(o1: AStarSolution, o2: AStarSolution) = o1.f.compareTo(o2.f)
-    })
-    val closed = new util.TreeSet[AStarSolution]( new Comparator[AStarSolution]{
-      def compare(o1: AStarSolution, o2: AStarSolution) = o1.f.compareTo(o2.f)
-    })
+    val open   = new util.HashMap[Location, AStarSolution]()
+    val closed = new util.HashMap[Location, AStarSolution]()
 
-    open.add( new AStarSolution(0, heuristic(origin), List(origin)) )
+    val originSolution = new AStarSolution(0, heuristic(origin), List(origin))
+    open.put( origin, originSolution )
+
+    if ( goalReached( originSolution ) )
+      return originSolution
 
     while ( !open.isEmpty ) {
-      val q = open.first()
-      q.tile.neighbours.map( target => {
+      val q = open.values().iterator().asScala.minBy( _.f )
+
+      open.remove( q.tile )
+      closed.put( q.tile, q )
+
+      for ( target <- q.tile.neighbours ) {
         val g = q.g + costOnto( q.tile, target )
         val h = heuristic(target)
         val targetSubSolution = new AStarSolution(g, h, target :: q.path)
 
         if ( goalReached(targetSubSolution) )
           return targetSubSolution
-        else {
-          open.iterator().asScala.find( ss => ss.tile == target ) match {
-            case Some(identical) if targetSubSolution.f < identical.f =>
-            case Some(identical) =>
-              open.remove( identical )
-              open.add( targetSubSolution )
-            case _ =>
-              closed.iterator().asScala.find( ss => ss.tile == target ) match {
-                case Some(identical) if targetSubSolution.f > identical.f =>
-                case Some(identical) =>
-                  closed.remove( identical )
-                  open.add( targetSubSolution )
-                case _ =>
-                  open.add( targetSubSolution )
-              }
-          }
-        }
-      } )
-      closed.add( q )
+        else if ( (!closed.containsKey( target ) || targetSubSolution.f < closed.get( target ).f ) &&
+                  (!open.containsKey  ( target ) || targetSubSolution.f < open.get(target).f     ) )
+          open.put( target, targetSubSolution )
+      }
     }
     throw new IllegalArgumentException("AStar did not find any solution")
   }
 }
 
 object AStar{
+  val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   def apply( destination: Location ) = new AStar {
-    def heuristic(fromTile: Location): Int = fromTile δ destination
+    def heuristic(fromTile: Location): Int = {
+      //logger.trace( s"Heuristic for tile $fromTile is ${fromTile δ destination}" )
+      fromTile δ destination
+    }
     def costOnto(fromTile: Location, toTile: Location) = 1
     def goalReached(solution: AStarSolution) = destination == solution.tile
   }

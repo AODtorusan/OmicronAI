@@ -19,14 +19,14 @@ class Squad(val aiPlayer: Player) extends Agent {
   var goal: Goal = new NoGoal
 
   def receive = {
-    case AddMember( unit ) => context.actorOf(Props(new Soldier(aiPlayer, new Asset(aiPlayer, unit) )), name = "Squad unit")
+    case AddMember( unit ) => context.actorOf(Props(new Soldier(aiPlayer, new Asset(aiPlayer, unit) )) )
     case SetGoal( g )      => goal = g
     case ListMembers()     => sender ! context.children
     case ExecuteOrders()   => {
       val members = context.children.par.map( ref =>
         try {
           implicit val timeout: Timeout = 5 seconds
-          val asset = Await.result(ref ? "hello", 5 seconds).asInstanceOf[Asset]
+          val asset = Await.result(ref ? GetAsset(), 5 seconds).asInstanceOf[Asset]
           (ref, Some(asset))
         } catch {
           case e: Throwable =>

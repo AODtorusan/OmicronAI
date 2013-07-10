@@ -19,7 +19,7 @@ class PikeTactical(aiPlayer: Player) extends Agent {
 
   def receive = {
     case NewUnit(unit) =>
-      val squad = context.actorOf(Props(new Squad(aiPlayer)), name = "Squad")
+      val squad = context.actorOf(Props(new Squad(aiPlayer)))
       squad ! AddMember( unit )
 
       val size = tacticalMap.size

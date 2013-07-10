@@ -50,11 +50,9 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
 
   def δh(l: Location) = h - l.h
 
-  def δ(l: Location) = {
-    val du = δu(l)
-    val dv = δv(l)
-    (abs(du) + abs(dv) + abs(du + dv)) / 2 + δh(l)
-  }
+  def δ(du: Int, dv: Int, dh: Int): Int = (abs(du) + abs(dv) + abs(du + dv)) / 2 + dh
+
+  def δ(l: Location): Int =  δ( δu(l), δv(l), δh(l) )
 
   def Δ(l: Location): Location = Δ( δu(l), δv(l), δh(l) )
 
