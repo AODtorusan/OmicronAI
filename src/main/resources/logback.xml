@@ -1,0 +1,16 @@
+<configuration scan="true">
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <withJansi>true</withJansi>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>%12d{HH:mm:ss.SSS} %logger{15} [%-5level] - %msg%n</Pattern>
+        </layout>
+    </appender>
+
+    <logger name="be.angelcorp" level="TRACE" />
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>

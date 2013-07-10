@@ -7,13 +7,15 @@ import be.angelcorp.omicronai.agents.{NewTurn, Admiral}
 import akka.actor.{Props, ActorSystem, Actor}
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
+import be.angelcorp.omicronai.Settings.settings
+
 
 class PikeAi extends Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   logger.info("Building new game")
   val builder = Game.builder
-  val pike = new Player( builder.nextPlayerID, new PlayerKey, "PikeAI", RED.get, RED.get )
+  val pike = new Player( builder.nextPlayerID, new PlayerKey, settings.ai.name, RED.get, RED.get )
   builder.getPlayers.add(pike)
   val gameController = new GameController( builder.build )
 
