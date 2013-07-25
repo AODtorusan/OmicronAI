@@ -1,6 +1,6 @@
 package be.angelcorp.omicronai
 
-import com.lyndir.omnicron.api.model.Size
+import com.lyndir.omicron.api.model.Size
 import be.angelcorp.omicronai.goals.SquareArea
 import scala.collection.mutable
 

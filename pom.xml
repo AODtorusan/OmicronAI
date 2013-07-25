@@ -8,24 +8,19 @@
     <version>1.0-SNAPSHOT</version>
     <description>Celest library and related tools</description>
 
-    <!--
     <scm>
-        <tag>HEAD</tag>
-        <url>http://angelcorp.be/</url>
-        <developerConnection>
-            http://angelcorp.be/git/be.angelcorp.libs.celest.git/
-        </developerConnection>
+        <connection>git@github.com:AODtorusan/OmicronAI.git</connection>
+        <url>git@github.com:AODtorusan/OmicronAI.git</url>
     </scm>
-    -->
-    
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
         <scala.version>2.10.2</scala.version>
+        <nifty.version>1.3.3</nifty.version>
     </properties>
     
-    <!--
     <licenses>
         <license>
             <name>The Non-Profit Open Software License version 3.0 (NPOSL-3.0)</name>
@@ -33,8 +28,7 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    -->
-    
+
     <developers>
         <developer>
             <id>simon</id>
@@ -45,20 +39,52 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.lyndir.lhunath.omnicron</groupId>
-            <artifactId>omnicron</artifactId>
+            <groupId>com.lyndir.lhunath.omicron</groupId>
+            <artifactId>omicron-core</artifactId>
             <version>GIT-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_2.10</artifactId>
-            <version>2.1.4</version>
+            <version>2.2.0</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>scalalogging-slf4j_2.10</artifactId>
             <version>1.0.1</version>
+        </dependency>
+
+        <!--<dependency>
+            <artifactId>slick2d-core</artifactId>
+            <groupId>org.slick2d</groupId>
+            <version>2013.04-SNAPSHOT</version>
+        </dependency>-->
+        <dependency>
+            <groupId>slick</groupId>
+            <artifactId>slick</artifactId>
+            <version>20121001-264</version>
+        </dependency>
+        <dependency>
+            <groupId>lessvoid</groupId>
+            <artifactId>nifty-slick-renderer</artifactId>
+            <version>${nifty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>lessvoid</groupId>
+            <artifactId>nifty-default-controls</artifactId>
+            <version>${nifty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>lessvoid</groupId>
+            <artifactId>nifty-style-black</artifactId>
+            <version>${nifty.version}</version>
+        </dependency>
+
+        <dependency>
+            <artifactId>logback-classic</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <version>1.0.13</version>
         </dependency>
 
         <dependency>
@@ -77,6 +103,20 @@
     <build>
         <sourceDirectory>src/main/scala</sourceDirectory>
         <plugins>
+            <plugin>
+                <groupId>com.googlecode.mavennatives</groupId>
+                <artifactId>maven-nativedependencies-plugin</artifactId>
+                <version>0.0.7</version>
+                <executions>
+                    <execution>
+                        <id>unpacknatives</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

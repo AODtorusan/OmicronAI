@@ -1,41 +1,35 @@
 package be.angelcorp.omicronai
 
-import com.lyndir.omnicron.api.model.{PlayerKey, Player, Game}
-import com.lyndir.omnicron.api.controller.GameController
-import com.lyndir.omnicron.api.model.Color.Template._
-import be.angelcorp.omicronai.agents.{NewTurn, Admiral}
-import akka.actor.{Props, ActorSystem, Actor}
+import akka.pattern.ask
+import akka.util.Timeout
+import scala.concurrent.duration._
+import akka.actor.{ActorRef, ActorSystem}
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
+import com.lyndir.omicron.api.model.{Color, PlayerKey, Player, Game}
+import com.lyndir.omicron.api.model.Color.Template._
+import be.angelcorp.omicronai.agents.{Self, Admiral}
 import be.angelcorp.omicronai.Settings.settings
+import scala.concurrent.Await
 
 
-class PikeAi extends Actor {
+class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: PlayerKey, name: String, color: Color ) extends Player( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  logger.info("Building new game")
-  val builder = Game.builder
-  val pike = new Player( builder.nextPlayerID, new PlayerKey, settings.ai.name, RED.get, RED.get )
-  builder.getPlayers.add(pike)
-  val gameController = new GameController( builder.build )
+  val actorSystem = ActorSystem()
 
-  override def preStart() = {
+  def this( aiBuilder: (PikeAi, ActorSystem) => ActorRef, builder: Game.Builder) =
+    this( aiBuilder, builder.nextPlayerID, new PlayerKey, settings.ai.name, RED.get )
 
-    logger.info("Recruiting admiral Pike")
-    val commander = context.actorOf(Props(new Admiral(pike)), name = "AdmiralPike")
-
-    commander ! NewTurn()
+  lazy val admiralRef = {
+    logger.info(s"Building AI logic for AI player ${getName}")
+    aiBuilder(this, actorSystem)
   }
 
-  def receive = {
-    case any => throw new RuntimeException(s"PikeAI cannot receive any messages, but received the following: $any")
+  override lazy val getController = {
+    implicit val timeout: Timeout = 5 seconds;
+    Await.result( ask(admiralRef, Self()), timeout.duration ).asInstanceOf[Admiral]
   }
 
 }
 
-object PikeAi extends App {
-
-  val system = ActorSystem( "PikeAi" )
-  val myActor = system.actorOf(Props[PikeAi], name = "PikeAi")
-
-}

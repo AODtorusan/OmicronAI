@@ -1,9 +1,9 @@
 package be.angelcorp.omicronai
 
 import scala.math._
-import com.lyndir.omnicron.api.model._
+import com.lyndir.omicron.api.model._
 
-case class Location( u: Int, v: Int, h: Int, size: Size ) {
+case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
 
   // Cube coordinate x
   val x = u
@@ -48,11 +48,22 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
       dv
   }
 
+  def mirrors = List(
+    new Location(u + size.getWidth, v, h, size),
+    new Location(u - size.getWidth, v, h, size),
+    new Location(u, v + size.getHeight, h, size),
+    new Location(u, v - size.getHeight, h, size)
+  )
+
   def δh(l: Location) = h - l.h
 
-  def δ(du: Int, dv: Int, dh: Int): Int = (abs(du) + abs(dv) + abs(du + dv)) / 2 + dh
+  def δ(du: Int, dv: Int, dh: Int): Int = δ ( Δ (du, dv, dh) )
 
-  def δ(l: Location): Int =  δ( δu(l), δv(l), δh(l) )
+  def δ(l: Location): Int = {
+    val du = δu(l)
+    val dv = δv(l)
+    (abs(du) + abs(dv) + abs(du + dv)) / 2 + δh(l)
+  }
 
   def Δ(l: Location): Location = Δ( δu(l), δv(l), δh(l) )
 
@@ -70,20 +81,24 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
     h, size
   )
 
+  def adjacentTo(l: Location) = neighbours.contains( l )
+
+  override def toString: String = s"Location($u, $v, $h)"
+
 }
 
 object Location {
 
-  implicit def level2int(level: Level) = level match {
-    case ground: GroundLevel => 0
-    case sky:    SkyLevel    => 1
-    case space:  SpaceLevel  => 2
-  }
-  implicit def int2level(level: Int): Level = throw new UnsupportedOperationException
+  implicit def levelType2int(level: LevelType): Int = level.ordinal()
+  implicit def int2levelType(level: Int): LevelType = LevelType.values()(level)
+
+  implicit def level2int(level: Level): Int = level.getType
+  implicit def int2level(level: Int)(implicit game: Game): Level = game.getLevel( level )
 
   implicit def tile2location( tile: Tile ) =
-    new Location( tile.getPosition.getU, tile.getPosition.getV, tile.getLevel, tile.getLevel.getLevelSize )
-  implicit def location2tile( l: Location ) =
+    new Location( tile.getPosition.getU, tile.getPosition.getV, tile.getLevel, tile.getLevel.getSize )
+
+  implicit def location2tile( l: Location )(implicit game: Game) =
     new Tile( new Coordinate(l.u, l.v, l.size), l.h )
 
 }

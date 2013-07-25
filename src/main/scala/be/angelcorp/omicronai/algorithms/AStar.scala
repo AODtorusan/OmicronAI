@@ -1,16 +1,17 @@
-package be.angelcorp.omicronai
+package be.angelcorp.omicronai.algorithms
 
 import java.util
 import java.util.Comparator
 import collection.JavaConverters._
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
+import be.angelcorp.omicronai.Location
 
 abstract class AStar {
 
-  def heuristic( fromTile: Location): Int
+  def heuristic( fromTile: Location): Double
 
-  def costOnto( fromTile: Location, toTile: Location ): Int
+  def costOnto( fromTile: Location, toTile: Location ): Double
 
   def goalReached( solution: AStarSolution ): Boolean
 
@@ -51,20 +52,18 @@ object AStar{
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   def apply( destination: Location ) = new AStar {
-    def heuristic(fromTile: Location): Int = {
-      //logger.trace( s"Heuristic for tile $fromTile is ${fromTile δ destination}" )
-      fromTile δ destination
-    }
+    def heuristic(fromTile: Location) = math.abs(fromTile δ destination)
     def costOnto(fromTile: Location, toTile: Location) = 1
     def goalReached(solution: AStarSolution) = destination == solution.tile
   }
 
 }
 
-class AStarSolution( val g: Int, val h: Int, val path: List[ Location ] ) {
+class AStarSolution( val g: Double, val h: Double, val path: List[ Location ] ) {
 
   val f    = g + h
   val tile = path.head
 
+  override lazy val toString = s"$tile | f=$f, g=$g, h=$h"
 }
 
