@@ -34,6 +34,7 @@ class AiGui extends NiftyOverlayGame {
     system.actorOf(Props(new Admiral(player)), name = "AdmiralPike")
   }, builder )
   builder.getPlayers.add( pike )
+  val game = builder.build
 
   val closeRequested = false
   val getTitle = "PikeAi gui"
@@ -48,7 +49,7 @@ class AiGui extends NiftyOverlayGame {
   def initGameAndGUI(container: GameContainer) {
     this.container = container
     initNifty(container, new SlickSlickInputSystem( new AiGuiInput(this) ) )
-    builder.build
+    game.getController.start()
   }
 
   def prepareNifty(nifty: Nifty) {
@@ -62,7 +63,6 @@ class AiGui extends NiftyOverlayGame {
 
     nifty.addScreen( screens.Introduction.name, screens.Introduction.screen(nifty, this) )
     nifty.addScreen( screens.MainMenu.name,     screens.MainMenu.screen(nifty, this)     )
-    nifty.addScreen( screens.Credits.name,      screens.Credits.screen(nifty, this)      )
 
     loadNiftyContent( nifty )
 
@@ -77,7 +77,7 @@ class AiGui extends NiftyOverlayGame {
     layerList.selectItem( LevelType.GROUND )
 
     val lb = mainMenu.findNiftyControl("layerList", classOf[ListBox[LayerRenderer]])
-    lb.addItem( new GridRenderer(pike, Color.white, Color.transparent) )
+    lb.addItem( new GridRenderer(pike, Color.white) )
     lb.addItem( new FieldOfView(pike, Color.white)     )
     lb.addItem( new ObjectLayer(pike, go => go.getPlayer == pike, "Friendly units", Color.green, Color.transparent ) )
     lb.addItem( new ObjectLayer(pike, go => go.getPlayer != pike, "Enemy units",    Color.red,   Color.transparent ) )

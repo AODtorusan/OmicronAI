@@ -7,11 +7,10 @@ import be.angelcorp.omicronai.Location
 
 class GuiTile( val location: Location ) {
 
-
   val (center_x, center_y) = GuiTile.unscaledCenter( location )
 
-  val verticesX = Seq( 0.0f, 0.50f,  0.50f,  0.0f, -0.50f, -0.50f).map( _ * GuiTile.width  + center_x.toFloat )
-  val verticesY = Seq( 0.5f, 0.25f, -0.25f, -0.5f, -0.25f,  0.25f).map( _ * GuiTile.height + center_y.toFloat )
+  val verticesX = GuiTile.verticesX.map( _ * GuiTile.width  + center_x.toFloat )
+  val verticesY = GuiTile.verticesY.map( _ * GuiTile.height + center_y.toFloat )
 
   def borderStyle: DrawStyle = new DrawStyle(Color.white)
   def fillColor:   Color = Color.black
@@ -30,9 +29,8 @@ class GuiTile( val location: Location ) {
       g.fill(shape)
     }
     if (borderStyle.color != Color.transparent) {
-      borderStyle(g) {
-        g.draw(shape)
-      }
+      borderStyle.applyOnto(g)
+      g.draw(shape)
     }
 
     val h = g.getFont.getHeight(text)
@@ -48,6 +46,9 @@ object GuiTile {
   val scale  = 100f
   val height = 1.0f
   val width  = (sqrt(3.0)/2.0 * height).toFloat
+
+  val verticesX = Seq( 0.0f, 0.50f,  0.50f,  0.0f, -0.50f, -0.50f)
+  val verticesY = Seq( 0.5f, 0.25f, -0.25f, -0.5f, -0.25f,  0.25f)
 
   def unscaledCenter(location: Location): (Float, Float) =
     unscaledCenter(location.u, location.v)

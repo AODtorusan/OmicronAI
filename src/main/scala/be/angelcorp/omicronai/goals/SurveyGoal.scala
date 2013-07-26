@@ -7,6 +7,7 @@ import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.agents.Squad
 import akka.actor.ActorRef
 import be.angelcorp.omicronai.algorithms.{MovementPathfinder, AStarSolution, AStar}
+import be.angelcorp.omicronai.information.{TileInformation, TileInformationLayer, InformationLayer}
 
 class SurveyGoal( val roi: RegionOfInterest ) extends Goal {
 
@@ -32,6 +33,11 @@ class SurveyGoal( val roi: RegionOfInterest ) extends Goal {
     override def costOnto(fromTile: Location, toTile: Location) =
       if ( roi inArea toTile) super.costOnto(fromTile, toTile) else 10 * super.costOnto(fromTile, toTile)
   }
+
+  def informationLayers: Seq[InformationLayer] = Seq( new TileInformationLayer{
+    val name  = "Region of interest"
+    val tiles = roi.tiles.map( new TileInformation( _, 0.5f) )
+  } )
 
 }
 

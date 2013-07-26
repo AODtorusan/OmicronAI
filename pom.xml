@@ -18,7 +18,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
         <scala.version>2.10.2</scala.version>
-        <nifty.version>1.3.3</nifty.version>
+        <nifty.version>1.4.0-SNAPSHOT</nifty.version>
     </properties>
     
     <licenses>
@@ -60,11 +60,6 @@
             <groupId>org.slick2d</groupId>
             <version>2013.04-SNAPSHOT</version>
         </dependency>-->
-        <dependency>
-            <groupId>slick</groupId>
-            <artifactId>slick</artifactId>
-            <version>20121001-264</version>
-        </dependency>
         <dependency>
             <groupId>lessvoid</groupId>
             <artifactId>nifty-slick-renderer</artifactId>

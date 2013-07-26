@@ -7,8 +7,10 @@
     </appender>
 
     <logger name="be.angelcorp" level="TRACE" />
+    <logger name="com.lyndir" level="DEBUG" />
+    <logger name="org.bushe" level="INFO" />
 
-    <root level="INFO">
+    <root level="TRACE">
         <appender-ref ref="STDOUT" />
     </root>
 

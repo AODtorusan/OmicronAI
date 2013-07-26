@@ -2,186 +2,57 @@ package be.angelcorp.omicronai.gui.screens
 
 import collection.JavaConverters._
 import scala.concurrent.duration._
-import akka.actor._
-import akka.pattern.ask
-import akka.actor.ActorRef
 import akka.util.Timeout
-import scala.concurrent.Await
-import de.lessvoid.nifty.{NiftyEventSubscriber, Nifty}
+import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber, Nifty}
 import de.lessvoid.nifty.screen.{ScreenController, Screen}
-import de.lessvoid.nifty.builder.{PanelBuilder, LayerBuilder, ScreenBuilder}
-import de.lessvoid.nifty.controls.button.builder.ButtonBuilder
-import de.lessvoid.nifty.controls.listbox.builder.ListBoxBuilder
-import de.lessvoid.nifty.controls.{ListBoxSelectionChangedEvent, ListBox}
+import de.lessvoid.nifty.controls.{ButtonClickedEvent, ListBoxSelectionChangedEvent, ListBox}
 import org.slf4j.LoggerFactory
-import org.newdawn.slick.{Graphics, Color}
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.{LevelType, Player}
+import com.lyndir.omicron.api.model.LevelType
 import be.angelcorp.omicronai.gui.NiftyConstants._
-import be.angelcorp.omicronai.gui.effects.MoveEffectBuilder
 import be.angelcorp.omicronai.gui.layerRender._
 import be.angelcorp.omicronai.gui._
-import be.angelcorp.omicronai.agents._
-import be.angelcorp.omicronai.actions._
-import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.PikeAi
 import scala.Some
-import be.angelcorp.omicronai.agents.ValidateAction
-import be.angelcorp.omicronai.agents.Name
-import be.angelcorp.omicronai.agents.GetAsset
-import org.newdawn.slick.geom.Polygon
+import scala.io.Source
+import java.io.ByteArrayInputStream
+import scala.xml.Elem
 
 object MainMenu extends GuiScreen {
 
   val name = "mainMenuScreen"
 
   def screen(nifty: Nifty, gui: AiGui) = {
-    new ScreenBuilder( name ) {{
+    val xml =
+      //<?xml version="1.0" encoding="UTF-8"?>
+      <nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+        <screen id={name} controller={classOf[MainMenuController].getName}>
+          <layer id="contentLayer" childLayout="vertical" backgroundColor={transparent}>
+            <panel id="globalControls" backgroundColor={black(128)} align="right"
+                   childLayout="vertical" width="25%" height="100%" paddingRight="5px">
 
-      controller(new MainMenuController(gui))
+              <effect>
+                <onStartScreen name="move" mode="in"  direction="right" length="500" />
+                <onEndScreen   name="move" mode="out" direction="right" length="500" />
+              </effect>
 
-      layer(new LayerBuilder("content") {{
-        backgroundColor( transparent )
-        childLayoutVertical()
+              <control id="activeLayerList" align="center" name="listBox" vertical="off"      horizontal="off" displayItems="3" selectionMode="Single"   />
+              <control id="layerList"       align="center" name="listBox" vertical="optional" horizontal="off" displayItems="4" selectionMode="Multiple" />
+              <control id="actionList"      align="center" name="listBox" vertical="optional" horizontal="off" displayItems="4" selectionMode="Multiple" />
 
-        panel(new PanelBuilder("middle") {{
-          backgroundColor( black(128) )
-          childLayoutCenter()
-          width(percentage(25))
-          alignRight()
-          valignTop()
-          height("*")
-          visibleToMouse()
-          paddingRight(pixels(5))
+              <panel id="actionButtons" paddingRight="5px" childLayout="horizontal">
+                <control id="acceptActionButton" name="button" label="Accept" />
+                <control id="rejectActionButton" name="button" label="Reject" />
+              </panel>
 
-          onStartScreenEffect(new MoveEffectBuilder() {{
-            mode( inMode )
-            direction( directionRight )
-            length(500)
-            inherit(true)
-          }})
+              <control id="exitButton" name="button" align="center" label="Exit" />
 
-          onEndScreenEffect(new MoveEffectBuilder() {{
-            mode( outMode )
-            direction( directionRight )
-            length(500)
-            inherit(true)
-          }})
+            </panel>
+          </layer>
+        </screen>
+      </nifty>;
 
-          panel(new PanelBuilder("menu-main") {{
-
-            childLayoutVertical()
-            alignCenter()
-            valignCenter()
-
-            width(percentage(100))
-
-            control( new ListBoxBuilder("activeLayerList") {{
-              width(percentage(100))
-              marginBottom(pixels(5))
-
-              displayItems(3)
-              selectionModeSingle()
-
-              hideHorizontalScrollbar()
-              hideVerticalScrollbar()
-            }} )
-
-            control( new ListBoxBuilder("layerList") {{
-              width(percentage(100))
-              marginBottom(pixels(5))
-
-              displayItems(4)
-              hideHorizontalScrollbar()
-              selectionModeMutliple()
-            }} )
-
-
-            control( new ListBoxBuilder("actionList") {{
-              width(percentage(100))
-              marginBottom(pixels(5))
-
-              alignCenter()
-              valignCenter()
-
-              displayItems(4)
-              hideHorizontalScrollbar()
-              optionalVerticalScrollbar()
-              selectionModeSingle()
-            }} )
-
-            panel( new PanelBuilder("actionButtons") {{
-              marginTop(pixels(10))
-
-              childLayoutHorizontal()
-              height(pixels(20))
-              alignCenter()
-              valignCenter()
-              marginBottom(pixels(5))
-
-              control( new ButtonBuilder("acceptActionButton", "Accept") {{
-                alignCenter()
-                valignCenter()
-                interactOnClick("acceptPressed()")
-              }} )
-              control( new ButtonBuilder("rejectActionButton", "Reject") {{
-                alignCenter()
-                valignCenter()
-                marginLeft(pixels(10))
-                interactOnClick("rejectPressed()")
-              }} )
-            }} )
-
-            control( new ButtonBuilder("playButton", "Play") {{
-              marginTop(pixels(10))
-              alignCenter()
-              valignCenter()
-
-              interactOnClick("play()")
-            }} )
-
-            control(new ButtonBuilder("optionsButton", "Options") {{
-              width(pixels(100))
-
-              alignCenter()
-              valignCenter()
-
-              interactOnClick("options()")
-            }})
-
-            control(new ButtonBuilder("highscoresButton", "Highscores") {{
-              width(pixels(100))
-
-              alignCenter()
-              valignCenter()
-
-              interactOnClick("highscores()")
-            }})
-
-            control(new ButtonBuilder("creditsButton", "Credits") {{
-              width(pixels(100))
-
-              alignCenter()
-              valignCenter()
-
-              interactOnClick("credits()")
-            }})
-
-            control(new ButtonBuilder("exitButton", "Exit") {{
-              width(pixels(100))
-
-              alignCenter()
-              valignCenter()
-
-              interactOnClick("exit()")
-            }})
-
-          }})
-
-        }})
-
-      }})
-    }}.build(nifty)
+    loadNiftyXml( nifty, xml, new MainMenuController(gui) )
+    nifty.getScreen( name )
   }
 
 }
@@ -195,10 +66,6 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
   supervisor.listener = Some(this)
 
   lazy val actionList = nifty.getScreen(MainMenu.name).findNiftyControl("actionList", classOf[ListBox[WrappedAction]])
-
-  //implicit val system = pike.actorSystem
-  //val validatorRef    = system.actorOf( Props( classOf[ActionValidator], this ), name = "GuiActionValidator" )
-  //val validator       = Await.result(validatorRef ? Self(), timeout.duration).asInstanceOf[ActionValidator]
 
   override def onStartScreen() {}
   override def onEndScreen() {}
@@ -251,35 +118,34 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
 
   def selectedAction = actionList.getSelection.asScala.headOption
 
-  def acceptPressed() {
-    selectedAction match {
-      case Some(wrappedAction) =>
-        actionList.removeItem(wrappedAction)
-        supervisor.acceptAction( wrappedAction )
-      case None =>
-    }
+  @NiftyEventSubscriber(id = "acceptActionButton")
+  def acceptPressed(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent => selectedAction match {
+        case Some(wrappedAction) =>
+          actionList.removeItem(wrappedAction)
+          supervisor.acceptAction( wrappedAction )
+        case None =>
+      }
+    case _ =>
   }
 
-  def rejectPressed() {
-    selectedAction match {
+  @NiftyEventSubscriber(id = "rejectActionButton")
+  def rejectPressed(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent => selectedAction match {
       case Some(wrappedAction) =>
         actionList.removeItem(wrappedAction)
         supervisor.rejectAction( wrappedAction )
       case None =>
     }
+    case _ =>
   }
 
-  def play() {}
-  def options() {}
-  def highscores() {}
-
-  def credits() {
-    nifty.gotoScreen( Credits.name )
-  }
-
-  def exit() {
-    nifty.exit()
-    System.exit(0)
+  @NiftyEventSubscriber(id = "exitButton")
+  def exit(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent =>
+      nifty.exit()
+      System.exit(0)
+    case _ =>
   }
 
   def actionReceived(wrappedAction: WrappedAction) {
