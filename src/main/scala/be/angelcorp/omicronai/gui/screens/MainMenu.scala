@@ -27,12 +27,13 @@ object MainMenu extends GuiScreen {
       <nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <screen id={name} controller={classOf[MainMenuController].getName}>
           <layer id="contentLayer" childLayout="vertical" backgroundColor={transparent}>
+
             <panel id="globalControls" backgroundColor={black(128)} align="right"
                    childLayout="vertical" width="25%" height="100%" paddingRight="5px">
 
               <effect>
-                <onStartScreen name="move" mode="in"  direction="right" length="500" />
-                <onEndScreen   name="move" mode="out" direction="right" length="500" />
+                <onStartScreen name="move" mode="in"  direction="right" length="1000" inherit="true" />
+                <onEndScreen   name="move" mode="out" direction="right" length="1000" inherit="true" />
               </effect>
 
               <control id="activeLayerList" align="center" name="listBox" vertical="off"      horizontal="off" displayItems="3" selectionMode="Single"   />
@@ -111,7 +112,7 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
 
   def updateActiveLayer( event: ListBoxSelectionChangedEvent[LevelType] ) {
     event.getSelection.asScala.headOption match {
-      case Some(newLayer) => gui.activeLayer = newLayer
+      case Some(newLayer) => gui.view.activeLayer = newLayer
       case _ =>
     }
   }

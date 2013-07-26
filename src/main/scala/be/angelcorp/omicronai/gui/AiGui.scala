@@ -13,7 +13,7 @@ import de.lessvoid.nifty.slick2d.NiftyOverlayGame
 import de.lessvoid.nifty.Nifty
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.{LevelType, Game}
-import be.angelcorp.omicronai.{AiSupervisor, PikeAi}
+import be.angelcorp.omicronai.{Location, AiSupervisor, PikeAi}
 import be.angelcorp.omicronai.agents.{GetAsset, Self, Admiral}
 import scala.collection.mutable.ListBuffer
 import be.angelcorp.omicronai.gui.layerRender.{GridRenderer, ObjectLayer, FieldOfView, LayerRenderer}
@@ -89,7 +89,7 @@ class AiGui extends NiftyOverlayGame {
         val actionList = mainMenu.findNiftyControl("actionList", classOf[ListBox[WrappedAction]])
         actionList.getSelection.asScala.headOption
       }
-      def render(g: Graphics, layer: LevelType) {
+      def render(g: Graphics, view: ViewPort) {
         selected match {
           case Some(a) =>
             val asset = assets.getOrElseUpdate(a.actor, Await.result(a.actor ? GetAsset(), timeout.duration).asInstanceOf[Asset])
@@ -98,7 +98,7 @@ class AiGui extends NiftyOverlayGame {
                 val poly = new Polygon()
                 poly.setClosed(false)
 
-                for ( loc <- asset.location :: path.toList if loc.h == layer.ordinal() ) {
+                for ( loc <- asset.location :: path.toList if loc.h == view.activeLayer ) {
                   val center = GuiTile.center(loc)
                   poly.addPoint( center._1, center._2 )
                 }
@@ -122,43 +122,19 @@ class AiGui extends NiftyOverlayGame {
   def updateGame(container: GameContainer, delta: Int) {}
 
   var container: GameContainer = null
-  var scale  =  0.5f
-  var offset = (0.0f, 0.0f)
-
-  var activeLayer  = LevelType.GROUND
+  lazy val view = new ViewPort(this)
   val renderLayers = ListBuffer[LayerRenderer]()
 
   def renderGame(container: GameContainer, g: Graphics) {
     g.clear()
-    g.scale(scale,scale)
-    g.translate(offset._1, offset._2)
-    renderLayers.foreach( _.render(g, activeLayer) )
+    g.scale( view.scale, view.scale)
+    g.translate( view.offset._1, view.offset._2)
+
+    renderLayers.foreach( _.render(g, view) )
+
     g.resetTransform()
   }
 
-  def scaleBy(delta: Float) {
-    scaleTo( scale + delta )
-  }
-
-  def scaleTo(newScale: Float) {
-    if (newScale > 0) {
-      val dx = container.getWidth  * ( 1.0f/newScale - 1.0f/scale)
-      val dy = container.getHeight * ( 1.0f/newScale - 1.0f/scale)
-
-      moveBy(dx/2.0f, dy/2.0f)
-      scale = newScale
-    } else {
-      logger.warn(s"Cannot rescale the viewport to a scale <= 0, requested $newScale")
-    }
-  }
-
-  def moveBy( deltaX: Float, deltaY: Float) {
-    offset = (offset._1 + deltaX, offset._2 + deltaY)
-  }
-
-  def moveTo( xOffset: Float, yOffset: Float) {
-    offset = (xOffset, yOffset)
-  }
 }
 
 object AiGui extends App {

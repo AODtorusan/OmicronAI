@@ -16,7 +16,7 @@ class AiGuiInput(gui: AiGui) extends InputAdapter {
   }
 
   override def mouseWheelMoved(change: Int) {
-    gui.scaleBy(change / 500.0f)
+    gui.view.scaleBy(change / 500.0f)
   }
 
   override def keyPressed(key: Int, c: Char) = {
@@ -26,11 +26,11 @@ class AiGuiInput(gui: AiGui) extends InputAdapter {
       case KEY_DOWN     => moveByPx( 0, -10)
       case KEY_LEFT     => moveByPx(  10, 0)
       case KEY_RIGHT    => moveByPx( -10, 0)
-      case KEY_ADD      => gui.scaleBy( 0.1f)
-      case KEY_SUBTRACT => gui.scaleBy(-0.1f)
+      case KEY_ADD      => gui.view.scaleBy( 0.1f)
+      case KEY_SUBTRACT => gui.view.scaleBy(-0.1f)
       case KEY_DELETE   =>
-        gui.scaleTo(0.5f)
-        gui.moveTo(0, 0)
+        gui.view.scaleTo(0.5f)
+        gui.view.moveTo(0, 0)
 
 
       case KEY_F4 if isDown(KEY_LALT) || isDown(KEY_RALT) => System.exit(0)
@@ -46,7 +46,7 @@ class AiGuiInput(gui: AiGui) extends InputAdapter {
   }
 
   def moveByPx(deltaX: Float, deltaY: Float) =
-    gui.moveBy( deltaX/gui.scale, deltaY/gui.scale )
+    gui.view.moveBy( deltaX/gui.view.scale, deltaY/gui.view.scale )
 
   def isDown(key: Int) = downKeys.contains(key)
 

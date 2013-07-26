@@ -1,11 +1,8 @@
 package be.angelcorp.omicronai.gui.layerRender
 
-import collection.JavaConverters._
-import com.lyndir.omicron.api.controller.GameController
-import be.angelcorp.omicronai.gui.{DrawStyle, GuiTile}
+import be.angelcorp.omicronai.gui.{ViewPort, DrawStyle, GuiTile}
 import org.newdawn.slick.{Graphics, Color}
 import be.angelcorp.omicronai.PikeAi
-import com.lyndir.omicron.api.model.LevelType
 import org.newdawn.slick.geom.Polygon
 
 class GridRenderer(player: PikeAi, border: DrawStyle = Color.white) extends LayerRenderer {
@@ -38,7 +35,7 @@ class GridRenderer(player: PikeAi, border: DrawStyle = Color.white) extends Laye
     poly
   }
 
-  def render(g: Graphics, layer: LevelType) {
+  def render(g: Graphics, view: ViewPort) {
     border.applyOnto(g)
     horizontal.foreach( g.draw )
     vertical.foreach( g.draw )

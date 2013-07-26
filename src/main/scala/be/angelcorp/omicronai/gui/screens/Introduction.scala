@@ -1,44 +1,31 @@
 package be.angelcorp.omicronai.gui.screens
 
 import be.angelcorp.omicronai.gui.NiftyConstants._
-import be.angelcorp.omicronai.gui.effects.FadeEffectBuilder
-import de.lessvoid.nifty.builder.{LayerBuilder, ScreenBuilder}
 import de.lessvoid.nifty.screen.DefaultScreenController
 import de.lessvoid.nifty.Nifty
 import be.angelcorp.omicronai.gui.AiGui
+import de.lessvoid.nifty.builder.{LayerBuilder, ScreenBuilder}
+import be.angelcorp.omicronai.gui.effects.FadeEffectBuilder
 
 object Introduction extends GuiScreen {
 
   val name = "introductionScreen"
 
-  def screen(nifty: Nifty, gui: AiGui) = new ScreenBuilder( name ) {{
-    controller(new IntroductionScreenController())
+  def screen(nifty: Nifty, gui: AiGui) = {
+    val controller_ = new DefaultScreenController{
+      override def onStartScreen() { gotoScreen( MainMenu.name ) }
+    }
 
-    inputMapping("de.lessvoid.nifty.input.mapping.DefaultScreenMapping")
+    val xml =
+      //<?xml version="1.0" encoding="UTF-8"?>
+      <nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+        <screen id={name} controller={controller_.getClass.getName}>
+          <layer id="background" backgroundColor={transparent} >
+          </layer>
+        </screen>
+      </nifty>;
 
-    layer(new LayerBuilder("background") {{
-
-      backgroundColor( black )
-
-      onStartScreenEffect(new FadeEffectBuilder() {{
-        startColor( black )
-        endColor( transparent )
-        length(2000)
-        //inherit(true)
-        //post(false)
-      }})
-
-    }})
-
-  }}.build(nifty)
-
-}
-
-/**
- * Controller for the introduction screen.
- */
-class IntroductionScreenController extends DefaultScreenController {
-
-  override def onStartScreen() { gotoScreen( MainMenu.name ) }
-
+    loadNiftyXml( nifty, xml, controller_ )
+    nifty.getScreen( name )
+  }
 }
