@@ -28,7 +28,7 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
   def atBottom = h == 0
 
   def δu(l: Location) = {
-    val du = u - l.u
+    val du = l.u - u
 
     if (du > size.getWidth / 2)
       du - size.getWidth
@@ -38,7 +38,7 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
       du
   }
   def δv(l: Location) = {
-    val dv = v - l.v
+    val dv = l.v - v
 
     if (dv > size.getHeight / 2)
       dv - size.getHeight
@@ -55,7 +55,7 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
     new Location(u, v - size.getHeight, h, size)
   )
 
-  def δh(l: Location) = h - l.h
+  def δh(l: Location) = l.h - h
 
   def δ(du: Int, dv: Int, dh: Int): Int = δ ( Δ (du, dv, dh) )
 

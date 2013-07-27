@@ -16,7 +16,7 @@ import com.lyndir.omicron.api.model.{LevelType, Game}
 import be.angelcorp.omicronai.{Location, AiSupervisor, PikeAi}
 import be.angelcorp.omicronai.agents.{GetAsset, Self, Admiral}
 import scala.collection.mutable.ListBuffer
-import be.angelcorp.omicronai.gui.layerRender.{GridRenderer, ObjectLayer, FieldOfView, LayerRenderer}
+import be.angelcorp.omicronai.gui.layerRender._
 import akka.util.Timeout
 import scala.concurrent.Await
 import de.lessvoid.nifty.slick2d.input.{NiftySlickInputSystem, SlickSlickInputSystem}
@@ -24,6 +24,11 @@ import de.lessvoid.nifty.controls.ListBox
 import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.actions.MoveVia
 import org.newdawn.slick.geom.Polygon
+import scala.Some
+import be.angelcorp.omicronai.agents.Self
+import be.angelcorp.omicronai.agents.GetAsset
+import be.angelcorp.omicronai.actions.MoveVia
+import be.angelcorp.omicronai.goals.SquareArea
 
 class AiGui extends NiftyOverlayGame {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -125,12 +130,19 @@ class AiGui extends NiftyOverlayGame {
   lazy val view = new ViewPort(this)
   val renderLayers = ListBuffer[LayerRenderer]()
 
+  lazy val testLayer = {
+    val s = game.getLevel(LevelType.GROUND).getSize
+    new RegionRenderer(new SquareArea(new Location(5,5,0, s), new Location(15, 15,0, s)))
+  }
+
   def renderGame(container: GameContainer, g: Graphics) {
     g.clear()
     g.scale( view.scale, view.scale)
     g.translate( view.offset._1, view.offset._2)
 
     renderLayers.foreach( _.render(g, view) )
+
+    testLayer.render(g, view)
 
     g.resetTransform()
   }

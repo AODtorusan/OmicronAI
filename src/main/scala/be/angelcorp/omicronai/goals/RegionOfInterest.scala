@@ -32,7 +32,7 @@ class SquareArea(val lowerBound: Location, val upperBound: Location) extends Reg
     du > 0 && dv > 0 && dh > 0&& du <= sizeU && dv <= sizeV && dh <= sizeH
   }
 
-  def tiles: Seq[Location] =
+  lazy val tiles: Seq[Location] =
     for (du <- 0 to (lowerBound δu upperBound);
          dv <- 0 to (lowerBound δv upperBound);
          dh <- 0 to (lowerBound δh upperBound)) yield lowerBound Δ (du, dv, dh)
