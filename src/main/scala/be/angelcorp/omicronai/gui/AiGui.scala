@@ -100,16 +100,20 @@ class AiGui extends NiftyOverlayGame {
             val asset = assets.getOrElseUpdate(a.actor, Await.result(a.actor ? GetAsset(), timeout.duration).asInstanceOf[Asset])
             a.action match {
               case MoveVia(path) =>
+                val r = new PolyLineRenderer( (asset.location :: path.toList).filter( _.h == view.activeLayer ), new DrawStyle(Color.yellow, 3.0f) )
+                r.render(g, view)
+                /*
                 val poly = new Polygon()
                 poly.setClosed(false)
 
-                for ( loc <- asset.location :: path.toList if loc.h == view.activeLayer ) {
+                for ( loc <-  if loc.h == view.activeLayer ) {
                   val center = GuiTile.center(loc)
                   poly.addPoint( center._1, center._2 )
                 }
 
                 new DrawStyle(Color.yellow, 3.0f).applyOnto(g)
                 g.draw(poly)
+                */
               case action =>
                 logger.warn(s"LayerRender does not know how to render action: $action")
             }
@@ -130,19 +134,12 @@ class AiGui extends NiftyOverlayGame {
   lazy val view = new ViewPort(this)
   val renderLayers = ListBuffer[LayerRenderer]()
 
-  lazy val testLayer = {
-    val s = game.getLevel(LevelType.GROUND).getSize
-    new RegionRenderer(new SquareArea(new Location(5,5,0, s), new Location(15, 15,0, s)))
-  }
-
   def renderGame(container: GameContainer, g: Graphics) {
     g.clear()
     g.scale( view.scale, view.scale)
     g.translate( view.offset._1, view.offset._2)
 
     renderLayers.foreach( _.render(g, view) )
-
-    testLayer.render(g, view)
 
     g.resetTransform()
   }

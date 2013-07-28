@@ -58,4 +58,20 @@ class HexArea(val center: Location, val radius: Int) extends RegionOfInterest {
 
 }
 
+class TileCollection(locations: Set[Location]) extends RegionOfInterest {
+
+  def inArea(l: Location) = locations.contains(l)
+
+  val tiles = locations.toSeq
+
+  lazy val center = {
+    val sum = locations.foldLeft( (0.0, 0.0, 0.0) )( (sum, tile) => {
+      ( sum._1 + tile.u, sum._2 + tile.v, sum._3 + tile.h )
+    } )
+    val N    = locations.size
+    val mean = ( (sum._1 / N).toInt, (sum._2 / N).toInt, (sum._3 / N).toInt )
+    new Location( mean._1, mean._2, mean._3, locations.head.size )
+  }
+
+}
 

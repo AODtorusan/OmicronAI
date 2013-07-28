@@ -19,11 +19,6 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
     case _ => false
   }
 
-  lazy val neighbours =
-    (if (atTop)    Nil else List[Location]( Δ(0, 0,  1))) :::
-    (if (atBottom) Nil else List[Location]( Δ(0, 0, -1))) :::
-    List[Location]( Δ2( 0, -1), Δ2( 1, -1), Δ2(-1,  0), Δ2( 1,  0), Δ2(-1,  1), Δ2( 0,  1) )
-
   def atTop =    h == 2
   def atBottom = h == 0
 
@@ -37,6 +32,10 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
     else
       du
   }
+
+  /** Yields the distance between in the u-axis between two locations, without taking wrapping of tiles into account*/
+  def δuUnwrap(l: Location) = l.u - u
+
   def δv(l: Location) = {
     val dv = l.v - v
 
@@ -48,14 +47,13 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
       dv
   }
 
-  def mirrors = List(
-    new Location(u + size.getWidth, v, h, size),
-    new Location(u - size.getWidth, v, h, size),
-    new Location(u, v + size.getHeight, h, size),
-    new Location(u, v - size.getHeight, h, size)
-  )
+  /** Yields the distance between in the v-axis between two locations, without taking wrapping of tiles into account*/
+  def δvUnwrap(l: Location) = l.v - v
 
   def δh(l: Location) = l.h - h
+
+  /** Yields the distance between height between two locations, without taking wrapping of tiles into account*/
+  def δhUnwrap(l: Location) = δh(l)
 
   def δ(du: Int, dv: Int, dh: Int): Int = δ ( Δ (du, dv, dh) )
 
@@ -63,6 +61,13 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
     val du = δu(l)
     val dv = δv(l)
     (abs(du) + abs(dv) + abs(du + dv)) / 2 + δh(l)
+  }
+
+  /** Yields the distance between two locations, without taking wrapping of tiles into account*/
+  def δunwrap(l: Location): Int = {
+    val du = δuUnwrap(l)
+    val dv = δvUnwrap(l)
+    (abs(du) + abs(dv) + abs(du + dv)) / 2 + δhUnwrap(l)
   }
 
   def Δ(l: Location): Location = Δ( δu(l), δv(l), δh(l) )
@@ -79,6 +84,18 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
     (size.getWidth  + u + δu) % size.getWidth,
     (size.getHeight + v + δv) % size.getHeight,
     h, size
+  )
+
+  lazy val neighbours =
+    (if (atTop)    Nil else List[Location]( Δ(0, 0,  1))) :::
+      (if (atBottom) Nil else List[Location]( Δ(0, 0, -1))) :::
+      List[Location]( Δ2( 0, -1), Δ2( 1, -1), Δ2(-1,  0), Δ2( 1,  0), Δ2(-1,  1), Δ2( 0,  1) )
+
+  lazy val mirrors = List(
+    new Location(u + size.getWidth, v, h, size),
+    new Location(u - size.getWidth, v, h, size),
+    new Location(u, v + size.getHeight, h, size),
+    new Location(u, v - size.getHeight, h, size)
   )
 
   def adjacentTo(l: Location) = neighbours.contains( l )
