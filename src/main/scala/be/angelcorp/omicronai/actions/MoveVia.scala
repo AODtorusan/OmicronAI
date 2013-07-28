@@ -1,19 +1,20 @@
 package be.angelcorp.omicronai.actions
 
 import math._
-import be.angelcorp.omicronai.Location
+import be.angelcorp.omicronai.{PathMetadata, MetaData, Location}
 import com.lyndir.omicron.api.model.Player
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicronai.agents.Soldier
 import be.angelcorp.omicronai.algorithms.AStar
+import akka.actor.ActorRef
 
-case class MoveVia(path: Seq[Location]) extends Action {
+case class MoveVia(path: Seq[Location], soldier: Soldier) extends Action {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   override lazy val toString = s"move to via path to " + path.last
 
-  def performAction(aiPlayer: Player, soldier: Soldier): Boolean = {
+  def performAction(aiPlayer: Player): Boolean = {
     logger.debug( s"Moving asset ${soldier.asset} from ${soldier.asset.location} via path to ${path.last}: $path" )
     val currentLocation = soldier.asset.gameObject.getLocation: Location
 
@@ -38,4 +39,9 @@ case class MoveVia(path: Seq[Location]) extends Action {
         false
     }
   }
+
+  def metadata: Seq[MetaData] = Seq(new PathMetadata(path, "Planned move path"))
+
+  def unit: ActorRef = soldier.self
+
 }

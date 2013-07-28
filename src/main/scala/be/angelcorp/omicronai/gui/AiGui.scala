@@ -97,26 +97,7 @@ class AiGui extends NiftyOverlayGame {
       def render(g: Graphics, view: ViewPort) {
         selected match {
           case Some(a) =>
-            val asset = assets.getOrElseUpdate(a.actor, Await.result(a.actor ? GetAsset(), timeout.duration).asInstanceOf[Asset])
-            a.action match {
-              case MoveVia(path) =>
-                val r = new PolyLineRenderer( (asset.location :: path.toList).filter( _.h == view.activeLayer ), new DrawStyle(Color.yellow, 3.0f) )
-                r.render(g, view)
-                /*
-                val poly = new Polygon()
-                poly.setClosed(false)
-
-                for ( loc <-  if loc.h == view.activeLayer ) {
-                  val center = GuiTile.center(loc)
-                  poly.addPoint( center._1, center._2 )
-                }
-
-                new DrawStyle(Color.yellow, 3.0f).applyOnto(g)
-                g.draw(poly)
-                */
-              case action =>
-                logger.warn(s"LayerRender does not know how to render action: $action")
-            }
+            for (m <- a.action.metadata; l <- m.layers) l._2.render(g, view)
           case None =>
         }
       }

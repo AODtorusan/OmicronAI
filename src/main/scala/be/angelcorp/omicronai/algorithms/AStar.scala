@@ -5,7 +5,7 @@ import java.util.Comparator
 import collection.JavaConverters._
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import be.angelcorp.omicronai.Location
+import be.angelcorp.omicronai.{MetaData, PathfinderMetadata, Location}
 
 abstract class AStar {
 
@@ -15,7 +15,7 @@ abstract class AStar {
 
   def goalReached( solution: AStarSolution ): Boolean
 
-  def findPath( origin: Location): AStarSolution = {
+  def findPath( origin: Location): (AStarSolution, MetaData) = {
 
     val open   = new util.HashMap[Location, AStarSolution]()
     val closed = new util.HashMap[Location, AStarSolution]()
@@ -23,8 +23,9 @@ abstract class AStar {
     val originSolution = new AStarSolution(0, heuristic(origin), List(origin))
     open.put( origin, originSolution )
 
-    if ( goalReached( originSolution ) )
-      return originSolution
+    if ( goalReached( originSolution ) ) {
+      return (originSolution, new PathfinderMetadata(originSolution, Nil))
+    }
 
     while ( !open.isEmpty ) {
       val q = open.values().iterator().asScala.minBy( _.f )
@@ -38,7 +39,7 @@ abstract class AStar {
         val targetSubSolution = new AStarSolution(g, h, target :: q.path)
 
         if ( goalReached(targetSubSolution) )
-          return targetSubSolution
+          return (targetSubSolution, new PathfinderMetadata(targetSubSolution, closed.values().asScala.toSeq ++ open.values().asScala.toSeq ))
         else if ( (!closed.containsKey( target ) || targetSubSolution.f < closed.get( target ).f ) &&
                   (!open.containsKey  ( target ) || targetSubSolution.f < open.get(target).f     ) )
           open.put( target, targetSubSolution )

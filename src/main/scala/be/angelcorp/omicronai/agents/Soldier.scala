@@ -14,12 +14,16 @@ class Soldier( val aiPlayer: Player, val asset: Asset ) extends Actor {
   def receive = {
     case ExecuteAction( action ) =>
       logger.debug(s"${asset.name} is executing action: $action")
-      action.performAction( aiPlayer, this )
+      action.performAction( aiPlayer )
     case RevokeAction( action ) =>
       logger.debug(s"${asset.name} is skipping action: $action")
     case OverruleAction(old, nw) =>
       logger.debug(s"${asset.name} wanted to do the following with ($old) but was overruled to do: $nw")
-      nw.performAction( aiPlayer, this )
+      nw.performAction( aiPlayer )
+
+    case Self() =>
+      logger.debug(s"Soldier ${asset.name} was asked for itself by $sender")
+      sender ! this
 
     case GetAsset() =>
       logger.debug(s"Soldier ${asset.name} was asked for its asset by $sender")
