@@ -13,22 +13,24 @@ import de.lessvoid.nifty.slick2d.NiftyOverlayGame
 import de.lessvoid.nifty.Nifty
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.{LevelType, Game}
-import be.angelcorp.omicronai.{Location, AiSupervisor, PikeAi}
-import be.angelcorp.omicronai.agents.{GetAsset, Self, Admiral}
+import be.angelcorp.omicronai.{SupervisorMessage, Location, AiSupervisor, PikeAi}
+import be.angelcorp.omicronai.agents._
 import scala.collection.mutable.ListBuffer
 import be.angelcorp.omicronai.gui.layerRender._
 import akka.util.Timeout
 import scala.concurrent.Await
 import de.lessvoid.nifty.slick2d.input.{NiftySlickInputSystem, SlickSlickInputSystem}
-import de.lessvoid.nifty.controls.ListBox
+import de.lessvoid.nifty.controls.{TreeItem, TreeBox, ListBox}
 import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.actions.MoveVia
 import org.newdawn.slick.geom.Polygon
 import scala.Some
-import be.angelcorp.omicronai.agents.Self
-import be.angelcorp.omicronai.agents.GetAsset
 import be.angelcorp.omicronai.actions.MoveVia
 import be.angelcorp.omicronai.goals.SquareArea
+import javax.swing.SwingUtilities
+import de.lessvoid.nifty.controls.treebox.builder.TreeBoxBuilder
+import scala.Some
+import be.angelcorp.omicronai.agents.Self
 
 class AiGui extends NiftyOverlayGame {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -47,14 +49,19 @@ class AiGui extends NiftyOverlayGame {
   val supervisorRef = pike.actorSystem.actorOf( Props( new GuiSupervisor(pike.admiralRef, pike) ), name="AiSupervisor" )
   var supervisor = {
     implicit val timeout: Timeout = 5 seconds;
-    Await.result( ask(supervisorRef, Self()), timeout.duration ).asInstanceOf[GuiSupervisor]
+    Await.result( supervisorRef ? Self(), timeout.duration ).asInstanceOf[GuiSupervisor]
   }
   AiSupervisor.supervisor = Some(supervisorRef)
 
   def initGameAndGUI(container: GameContainer) {
     this.container = container
     initNifty(container, new SlickSlickInputSystem( new AiGuiInput(this) ) )
-    game.getController.start()
+    SwingUtilities.invokeLater( new Runnable {
+      def run() {
+        Thread.sleep(1000)
+        game.getController.start()
+      }
+    } )
   }
 
   def prepareNifty(nifty: Nifty) {
@@ -91,8 +98,11 @@ class AiGui extends NiftyOverlayGame {
       val assets = mutable.Map[ActorRef, Asset]()
       implicit val timeout: Timeout = 5 seconds;
       def selected = {
-        val actionList = mainMenu.findNiftyControl("actionList", classOf[ListBox[WrappedAction]])
-        actionList.getSelection.asScala.headOption
+        val actionList = mainMenu.findNiftyControl("actionList", classOf[ListBox[SupervisorMessage]])
+        actionList.getSelection.asScala.headOption.flatMap( _.message match {
+          case m: ValidateAction => Some(m)
+          case _ => None
+        } )
       }
       def render(g: Graphics, view: ViewPort) {
         selected match {
@@ -107,6 +117,18 @@ class AiGui extends NiftyOverlayGame {
     lb.selectItemByIndex(0)
     renderLayers.appendAll(lb.getSelection.asScala)
 
+    val unitTree = mainMenu.findNiftyControl("unitTree", classOf[TreeBox[ActorRef]])
+
+    def buildTree(a: ActorRef): TreeItem[ActorRef] = {
+      val i = new TreeItem[ActorRef](a)
+      implicit val timeout: Timeout = 5 seconds;
+      val children = Await.result( ask(a, ListMembers()), timeout.duration ).asInstanceOf[Iterable[ActorRef]]
+      children.foreach( c => i.addTreeItem( buildTree(c) ) )
+      i
+    }
+    val root = new TreeItem[ActorRef](ActorRef.noSender)
+    root.addTreeItem(buildTree(pike.admiralRef))
+    unitTree.setTree( root )
   }
 
   def updateGame(container: GameContainer, delta: Int) {}

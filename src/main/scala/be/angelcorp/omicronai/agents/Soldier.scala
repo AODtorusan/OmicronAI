@@ -7,11 +7,11 @@ import be.angelcorp.omicronai.Location
 import com.lyndir.omicron.api.model.Player
 import akka.actor.Actor
 
-class Soldier( val aiPlayer: Player, val asset: Asset ) extends Actor {
+class Soldier( val aiPlayer: Player, val asset: Asset ) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   logger.debug(s"Promoted asset ${asset.name} to a soldier")
 
-  def receive = {
+  def act = {
     case ExecuteAction( action ) =>
       logger.debug(s"${asset.name} is executing action: $action")
       action.performAction( aiPlayer )
@@ -32,6 +32,9 @@ class Soldier( val aiPlayer: Player, val asset: Asset ) extends Actor {
     case Name() =>
       //logger.trace(s"${asset.name} was asked for a its name by $sender")
       sender ! asset.name
+
+    case ListMembers() =>
+      sender ! context.children
 
     case msg =>
       logger.info( s"Asset received an unknown message: $msg" )

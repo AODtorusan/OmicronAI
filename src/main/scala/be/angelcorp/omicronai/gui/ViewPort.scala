@@ -92,6 +92,14 @@ class ViewPort(gui: AiGui,
     updateScreen
   }
 
+  /** Move the viewport so that a specific tile is in the center of the view */
+  def centerOn(l: Location) = {
+    val center = GuiTile.center(l)
+    val newX = - center._1 + width  / 2.0f
+    val newY = - center._2 + height / 2.0f
+    moveTo( newX, newY )
+  }
+
   /** Get the active displayed being displayed in the viewport */
   def activeLayer = _activeLayer
 

@@ -14,7 +14,7 @@ import be.angelcorp.omicronai.actions.Action
 import akka.util.Timeout
 import java.util.concurrent.atomic.AtomicInteger
 
-class Squad(val aiPlayer: Player) extends Actor {
+class Squad(val aiPlayer: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   val name = s"Squad ${Squad.squadCount.incrementAndGet()}"
@@ -22,7 +22,7 @@ class Squad(val aiPlayer: Player) extends Actor {
 
   logger.debug(s"Created a new squad: $name")
 
-  def receive = {
+  def act = {
     case AddMember( unit ) =>
       logger.debug(s"${name} was asked to absorb a new member: ${unit}")
       context.actorOf(Props(new Soldier(aiPlayer, new Asset(aiPlayer, unit) )) )

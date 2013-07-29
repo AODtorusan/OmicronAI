@@ -9,7 +9,7 @@ import be.angelcorp.omicronai.goals.{SquareArea, SurveyGoal}
 import be.angelcorp.omicronai.{Location, StrategicMap}
 import Location.level2int
 
-class PikeTactical(aiPlayer: Player) extends Actor {
+class PikeTactical(aiPlayer: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   val name = "Tactical"
@@ -18,7 +18,7 @@ class PikeTactical(aiPlayer: Player) extends Actor {
     aiPlayer.getController.getGameController.listLevels().iterator().next().getSize
   )
 
-  def receive = {
+  def act = {
     case AddMember(unit) =>
       logger.debug( s"$name was asked to assign unit ${unit} to a new Squad" )
       val squad = context.actorOf(Props(new Squad(aiPlayer)))
@@ -42,6 +42,10 @@ class PikeTactical(aiPlayer: Player) extends Actor {
     case Name() =>
       logger.trace(s"$name was asked for a its name by $sender")
       sender ! name
+
+    case ListMembers() =>
+      logger.debug(s"$name was asked for a list of members by $sender")
+      sender ! context.children
 
     case any =>
       logger.warn( s"Received an unknown tactical message: $any" )

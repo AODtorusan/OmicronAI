@@ -1,75 +1,112 @@
 package be.angelcorp.omicronai.gui
 
-import scala.concurrent.duration._
+import collection.mutable
+import concurrent.duration._
+import concurrent.Await
 import akka.actor._
 import akka.pattern.ask
-import be.angelcorp.omicronai.{PikeAi, AiSupervisor}
-import akka.actor.ActorRef
+import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import scala.collection.mutable.ListBuffer
+import be.angelcorp.omicronai.{UnSupervisedMessage, SupervisorMessage, PikeAi, AiSupervisor}
 import be.angelcorp.omicronai.actions.Action
-import akka.util.Timeout
-import scala.concurrent.Await
+import be.angelcorp.omicronai.Settings.settings
+
 import be.angelcorp.omicronai.agents._
 
 class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiSupervisorInterface] = None) extends AiSupervisor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  val actionQue = ListBuffer[WrappedAction]()
+  // [destination actor, message]
+  private val messageBuffer = mutable.Map[ActorRef, mutable.ListBuffer[SupervisorMessage]]()
+  // [actor, isActorOnAuto]
+  private val onAuto        = mutable.Map[ActorRef, Boolean]()
+
+  def isOnAuto( unit: ActorRef ) = onAuto.getOrElseUpdate(unit, settings.ai.supervisor.defaultAuto )
+
+  def toggleAuto( unit: ActorRef ) {
+    val newMode = !isOnAuto( unit )
+    onAuto.update( unit, newMode )
+    logger.debug(s"Toggled auto mode of unit $unit to: $newMode")
+    if ( newMode ) {
+      messageBuffer.get( unit ) match {
+        case Some(list) =>
+          logger.debug(s"Fast-forwarding all queued messages for unit $unit")
+          list.foreach( m => {
+            m.destination.forward( new UnSupervisedMessage(m.message) )
+            listener match {
+              case Some(l) => l.messageSend( m )
+              case _ =>
+            }
+          } )
+          list.clear()
+        case None =>
+      }
+    }
+  }
 
   def receive = {
-    case NewTurn() =>
-      logger.info("Gui is delaying the AI new turn actions by 5 seconds ...")
-      listener match {
-        case Some(l) => l.newTurn()
-        case _ =>
-      }
-      new Thread() {
-        override def run() {
-          Thread.sleep(5000)
-          admiral ! NewTurn()
+    case SupervisorMessage(originalSender, originalReceiver, message) =>
+      if (isOnAuto( originalReceiver )) {
+        logger.trace(s"GuiSupervisor received message for $originalReceiver, but that unit is on auto, so passing along: $message")
+        originalReceiver.forward(new UnSupervisedMessage(message))
+      } else {
+        logger.trace(s"GuiSupervisor intercepted message for $originalReceiver: $message")
+        message match {
+          case NewTurn() => originalReceiver.forward( new UnSupervisedMessage(message) )
+          case Name()    => originalReceiver.forward( new UnSupervisedMessage(message) )
+          case Self()    => originalReceiver.forward( new UnSupervisedMessage(message) )
+
+          case m: ValidateAction =>
+            val bufferedMessage = SupervisorMessage(originalSender, originalReceiver, message)
+            val list = messageBuffer.getOrElseUpdate( originalReceiver, mutable.ListBuffer[SupervisorMessage]() )
+            list.append(bufferedMessage)
+
+            listener match {
+              case Some(l) => l.messageBuffered( bufferedMessage )
+              case _ =>
+            }
+
+          case any =>
+            logger.warn(s"GuiSupervisor received unknown message '$any', forwarding to the original receiver")
+            originalReceiver.forward(message)
         }
-      }.start()
-
-    case ValidateAction(action, actor) =>
-      val wa = new WrappedAction(action, actor)
-      actionQue.append( wa )
-      listener match {
-        case Some(l) => l.actionReceived( wa )
-        case _ =>
       }
+    case Self() => sender ! this
 
-    case Self() =>
-      sender ! this
-
-    case any =>
-      logger.warn(s"GuiSupervisor received unknown message: $any")
   }
 
-  def acceptAction(wa: WrappedAction) {
-    val i = actionQue.indexOf( wa )
-    if (i != -1) actionQue.remove( i )
-    wa.actor ! ExecuteAction( wa.action )
+  def acceptAction(msg: SupervisorMessage) {
+    msg.message match {
+      case ValidateAction(action, actor) =>
+        // Remove from the message buffer if present
+        messageBuffer.find( _._2 == msg) match {
+          case Some( (key, _) ) => messageBuffer.remove( key )
+          case None => logger.info(s"Accepted action from '$msg', but it this message was no longer present in the messageBuffer." )
+        }
+        actor ! new UnSupervisedMessage( ExecuteAction( action ) )
+      case _ => logger.warn(s"Tried to accept an action from the $msg, but this is not a ValidateAction command!")
+    }
   }
 
-  def rejectAction(wa: WrappedAction) {
-    val i = actionQue.indexOf( wa )
-    if (i != -1) actionQue.remove( i )
-    wa.actor ! RevokeAction( wa.action )
+  def rejectAction(msg: SupervisorMessage) {
+    msg.message match {
+      case ValidateAction(action, actor) =>
+        // Remove from the message buffer if present
+        messageBuffer.find( _._2 == msg) match {
+          case Some( (key, _) ) => messageBuffer.remove( key )
+          case None => logger.info(s"Revoked action from '$msg', but it this message was no longer present in the messageBuffer." )
+        }
+        actor ! new UnSupervisedMessage( RevokeAction( action ) )
+      case _ => logger.warn(s"Tried to revoke an action from the $msg, but this is not a ValidateAction command!")
+    }
   }
 
-}
-
-class WrappedAction(val action: Action, val actor: ActorRef) {
-  implicit val timeout: Timeout = 5 seconds;
-  lazy val actorName = Await.result(actor ? Name(), timeout.duration).asInstanceOf[String]
-  override def toString: String = s"$actorName: $action"
 }
 
 trait GuiSupervisorInterface {
 
-  def actionReceived( wrappedAction: WrappedAction )
-  def newTurn()
+  def messageBuffered( msg: SupervisorMessage )
+  def messageSend(     msg: SupervisorMessage )
 
 }

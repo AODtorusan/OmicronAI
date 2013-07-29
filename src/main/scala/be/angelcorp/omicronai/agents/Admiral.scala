@@ -14,7 +14,7 @@ import akka.util.Timeout
 import be.angelcorp.omicronai.Settings.settings
 import be.angelcorp.omicronai.AiSupervisor
 
-class Admiral(player: Player) extends PlayerController(player) with Actor {
+class Admiral(player: Player) extends PlayerController(player) with Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   // Joint Chiefs of Staff
@@ -33,35 +33,27 @@ class Admiral(player: Player) extends PlayerController(player) with Actor {
     //} )
   }
 
-  def receive = {
+  def act = {
     case Self() =>
       sender ! this
 
     case NewTurn() =>
-      AiSupervisor.supervisor match {
-        case Some(supervisor) if settings.ai.supervisor.onNewTurn && sender != supervisor =>
-          logger.debug(s"Forwarding new turn command to supervisor")
-          supervisor.forward( NewTurn() )
-        case _ =>
-          logger.debug(s"Admiral is asking for proposed orders by all units")
-          tacticalGeneral ! SubmitActions()
-      }
+      logger.debug(s"Admiral is asking for proposed orders by all units")
+      tacticalGeneral ! SubmitActions()
 
     case Name() =>
       logger.trace(s"Admiral was asked for a its name by $sender")
       sender ! "Admiral"
 
+    case ListMembers() =>
+      logger.debug(s"Admiral was asked for a list of members by $sender")
+      sender ! context.children
+
     case ValidateAction(a, s) =>
-      AiSupervisor.supervisor match {
-        case Some(supervisor) if settings.ai.supervisor.onValidateAction && sender != supervisor =>
-          logger.debug(s"Forwarding action validation message to supervisor")
-          supervisor.forward( ValidateAction(a, s) )
-        case _ =>
-          implicit val timeout: Timeout = 5 seconds;
-          logger.debug(s"Admiral was asked to validate action $a for unit ${Await.result(s ? Name(), timeout.duration).asInstanceOf[String]}")
-          logger.debug(s"No external validator present, so action is accepted.")
-          s ! ExecuteAction(a)
-      }
+      implicit val timeout: Timeout = 5 seconds;
+      logger.debug(s"Admiral was asked to validate action $a for unit ${Await.result(s ? Name(), timeout.duration).asInstanceOf[String]}")
+      logger.debug(s"No external validator present, so action is accepted.")
+      s ! ExecuteAction(a)
 
     case event =>
       logger.warn(s"Dude what the hell are you trying to tell me, I don't get this: $event")
@@ -89,11 +81,11 @@ case class NewTurn()                            extends AdmiralMessage
 /** Asks children to submit actions that they will perform */
 case class SubmitActions() extends AdmiralMessage
 /** Reply by a child to a parent to clear an action for execution */
-case class ValidateAction( a: Action, soldier: ActorRef ) extends AdmiralMessage
+case class ValidateAction( action: Action, soldier: ActorRef ) extends AdmiralMessage
 /** Answer from a parent that an action may be executed */
-case class ExecuteAction( a: Action ) extends AdmiralMessage
+case class ExecuteAction( action: Action ) extends AdmiralMessage
 /** Answer from a parent that an action may not be executed */
-case class RevokeAction( a: Action ) extends AdmiralMessage
+case class RevokeAction( action: Action ) extends AdmiralMessage
 /** Answer from a parent that an alternative action should be executed */
 case class OverruleAction( oldAction: Action, newAction: Action ) extends AdmiralMessage
 

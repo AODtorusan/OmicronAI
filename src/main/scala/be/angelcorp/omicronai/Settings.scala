@@ -1,6 +1,7 @@
 package be.angelcorp.omicronai
 
-import com.typesafe.config.{ConfigSyntax, ConfigParseOptions, Config, ConfigFactory}
+import collection.mutable
+import com.typesafe.config.{ConfigException, Config, ConfigFactory}
 import org.slf4j.LoggerFactory
 
 class Settings( config: Config ) {
@@ -11,13 +12,21 @@ class Settings( config: Config ) {
 }
 
 class AISettings(config: Config) {
-  val name       = config.getString( "name" )
-  val supervisor = new AiSupervisorSettings( config.getConfig( "supervisor" ) )
+  val name        = config.getString( "name" )
+  val supervisor  = new AiSupervisorSettings( config.getConfig( "supervisor" ) )
 }
 
 class AiSupervisorSettings(config: Config) {
-  val onNewTurn        = config.getBoolean( "onNewTurn" )
-  val onValidateAction = config.getBoolean( "onValidateAction" )
+  private val cache = mutable.Map[Class[_], Boolean]()
+
+  val defaultAuto = config.getBoolean( "defaultAuto" )
+  def forwardOnFor( m: Any ) = cache.getOrElseUpdate( m.getClass, {
+    try {
+      config.getBoolean( m.getClass.getName )
+    } catch {
+      case e: ConfigException.Missing => false
+    }
+  } )
 }
 
 class PathfinderSettings( config: Config ) {
