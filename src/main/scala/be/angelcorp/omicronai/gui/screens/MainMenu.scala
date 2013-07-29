@@ -46,34 +46,36 @@ object MainMenu extends GuiScreen {
       //<?xml version="1.0" encoding="UTF-8"?>
       <nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <screen id={name} controller={classOf[MainMenuController].getName}>
-          <layer id="contentLayer" childLayout="vertical" backgroundColor={transparent}>
+          <layer id="contentLayer" childLayout="horizontal" backgroundColor={transparent}>
 
-            <panel id="globalControls" backgroundColor={black(128)} align="right"
-                   childLayout="vertical" width="25%" height="100%" >
+            <panel id="globalControls" backgroundColor={black(200)} valign="bottom" childLayout="horizontal" height="25%">
 
               <effect>
-                <onStartScreen name="move" mode="in"  direction="right" length="1000" inherit="true" />
-                <onEndScreen   name="move" mode="out" direction="right" length="1000" inherit="true" />
+                <onStartScreen name="move" mode="in"  direction="bottom" length="1000" inherit="true" />
+                <onEndScreen   name="move" mode="out" direction="bottom" length="1000" inherit="true" />
               </effect>
 
-              <control id="activeLayerList" align="center" name="listBox" vertical="off"      horizontal="off" displayItems="3" selectionMode="Single"   />
-              <control id="layerList"       align="center" name="listBox" vertical="optional" horizontal="off" displayItems="4" selectionMode="Multiple" />
-              <control id="unitTree"        align="center" name="treeBox" vertical="on"       horizontal="off" displayItems="4" selectionMode="Single"   viewConverterClass={classOf[ActorConverter].getName} />
-
-              <panel id="actionButtons" childLayout="absolute" height="40px" >
-                <control id="autoButton"   name="button" label="Auto"   x="00%" y="00px" width="50%" height="20px" />
-                <control id="centerButton" name="button" label="Center" x="50%" y="00px" width="50%" height="20px" />
-                <control id="dummy1Button" name="button" label="-"      x="00%" y="20px" width="50%" height="20px" />
-                <control id="dummy2Button" name="button" label="-"      x="50%" y="20px" width="50%" height="20px" />
+              <!--<control id="activeLayerList" name="listBox" vertical="off"      horizontal="off" displayItems="3" selectionMode="Single"   />-->
+              <panel id="renderLayerPanel" childLayout="vertical" height="100%" width="180px" >
+                <control id="layerList" name="listBox" vertical="optional" horizontal="off" displayItems="5" selectionMode="Multiple" />
+                <panel id="renderLayerControlPanel" childLayout="horizontal" width="100%" >
+                  <control id="layerUpButton"   name="button" label="up"     width="30%" />
+                  <control id="layerLabel"      name="label"  text="GROUND" width="40%" color={white} />
+                  <control id="layerDownButton" name="button" label="down"   width="30%" />
+                </panel>
               </panel>
+
+              <control id="unitTree" name="treeBox" width="200px" vertical="on" horizontal="off" displayItems="5" selectionMode="Single"   viewConverterClass={classOf[ActorConverter].getName} />
 
               <control id="controlTabs" name="tabGroup" caption="Control" >
 
-                <control id="actionTab" name="tab" caption="Actions" childLayout="vertical" >
-                  <control id="actionList" align="center" name="listBox" vertical="optional" horizontal="off" displayItems="4" selectionMode="Single"   />
-                  <panel id="actionButtons" childLayout="horizontal">
-                    <control id="acceptActionButton" name="button" label="Accept" width="50%" />
-                    <control id="rejectActionButton" name="button" label="Reject" width="50%" />
+                <control id="messageTab" name="tab" caption="Messages" childLayout="horizontal" >
+                  <control id="messageList" align="center" name="listBox" vertical="optional" horizontal="off" displayItems="4" selectionMode="Single" />
+                  <panel id="actionButtons" childLayout="vertical" width="50px" paddingLeft="5px" >
+                    <control id="acceptButton" name="button" label="Accept" width="50px" />
+                    <control id="rejectButton" name="button" label="Reject" width="50px" />
+                    <control id="modifyButton" name="button" label="Modify" width="50px" />
+                    <control id="addButton"    name="button" label="Add"    width="50px" />
                   </panel>
                 </control>
 
@@ -83,11 +85,13 @@ object MainMenu extends GuiScreen {
 
               </control>
 
-
-
-
-
-              <control id="exitButton" name="button" align="center" label="Exit" width="100%" />
+              <panel id="actionButtons" childLayout="vertical" height="100%" >
+                <control id="autoButton"   name="button" label="Auto"   />
+                <control id="centerButton" name="button" label="Center" />
+                <control id="dummy1Button" name="button" label="-"      />
+                <control id="dummy2Button" name="button" label="-"      />
+                <control id="exitButton"   name="button" label="Exit"   />
+              </panel>
 
             </panel>
           </layer>
@@ -108,17 +112,42 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
   val supervisor = gui.supervisor
   supervisor.listener = Some(this)
 
-  lazy val actionList = nifty.getScreen(MainMenu.name).findNiftyControl("actionList", classOf[ListBox[SupervisorMessage]])
-  lazy val unitTree   = nifty.getScreen(MainMenu.name).findNiftyControl("unitTree",   classOf[TreeBox[ActorRef]])
+  lazy val layerUpButton   = nifty.getScreen(MainMenu.name).findNiftyControl("layerUpButton",   classOf[Button])
+  lazy val layerLabel      = nifty.getScreen(MainMenu.name).findNiftyControl("layerLabel",      classOf[Label])
+  lazy val layerDownButton = nifty.getScreen(MainMenu.name).findNiftyControl("layerDownButton", classOf[Button])
+
+  lazy val messageList = nifty.getScreen(MainMenu.name).findNiftyControl("messageList", classOf[ListBox[SupervisorMessage]])
+  lazy val unitTree    = nifty.getScreen(MainMenu.name).findNiftyControl("unitTree",   classOf[TreeBox[ActorRef]])
 
   lazy val autoButton   = nifty.getScreen(MainMenu.name).findNiftyControl("autoButton",   classOf[Button])
   lazy val centerButton = nifty.getScreen(MainMenu.name).findNiftyControl("centerButton", classOf[Button])
+
+  lazy val acceptButton = nifty.getScreen(MainMenu.name).findNiftyControl("acceptButton", classOf[Button])
+  lazy val rejectButton = nifty.getScreen(MainMenu.name).findNiftyControl("rejectButton", classOf[Button])
+  lazy val modifyButton = nifty.getScreen(MainMenu.name).findNiftyControl("modifyButton", classOf[Button])
+  lazy val addButton    = nifty.getScreen(MainMenu.name).findNiftyControl("addButton",    classOf[Button])
 
   override def onStartScreen() {}
   override def onEndScreen() {}
 
   override def bind(nifty: Nifty, screen: Screen) {
     this.nifty = nifty
+  }
+
+  @NiftyEventSubscriber(id = "layerUpButton")
+  def layerUpButtonAction(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent =>
+      gui.view.activeLayer = math.min( gui.view.activeLayer + 1, LevelType.values().size - 1 )
+      layerLabel.setText( LevelType.values()(gui.view.activeLayer).getName )
+    case _ =>
+  }
+
+  @NiftyEventSubscriber(id = "layerDownButton")
+  def layerDownButtonAction(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent =>
+      gui.view.activeLayer = math.max( gui.view.activeLayer - 1, 0 )
+      layerLabel.setText( LevelType.values()(gui.view.activeLayer).getName )
+    case _ =>
   }
 
   @NiftyEventSubscriber(id = "layerList")
@@ -159,35 +188,42 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
   @NiftyEventSubscriber(id = "unitTree")
   def updateUnitSelection( id: String, event: TreeItemSelectionChangedEvent[ActorRef] ) {
     selectedUnit match {
-      case Some(unit) =>
-        autoButton.setText( "Auto " + (if (supervisor.isOnAuto( unit )) "(on)" else "(off)") )
+      case Some(unit) => updateUnitUi()
       case None =>
     }
   }
 
-  def selectedAction = actionList.getSelection.asScala.headOption
-  def selectedUnit   = unitTree.getSelection.asScala.headOption.map( _.getValue )
+  def selectedMessage = messageList.getSelection.asScala.headOption
+  def selectedUnit    = unitTree.getSelection.asScala.headOption.map( _.getValue )
 
-  @NiftyEventSubscriber(id = "acceptActionButton")
-  def acceptPressed(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => selectedAction match {
-        case Some(wrappedAction) =>
-          actionList.removeItem(wrappedAction)
-          supervisor.acceptAction( wrappedAction )
+  @NiftyEventSubscriber(id = "acceptButton")
+  def acceptButtonAction(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent => selectedMessage match {
+        case Some(message) =>
+          messageList.removeItem(message)
+          supervisor.acceptMessage( message )
         case None =>
       }
     case _ =>
   }
 
-  @NiftyEventSubscriber(id = "rejectActionButton")
-  def rejectPressed(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => selectedAction match {
-      case Some(wrappedAction) =>
-        actionList.removeItem(wrappedAction)
-        supervisor.rejectAction( wrappedAction )
+  @NiftyEventSubscriber(id = "rejectButton")
+  def rejectButtonAction(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent => selectedMessage match {
+      case Some(message) =>
+        messageList.removeItem(message)
+        supervisor.rejectMessage(message)
       case None =>
     }
     case _ =>
+  }
+
+  @NiftyEventSubscriber(id = "modifyButton")
+  def modifyButtonAction(id: String, event: NiftyEvent) {
+  }
+
+  @NiftyEventSubscriber(id = "addButton")
+  def addButtonAction(id: String, event: NiftyEvent) {
   }
 
   @NiftyEventSubscriber(id = "exitButton")
@@ -204,7 +240,7 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
       selectedUnit match {
         case Some(unit) =>
           supervisor.toggleAuto( unit )
-          autoButton.setText( "Auto " + (if (supervisor.isOnAuto( unit )) "(on)" else "(off)") )
+          updateUnitUi()
         case None =>
       }
     case _ =>
@@ -227,12 +263,45 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
     case _ =>
   }
 
-  def messageBuffered( msg: SupervisorMessage ) = msg.message match {
-    case ValidateAction(a, s) => actionList.addItem( msg )
+  def messageBuffered( msg: SupervisorMessage ) = selectedUnit match {
+    case Some(unit) if unit == msg.destination =>
+      messageList.addItem( msg )
+    case _ =>
   }
 
-  def messageSend(msg: SupervisorMessage) = msg.message match {
-    case ValidateAction(a, s) => actionList.removeItem( msg )
+  def messageSend(msg: SupervisorMessage) = selectedUnit match {
+    case Some(unit) if msg.destination == unit =>
+      messageList.removeItem( msg )
+  }
+
+  def updateUnitUi() {
+    selectedUnit match {
+      case Some(unit) =>
+        enable(autoButton)
+        autoButton.setText( "Auto " + (if (supervisor.isOnAuto( unit )) "(on)" else "(off)") )
+        enable(centerButton)
+        enable(acceptButton)
+        enable(rejectButton)
+        enable(modifyButton)
+        messageList.addAllItems( supervisor.messagesFor(unit).asJava )
+      case _ =>
+        disable(autoButton)
+        disable(centerButton)
+        disable(acceptButton)
+        disable(rejectButton)
+        disable(modifyButton)
+        disable(addButton)
+        messageList.clear()
+    }
+  }
+
+  def disable(control: NiftyControl) {
+    control.setEnabled(false)
+    control.setFocusable(false)
+  }
+  def enable(control: NiftyControl) {
+    control.setEnabled(true)
+    control.setFocusable(true)
   }
 
 }

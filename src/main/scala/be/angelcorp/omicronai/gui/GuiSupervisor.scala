@@ -76,31 +76,25 @@ class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiS
 
   }
 
-  def acceptAction(msg: SupervisorMessage) {
-    msg.message match {
-      case ValidateAction(action, actor) =>
-        // Remove from the message buffer if present
-        messageBuffer.find( _._2 == msg) match {
-          case Some( (key, _) ) => messageBuffer.remove( key )
-          case None => logger.info(s"Accepted action from '$msg', but it this message was no longer present in the messageBuffer." )
-        }
-        actor ! new UnSupervisedMessage( ExecuteAction( action ) )
-      case _ => logger.warn(s"Tried to accept an action from the $msg, but this is not a ValidateAction command!")
+  def acceptMessage(msg: SupervisorMessage) {
+    // Remove from the message buffer if present
+    messageBuffer.find( _._2 == msg) match {
+      case Some( (key, _) ) => messageBuffer.remove( key )
+      case None => logger.info(s"Accepted action from '$msg', but it this message was no longer present in the messageBuffer." )
+    }
+
+    msg.destination.tell( new UnSupervisedMessage( msg.message), msg.source )
+  }
+
+  def rejectMessage(msg: SupervisorMessage) {
+    // Remove from the message buffer if present
+    messageBuffer.find( _._2 == msg) match {
+      case Some( (key, _) ) => messageBuffer.remove( key )
+      case None => logger.info(s"Revoked action from '$msg', but it this message was no longer present in the messageBuffer." )
     }
   }
 
-  def rejectAction(msg: SupervisorMessage) {
-    msg.message match {
-      case ValidateAction(action, actor) =>
-        // Remove from the message buffer if present
-        messageBuffer.find( _._2 == msg) match {
-          case Some( (key, _) ) => messageBuffer.remove( key )
-          case None => logger.info(s"Revoked action from '$msg', but it this message was no longer present in the messageBuffer." )
-        }
-        actor ! new UnSupervisedMessage( RevokeAction( action ) )
-      case _ => logger.warn(s"Tried to revoke an action from the $msg, but this is not a ValidateAction command!")
-    }
-  }
+  def messagesFor(unit: ActorRef) = messageBuffer.getOrElse(unit, Nil).toSeq
 
 }
 

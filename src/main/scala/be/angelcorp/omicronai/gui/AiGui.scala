@@ -98,8 +98,8 @@ class AiGui extends NiftyOverlayGame {
       val assets = mutable.Map[ActorRef, Asset]()
       implicit val timeout: Timeout = 5 seconds;
       def selected = {
-        val actionList = mainMenu.findNiftyControl("actionList", classOf[ListBox[SupervisorMessage]])
-        actionList.getSelection.asScala.headOption.flatMap( _.message match {
+        val messagesList = nifty.getScreen(screens.MainMenu.name).findNiftyControl("messageList", classOf[ListBox[SupervisorMessage]])
+        messagesList.getSelection.asScala.headOption.flatMap( _.message match {
           case m: ValidateAction => Some(m)
           case _ => None
         } )
