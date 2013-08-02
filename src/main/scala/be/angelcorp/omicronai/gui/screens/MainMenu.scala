@@ -21,12 +21,12 @@ import akka.actor.ActorRef
 import scala.concurrent.Await
 import be.angelcorp.omicronai.agents.{GetAsset, ValidateAction, Name}
 import be.angelcorp.omicronai.SupervisorMessage
-import be.angelcorp.omicronai.assets.Asset
 import scala.Some
 import be.angelcorp.omicronai.agents.ValidateAction
 import be.angelcorp.omicronai.agents.GetAsset
 import be.angelcorp.omicronai.agents.Name
 import be.angelcorp.omicronai.SupervisorMessage
+import be.angelcorp.omicronai.assets.Asset
 
 object MainMenu extends GuiScreen {
 
@@ -65,12 +65,12 @@ object MainMenu extends GuiScreen {
                 </panel>
               </panel>
 
-              <control id="unitTree" name="treeBox" width="200px" vertical="on" horizontal="off" displayItems="5" selectionMode="Single"   viewConverterClass={classOf[ActorConverter].getName} />
+              <control id="unitTree" name="treeBox" width="200px" vertical="on" horizontal="optional" displayItems="5" selectionMode="Single"   viewConverterClass={classOf[ActorConverter].getName} />
 
               <control id="controlTabs" name="tabGroup" caption="Control" >
 
                 <control id="messageTab" name="tab" caption="Messages" childLayout="horizontal" >
-                  <control id="messageList" align="center" name="listBox" vertical="optional" horizontal="off" displayItems="4" selectionMode="Single" />
+                  <control id="messageList" align="center" name="listBox" vertical="optional" horizontal="optional" displayItems="4" selectionMode="Single" />
                   <panel id="actionButtons" childLayout="vertical" width="50px" paddingLeft="5px" >
                     <control id="acceptButton" name="button" label="Accept" width="50px" />
                     <control id="rejectButton" name="button" label="Reject" width="50px" />
@@ -275,6 +275,7 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
   }
 
   def updateUnitUi() {
+    messageList.clear()
     selectedUnit match {
       case Some(unit) =>
         enable(autoButton)
@@ -291,7 +292,6 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
         disable(rejectButton)
         disable(modifyButton)
         disable(addButton)
-        messageList.clear()
     }
   }
 

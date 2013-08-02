@@ -8,12 +8,12 @@ class Settings( config: Config ) {
 
   val ai = new AISettings( config.getConfig("ai") )
   val pathfinder = new PathfinderSettings( config.getConfig("pathfinder") )
-
 }
 
 class AISettings(config: Config) {
   val name        = config.getString( "name" )
   val supervisor  = new AiSupervisorSettings( config.getConfig( "supervisor" ) )
+  val messageTimeout = config.getDouble("messageTimeout")
 }
 
 class AiSupervisorSettings(config: Config) {

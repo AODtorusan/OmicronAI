@@ -1,43 +1,52 @@
 package be.angelcorp.omicronai.agents
 
-import collection.JavaConverters._
-import com.lyndir.omicron.api.model.Player
+import collection.mutable
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import akka.actor.{Actor, Props}
-import be.angelcorp.omicronai.goals.{SquareArea, SurveyGoal}
-import be.angelcorp.omicronai.{Location, StrategicMap}
-import Location.level2int
+import akka.actor.{ActorRef, Props}
+import com.lyndir.omicron.api.model.Player
+import be.angelcorp.omicronai.{SquareArea, Namer, Location}
+import be.angelcorp.omicronai.Location._
+import be.angelcorp.omicronai.agents.squad.{NewSurveyRoi, Squad, SurveySquad}
 
 class PikeTactical(aiPlayer: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  val name = "Tactical"
+  val name  = "Tactical"
+  val namer = new Namer[Class[_ <: Squad]](_.getSimpleName)
 
-  lazy val tacticalMap = new StrategicMap(
-    aiPlayer.getController.getGameController.listLevels().iterator().next().getSize
-  )
+  val readyUnits = mutable.Set[ActorRef]()
+
+  lazy val cartographer = context.actorOf(Props(new Cartographer( aiPlayer.getController.getGameController )), name = "Cartographer")
 
   def act = {
     case AddMember(unit) =>
-      logger.debug( s"$name was asked to assign unit ${unit} to a new Squad" )
-      val squad = context.actorOf(Props(new Squad(aiPlayer)))
+      logger.debug( s"$name was asked to assign unit $unit to a new Squad" )
+      val newName = namer.nameFor(classOf[SurveySquad])
+      val squad = context.actorOf(Props(new SurveySquad(aiPlayer, newName, cartographer )), name = newName)
       squad ! AddMember( unit )
 
       val size = unit.getLocation.getLevel.getSize
       val level: Int = unit.getLocation.getLevel
-      squad ! SetGoal( new SurveyGoal( new SquareArea(
+      squad ! NewSurveyRoi( new SquareArea(
         new Location(10, 10, level, size),
         new Location(20, 20, level, size)
-      ) ) )
+      ) )
 
-    case m: SubmitActions =>
-      logger.debug( s"$name received request to submit all unit actions for validation, delegating to the Squads" )
-      context.children.foreach( child => child.forward( m ) )
+    case NewTurn() =>
+      logger.debug( s"$name is starting new turn actions" )
+      readyUnits.clear()
+      context.children.foreach( child => child ! SubmitActions() )
 
-    case m: ValidateAction =>
-      logger.trace( s"$name received order validation request, forwarding to the admiral" )
-      context.parent.forward( m )
+    case Ready() =>
+      readyUnits.add( sender )
+      logger.debug( s"$name is marking $sender as ready. Waiting for: ${context.children.filterNot(readyUnits.contains)}" )
+      if ( context.children.forall( readyUnits.contains ) )
+        context.parent ! Ready()
+
+    case ValidateAction(action, unit) =>
+      logger.trace( s"$name received order validation request" )
+      unit ! ExecuteAction( action )
 
     case Name() =>
       logger.trace(s"$name was asked for a its name by $sender")

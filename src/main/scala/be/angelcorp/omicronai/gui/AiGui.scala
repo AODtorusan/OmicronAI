@@ -21,16 +21,14 @@ import akka.util.Timeout
 import scala.concurrent.Await
 import de.lessvoid.nifty.slick2d.input.{NiftySlickInputSystem, SlickSlickInputSystem}
 import de.lessvoid.nifty.controls.{TreeItem, TreeBox, ListBox}
-import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.actions.MoveVia
 import org.newdawn.slick.geom.Polygon
 import scala.Some
-import be.angelcorp.omicronai.actions.MoveVia
 import be.angelcorp.omicronai.goals.SquareArea
 import javax.swing.SwingUtilities
 import de.lessvoid.nifty.controls.treebox.builder.TreeBoxBuilder
 import scala.Some
 import be.angelcorp.omicronai.agents.Self
+import be.angelcorp.omicronai.assets.Asset
 
 class AiGui extends NiftyOverlayGame {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -107,7 +105,8 @@ class AiGui extends NiftyOverlayGame {
       def render(g: Graphics, view: ViewPort) {
         selected match {
           case Some(a) =>
-            for (m <- a.action.metadata; l <- m.layers) l._2.render(g, view)
+            logger.warn("No way to retrieve metadata")
+            //for (m <- a.action.metadata; l <- m.layers) l._2.render(g, view)
           case None =>
         }
       }

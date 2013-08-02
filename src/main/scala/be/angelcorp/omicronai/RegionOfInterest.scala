@@ -1,7 +1,6 @@
-package be.angelcorp.omicronai.goals
+package be.angelcorp.omicronai
 
 import math._
-import be.angelcorp.omicronai.Location
 import scala.annotation.tailrec
 
 trait RegionOfInterest {

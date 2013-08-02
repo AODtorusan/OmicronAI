@@ -53,11 +53,11 @@ class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiS
       } else {
         logger.trace(s"GuiSupervisor intercepted message for $originalReceiver: $message")
         message match {
-          case NewTurn() => originalReceiver.forward( new UnSupervisedMessage(message) )
-          case Name()    => originalReceiver.forward( new UnSupervisedMessage(message) )
-          case Self()    => originalReceiver.forward( new UnSupervisedMessage(message) )
+          case Name()        => originalReceiver.forward( new UnSupervisedMessage(message) )
+          case Self()        => originalReceiver.forward( new UnSupervisedMessage(message) )
+          case ListMembers() => originalReceiver.forward( new UnSupervisedMessage(message) )
 
-          case m: ValidateAction =>
+          case m =>
             val bufferedMessage = SupervisorMessage(originalSender, originalReceiver, message)
             val list = messageBuffer.getOrElseUpdate( originalReceiver, mutable.ListBuffer[SupervisorMessage]() )
             list.append(bufferedMessage)
@@ -66,10 +66,6 @@ class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiS
               case Some(l) => l.messageBuffered( bufferedMessage )
               case _ =>
             }
-
-          case any =>
-            logger.warn(s"GuiSupervisor received unknown message '$any', forwarding to the original receiver")
-            originalReceiver.forward(message)
         }
       }
     case Self() => sender ! this

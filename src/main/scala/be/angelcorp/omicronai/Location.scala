@@ -98,7 +98,7 @@ case class Location( val u: Int, val v: Int, val h: Int, val size: Size ) {
     new Location(u, v - size.getHeight, h, size)
   )
 
-  def adjacentTo(l: Location) = neighbours.contains( l )
+  def adjacentTo(l: Location) = δ(l) == 1
 
   override def toString: String = s"Location($u, $v, $h)"
 
@@ -116,6 +116,6 @@ object Location {
     new Location( tile.getPosition.getU, tile.getPosition.getV, tile.getLevel, tile.getLevel.getSize )
 
   implicit def location2tile( l: Location )(implicit game: Game) =
-    new Tile( new Coordinate(l.u, l.v, l.size), l.h )
+    game.getLevel(l.h).getTile(l.u, l.v).get()
 
 }

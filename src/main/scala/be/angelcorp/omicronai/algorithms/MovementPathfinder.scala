@@ -4,8 +4,8 @@ import math._
 import scala.languageFeature.implicitConversions
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.Location._
-import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.Settings.settings
+import be.angelcorp.omicronai.assets.Asset
 
 class MovementPathfinder( destination: Location, asset: Asset ) extends AStar {
 
