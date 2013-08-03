@@ -142,6 +142,11 @@ class AiGui extends NiftyOverlayGame {
     g.scale( view.scale, view.scale)
     g.translate( view.offset._1, view.offset._2)
 
+    if (view.changed) {
+      renderLayers.par.foreach( _.update(view) )
+      view.unsetChanged()
+    }
+
     renderLayers.foreach( _.render(g, view) )
 
     hoverTile match {

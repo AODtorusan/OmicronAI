@@ -4,29 +4,29 @@ import collection.mutable
 import collection.JavaConverters._
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.Some
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.Await
 import akka.util.Timeout
 import akka.pattern.ask
+import akka.actor.ActorRef
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber, Nifty}
 import de.lessvoid.nifty.screen.{ScreenController, Screen}
 import de.lessvoid.nifty.controls._
 import org.slf4j.LoggerFactory
+import org.newdawn.slick.{Color, Graphics}
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.LevelType
+import com.lyndir.omicron.api.model.{ResourceType, LevelType}
 import be.angelcorp.omicronai.gui.NiftyConstants._
 import be.angelcorp.omicronai.gui.layerRender._
 import be.angelcorp.omicronai.gui._
-import scala.Some
-import be.angelcorp.omicronai.gui.nifty.{TreeBoxViewController, ListBoxViewConverter}
-import akka.actor.ActorRef
-import scala.concurrent.Await
-import be.angelcorp.omicronai.agents.{GetAsset, ValidateAction, Name}
-import be.angelcorp.omicronai.SupervisorMessage
-import scala.Some
-import be.angelcorp.omicronai.agents.ValidateAction
+import be.angelcorp.omicronai.gui.nifty.{TreeBoxViewController}
+import be.angelcorp.omicronai.agents._
+import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.agents.GetAsset
 import be.angelcorp.omicronai.agents.Name
 import be.angelcorp.omicronai.SupervisorMessage
-import be.angelcorp.omicronai.assets.Asset
 
 object MainMenu extends GuiScreen {
 
@@ -40,6 +40,11 @@ object MainMenu extends GuiScreen {
       def stringify(item: ActorRef) = names.getOrElseUpdate(item, {
         Await.result( ask(item, Name()), timeout.duration).asInstanceOf[String]
       })
+    }
+    class ProbeConverter extends TreeBoxViewController[LayerRenderer] {
+      implicit val timeout: Timeout = 5 seconds;
+      val names = mutable.Map[ActorRef, String]()
+      def stringify(item: LayerRenderer) = item.toString
     }
 
     val xml =
@@ -55,7 +60,6 @@ object MainMenu extends GuiScreen {
                 <onEndScreen   name="move" mode="out" direction="bottom" length="1000" inherit="true" />
               </effect>
 
-              <!--<control id="activeLayerList" name="listBox" vertical="off"      horizontal="off" displayItems="3" selectionMode="Single"   />-->
               <panel id="renderLayerPanel" childLayout="vertical" height="100%" width="180px" >
                 <control id="layerList" name="listBox" vertical="optional" horizontal="off" displayItems="5" selectionMode="Multiple" />
                 <panel id="renderLayerControlPanel" childLayout="horizontal" width="100%" >
@@ -65,7 +69,10 @@ object MainMenu extends GuiScreen {
                 </panel>
               </panel>
 
-              <control id="unitTree" name="treeBox" width="200px" vertical="on" horizontal="optional" displayItems="5" selectionMode="Single"   viewConverterClass={classOf[ActorConverter].getName} />
+              <panel id="unitTreePanel" childLayout="vertical" height="100%" width="200px" >
+                <control id="unitTree" name="treeBox" width="100%" vertical="on" horizontal="optional" displayItems="5" selectionMode="Single"   viewConverterClass={classOf[ActorConverter].getName} />
+                <control id="unitTreeUpdate" name="button" label="update unit tree" width="100%" />
+              </panel>
 
               <control id="controlTabs" name="tabGroup" caption="Control" >
 
@@ -79,8 +86,8 @@ object MainMenu extends GuiScreen {
                   </panel>
                 </control>
 
-                <control id="goalTab" name="tab" caption="Goals" childLayout="vertical" >
-                  <control id="goalList" align="center" name="listBox" vertical="optional" horizontal="off" displayItems="4" selectionMode="Single"   />
+                <control id="probeTab" name="tab" caption="Probe" childLayout="vertical" >
+                  <control id="probesTree" name="treeBox" width="200px" vertical="optional" horizontal="optional" displayItems="4" selectionMode="Single" viewConverterClass={classOf[ProbeConverter].getName} />
                 </control>
 
               </control>
@@ -116,16 +123,20 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
   lazy val layerLabel      = nifty.getScreen(MainMenu.name).findNiftyControl("layerLabel",      classOf[Label])
   lazy val layerDownButton = nifty.getScreen(MainMenu.name).findNiftyControl("layerDownButton", classOf[Button])
 
-  lazy val messageList = nifty.getScreen(MainMenu.name).findNiftyControl("messageList", classOf[ListBox[SupervisorMessage]])
-  lazy val unitTree    = nifty.getScreen(MainMenu.name).findNiftyControl("unitTree",   classOf[TreeBox[ActorRef]])
+  lazy val unitTree       = nifty.getScreen(MainMenu.name).findNiftyControl("unitTree",       classOf[TreeBox[ActorRef]])
+  lazy val unitTreeUpdate = nifty.getScreen(MainMenu.name).findNiftyControl("unitTreeUpdate", classOf[Button])
 
-  lazy val autoButton   = nifty.getScreen(MainMenu.name).findNiftyControl("autoButton",   classOf[Button])
-  lazy val centerButton = nifty.getScreen(MainMenu.name).findNiftyControl("centerButton", classOf[Button])
-
+  lazy val messageList  = nifty.getScreen(MainMenu.name).findNiftyControl("messageList",  classOf[ListBox[SupervisorMessage]])
   lazy val acceptButton = nifty.getScreen(MainMenu.name).findNiftyControl("acceptButton", classOf[Button])
   lazy val rejectButton = nifty.getScreen(MainMenu.name).findNiftyControl("rejectButton", classOf[Button])
   lazy val modifyButton = nifty.getScreen(MainMenu.name).findNiftyControl("modifyButton", classOf[Button])
   lazy val addButton    = nifty.getScreen(MainMenu.name).findNiftyControl("addButton",    classOf[Button])
+
+  lazy val probesTree = nifty.getScreen(MainMenu.name).findNiftyControl("probesTree", classOf[TreeBox[LayerRenderer]])
+
+  lazy val autoButton   = nifty.getScreen(MainMenu.name).findNiftyControl("autoButton",   classOf[Button])
+  lazy val centerButton = nifty.getScreen(MainMenu.name).findNiftyControl("centerButton", classOf[Button])
+
 
   override def onStartScreen() {}
   override def onEndScreen() {}
@@ -152,28 +163,38 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
 
   @NiftyEventSubscriber(id = "layerList")
   def updateLayers(id: String, event: ListBoxSelectionChangedEvent[LayerRenderer]) {
-    try{
-      event.getListBox.getItems.asScala.zipWithIndex.foreach( entry => {
-        val renderer = entry._1
-        val index    = entry._2
-        if ( event.getSelectionIndices.contains(index) ) {
-          if (!gui.renderLayers.contains(renderer)) {
-            logger.info("Enabling extra layer info: " + renderer.toString )
-            gui.renderLayers.append( renderer )
-          } else {
-            logger.debug("Selected layer info " + renderer.toString + " was already enabled.")
-          }
-        } else {
-          if (gui.renderLayers.contains(renderer)) {
-            logger.info("Disabling extra layer info: " + renderer.toString )
-            gui.renderLayers.remove( gui.renderLayers.indexOf(renderer) )
-          } else {
-            logger.trace("Deselected layer info " + renderer.toString + " was already disabled.")
-          }
+    event.getListBox.getItems.asScala.zipWithIndex.foreach( entry => {
+      val renderer = entry._1
+      val index    = entry._2
+      if ( event.getSelectionIndices.contains(index) ) {
+        if (!gui.renderLayers.contains(renderer)) {
+          logger.info("Enabling extra layer info: " + renderer.toString )
+          gui.renderLayers.append( renderer )
+          renderer.update( gui.view )
         }
-      } )
-    } catch {
-      case e: Throwable => logger.info("Could not swap display layer, could not retrieve layer details; ", e)
+      } else {
+        if (gui.renderLayers.contains(renderer)) {
+          logger.info("Disabling extra layer info: " + renderer.toString )
+          gui.renderLayers.remove( gui.renderLayers.indexOf(renderer) )
+        }
+      }
+    } )
+  }
+
+  def treeContains[T]( tree: TreeItem[T], element: T ): Boolean =
+    tree.getValue == element || tree.iterator().asScala.exists( t => treeContains(t, element) )
+
+  @NiftyEventSubscriber(id = "probesTree")
+  def updateProbesTree(id: String, event: TreeItemSelectionChangedEvent[LayerRenderer]) {
+    event.getTreeBoxControl.getItems.asScala.foreach( p => {
+      val i = gui.renderLayers.indexOf(p.getValue)
+      if (i != -1) gui.renderLayers.remove( i )
+    } )
+    selectedProbe match {
+      case Some(probe) =>
+        gui.renderLayers.append( probe )
+        probe.update( gui.view )
+      case None =>
     }
   }
 
@@ -193,8 +214,25 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
     }
   }
 
-  def selectedMessage = messageList.getSelection.asScala.headOption
+  @NiftyEventSubscriber(id = "unitTreeUpdate")
+  def unitTreeUpdateAction(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent =>
+      def buildTree(a: ActorRef): TreeItem[ActorRef] = {
+        val i = new TreeItem[ActorRef](a)
+        val children = Await.result( ask(a, ListMembers()), timeout.duration ).asInstanceOf[Iterable[ActorRef]]
+        children.foreach( c => i.addTreeItem( buildTree(c) ) )
+        i
+      }
+      val root = new TreeItem[ActorRef](ActorRef.noSender)
+      root.addTreeItem(buildTree(gui.pike.admiralRef))
+      unitTree.setTree( root )
+    case _ =>
+  }
+
+
   def selectedUnit    = unitTree.getSelection.asScala.headOption.map( _.getValue )
+  def selectedMessage = messageList.getSelection.asScala.headOption
+  def selectedProbe   = probesTree.getSelection.asScala.headOption.map( _.getValue )
 
   @NiftyEventSubscriber(id = "acceptButton")
   def acceptButtonAction(id: String, event: NiftyEvent) = event match {
@@ -274,8 +312,54 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
       messageList.removeItem( msg )
   }
 
+  def addProbesFor( entry: Any ): TreeItem[LayerRenderer] = {
+    val root = new TreeItem[LayerRenderer](new  LayerRenderer {
+      def render(g: Graphics, view: ViewPort) {}
+      override def toString: String = entry.toString
+    })
+
+    entry match {
+      case actor: ActorRef =>
+        Await.result( ask(actor, Self()), timeout.duration) match {
+          case c: Cartographer =>
+            class ResourceLayer(val resourceType: ResourceType) extends LayerRenderer {
+              val tiles = ListBuffer[GuiTile]()
+              override def update(view: ViewPort) {
+                tiles.clear()
+                val futureResources = Future.sequence( view.tilesInView.map( tile => {
+                  actor ? ResourcesOn( tile, resourceType )
+                } ) )
+                val resources = Await.result( futureResources, timeout.duration).map( _.asInstanceOf[ResourceCount] )
+                tiles.appendAll( resources.map( c => {
+                  new GuiTile( c.l ) {
+                    override def fillColor   = if (c.quantity > 0.0 )   new Color(0f, 0.5f, 0f, 1.0f)                 else Color.transparent
+                    override def borderStyle = if (c.confidence != 0.0) new Color(0f, 0.5f, 0f, c.confidence.toFloat) else Color.transparent
+                    override def textColor   = Color.white
+                    override def text        = (c.quantity, c.confidence).toString
+                  }
+                } ) )
+              }
+              def render(g: Graphics, view: ViewPort) { tiles.foreach( _.render(g) ) }
+              override val toString = s"Detected and estimated ${resourceType.name()}"
+            }
+
+            ResourceType.values().foreach( r => {
+              root.addTreeItem( new TreeItem[LayerRenderer]( new ResourceLayer( r ) ) )
+            } )
+          case _ =>
+        }
+    }
+
+    root
+  }
+
   def updateUnitUi() {
     messageList.clear()
+    probesTree.getItems.asScala.foreach( p => {
+      val i = gui.renderLayers.indexOf(p.getValue)
+      if (i != -1) gui.renderLayers.remove( i )
+    } )
+    val rootProbes = new TreeItem[LayerRenderer]()
     selectedUnit match {
       case Some(unit) =>
         enable(autoButton)
@@ -285,6 +369,7 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
         enable(rejectButton)
         enable(modifyButton)
         messageList.addAllItems( supervisor.messagesFor(unit).asJava )
+        rootProbes.addTreeItem( addProbesFor(unit) )
       case _ =>
         disable(autoButton)
         disable(centerButton)
@@ -293,6 +378,7 @@ class MainMenuController(gui: AiGui) extends ScreenController with GuiSupervisor
         disable(modifyButton)
         disable(addButton)
     }
+    probesTree.setTree(rootProbes)
   }
 
   def disable(control: NiftyControl) {

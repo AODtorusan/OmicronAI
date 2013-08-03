@@ -17,13 +17,14 @@ class PikeTactical(aiPlayer: Player) extends Agent {
 
   val readyUnits = mutable.Set[ActorRef]()
 
-  lazy val cartographer = context.actorOf(Props(new Cartographer( aiPlayer.getController.getGameController )), name = "Cartographer")
+  lazy val cartographer =
+    context.actorOf(Props(classOf[Cartographer], aiPlayer.getController.getGameController ), name = "Cartographer")
 
   def act = {
     case AddMember(unit) =>
       logger.debug( s"$name was asked to assign unit $unit to a new Squad" )
       val newName = namer.nameFor(classOf[SurveySquad])
-      val squad = context.actorOf(Props(new SurveySquad(aiPlayer, newName, cartographer )), name = newName)
+      val squad = context.actorOf(Props(classOf[SurveySquad], aiPlayer, newName, cartographer ), name = newName)
       squad ! AddMember( unit )
 
       val size = unit.getLocation.getLevel.getSize

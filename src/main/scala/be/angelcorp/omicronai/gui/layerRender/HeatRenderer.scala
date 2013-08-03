@@ -1,9 +1,8 @@
 package be.angelcorp.omicronai.gui.layerRender
 
-import be.angelcorp.omicronai.Location
+import be.angelcorp.omicronai.{TileCollection, Location}
 import org.newdawn.slick.{Graphics, Color}
 import be.angelcorp.omicronai.gui.ViewPort
-import be.angelcorp.omicronai.goals.TileCollection
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -33,7 +32,7 @@ trait HeatRenderer extends LayerRenderer {
 
   var regions: Iterable[RegionRenderer] = Nil
 
-  def update(view: ViewPort) {
+  override def update(view: ViewPort) {
     logger.info("Updating heatmap")
     val values = view.tilesInView.map( l => (l, valueFor(l)) )
     val valuesNonNan = values.filterNot( _._2.isNaN )
@@ -60,7 +59,6 @@ trait HeatRenderer extends LayerRenderer {
   }
 
   def render(g: Graphics, view: ViewPort) {
-    if (view.scale != lastScale || view.offset != lastOffset) update(view)
     regions.foreach( _.render(g, view) )
   }
 

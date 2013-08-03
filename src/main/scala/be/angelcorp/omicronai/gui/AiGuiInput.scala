@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory
 import org.newdawn.slick.util.InputAdapter
 import org.newdawn.slick.Input._
 import collection.mutable
-import be.angelcorp.omicronai.gui.GuiTile
 
 class AiGuiInput(gui: AiGui) extends InputAdapter {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -17,7 +16,6 @@ class AiGuiInput(gui: AiGui) extends InputAdapter {
   override def mouseMoved(oldx: Int, oldy: Int, newx: Int, newy: Int) {
     val gameXY = pixelToGameXY(newx, newy)
     val coor = openglToLocation( gameXY._1, gameXY._2 )
-    logger.debug( s"Moved move to ($newx, $newy) = $gameXY = $coor" )
     gui.hoverTile = Some( coor )
   }
 

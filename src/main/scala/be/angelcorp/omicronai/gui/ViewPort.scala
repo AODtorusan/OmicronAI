@@ -10,7 +10,8 @@ import org.slf4j.LoggerFactory
 class ViewPort(gui: AiGui,
                private var _activeLayer: Int       = LevelType.GROUND,
                private var _scale:   Float         =  0.5f,
-               private var _offset: (Float, Float) = (0, 0)) {
+               private var _offset: (Float, Float) = (0, 0),
+               private var _changed: Boolean       = true) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   /** Width  of the in-game viewport (scaled) */
@@ -47,6 +48,8 @@ class ViewPort(gui: AiGui,
       val loc: Location = tile
       if ( inView(loc) ) Some(loc) else None
     } ).flatten
+
+    _changed = true
 
     logger.debug(s"Viewport changed to; $toString")
   }
@@ -108,6 +111,13 @@ class ViewPort(gui: AiGui,
 
   /** Get the current offset of the viewport in in-game units*/
   def offset = _offset
+
+  /** Check if the viewport has change since the last poll */
+  def changed = _changed
+
+  protected[gui] def unsetChanged() {
+    _changed = false
+  }
 
   override def toString = s"layer=$activeLayer, offset=$offset, scale=$scale, width=$width, height=$height, tiles in view:${tilesInView.size}"
 

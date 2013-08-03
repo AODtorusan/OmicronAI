@@ -22,7 +22,7 @@ class Cartographer(val gameController: GameController) extends Agent {
 
   def act = {
     case UpdateLocation( location ) =>
-      logger.debug(s"Updating map information on location $location")
+      logger.trace(s"Updating map information on location $location")
       val tile: Tile = location
       updateResources(location, tile)
 

@@ -4,9 +4,9 @@ import math._
 import collection.mutable
 import org.newdawn.slick.{Color, Graphics}
 import be.angelcorp.omicronai.gui.{DrawStyle, GuiTile, ViewPort}
-import be.angelcorp.omicronai.goals.RegionOfInterest
 import scala.collection.mutable.ListBuffer
 import org.newdawn.slick.geom.Polygon
+import be.angelcorp.omicronai.RegionOfInterest
 
 class RegionRenderer(val roi:    RegionOfInterest,
                      val border: DrawStyle = new DrawStyle(Color.red, 3.0f),
