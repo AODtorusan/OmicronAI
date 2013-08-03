@@ -13,7 +13,7 @@ import de.lessvoid.nifty.slick2d.NiftyOverlayGame
 import de.lessvoid.nifty.Nifty
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.{LevelType, Game}
-import be.angelcorp.omicronai.{SupervisorMessage, Location, AiSupervisor, PikeAi}
+import be.angelcorp.omicronai._
 import be.angelcorp.omicronai.agents._
 import scala.collection.mutable.ListBuffer
 import be.angelcorp.omicronai.gui.layerRender._
@@ -29,6 +29,11 @@ import de.lessvoid.nifty.controls.treebox.builder.TreeBoxBuilder
 import scala.Some
 import be.angelcorp.omicronai.agents.Self
 import be.angelcorp.omicronai.assets.Asset
+import be.angelcorp.omicronai.agents.ListMembers
+import scala.Some
+import be.angelcorp.omicronai.agents.Self
+import be.angelcorp.omicronai.agents.ValidateAction
+import be.angelcorp.omicronai.SupervisorMessage
 
 class AiGui extends NiftyOverlayGame {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -135,7 +140,7 @@ class AiGui extends NiftyOverlayGame {
   var container: GameContainer = null
   lazy val view = new ViewPort(this)
   val renderLayers = ListBuffer[LayerRenderer]()
-  var hoverTile: Option[(Int, Int)] = None
+  var hoverTile: Option[HexTile] = None
 
   def renderGame(container: GameContainer, g: Graphics) {
     g.clear()
@@ -151,7 +156,7 @@ class AiGui extends NiftyOverlayGame {
 
     hoverTile match {
       case Some(loc) =>
-        new GuiTile( Location(loc._1, loc._2, 0, game.listLevels().iterator().next().getSize) ) {
+        new GuiTile( loc ) {
           override def borderStyle: DrawStyle = new DrawStyle(Color.orange, 5.0f)
           override def fillColor: Color = Color.transparent
         }.render(g)

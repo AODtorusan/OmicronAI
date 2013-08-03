@@ -21,7 +21,7 @@ class PolyLineRenderer(path: Seq[Location], style: DrawStyle, description: Strin
       if (last.isDefined && (loc.size.getWidth / 2 < math.abs(last.get.δuUnwrap(loc)) || loc.size.getWidth / 2 < math.abs(last.get.δvUnwrap(loc)) ) ) {
         // Add the next line segment (from onto the map to out-of-map)
         val virtualNext = loc.mirrors.minBy( mirror => mirror δunwrap last.get )
-        val centerNext = GuiTile.center(virtualNext)
+        val centerNext  = GuiTile.center(virtualNext)
         poly.addPoint( centerNext._1, centerNext._2 )
 
         // Start a new line

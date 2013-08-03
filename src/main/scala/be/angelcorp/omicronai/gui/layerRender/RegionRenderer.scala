@@ -6,7 +6,7 @@ import org.newdawn.slick.{Color, Graphics}
 import be.angelcorp.omicronai.gui.{DrawStyle, GuiTile, ViewPort}
 import scala.collection.mutable.ListBuffer
 import org.newdawn.slick.geom.Polygon
-import be.angelcorp.omicronai.RegionOfInterest
+import be.angelcorp.omicronai.{HexTile, RegionOfInterest}
 
 class RegionRenderer(val roi:    RegionOfInterest,
                      val border: DrawStyle = new DrawStyle(Color.red, 3.0f),
@@ -29,12 +29,13 @@ class RegionRenderer(val roi:    RegionOfInterest,
     // This results in a collection of segments that define the outer contour(s) of the ROI
     val segments = mutable.Set[Segment]()
     roi.tiles.foreach( tile => {
-      val vertices = GuiTile.vertices( tile ).toBuffer
+      val vertices = HexTile( tile ).verticesXY.toBuffer
       vertices.append( vertices.head )
       val tileSegments = vertices.sliding(2).map( elem => {
         val p0 = elem(0)
         val p1 = elem(1)
-        new Segment( round(p0._1), round(p0._2), round(p1._1), round(p1._2) ) // <= rounding required so that == works
+        new Segment( round(p0._1 * GuiTile.scale), round(p0._2 * GuiTile.scale),
+                     round(p1._1 * GuiTile.scale), round(p1._2 * GuiTile.scale) ) // <= rounding required so that == works
       } )
       tileSegments.foreach( s => if (!segments.add(s)) segments.remove(s) )
     } )

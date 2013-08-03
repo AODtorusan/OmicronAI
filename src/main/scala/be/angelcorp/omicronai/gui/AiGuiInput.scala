@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.newdawn.slick.util.InputAdapter
 import org.newdawn.slick.Input._
 import collection.mutable
+import be.angelcorp.omicronai.HexTile
 
 class AiGuiInput(gui: AiGui) extends InputAdapter {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -81,45 +82,11 @@ class AiGuiInput(gui: AiGui) extends InputAdapter {
   /**
    * Convert OpenGL coordinates to the index to a specific tile containing the coordinate.
    *
-   * @param _x OpenGL x coordinate.
-   * @param _y OpenGL y coordinate.
+   * @param x OpenGL x coordinate.
+   * @param y OpenGL y coordinate.
    * @return Tile coordinate (u, v)
    */
-  def openglToLocation(_x: Float, _y : Float) = {
-    //         Y ^
-    //           |
-    //          a|
-    //          / \
-    //        /  |  \
-    //      /   c|____\
-    //     |     |     |
-    //-----|-----+-----|------->
-    //     |     |    b|        X
-    //      \    |    /
-    //        \  |  /
-    //          \|/
-    //           |
-    val a = GuiTile.height * GuiTile.scale / 2f
-    val b = GuiTile.width  * GuiTile.scale / 2f
-    val c = a / 2f
-
-    val x = _x + b
-    val y = _y + a
-
-    val cj = (y / (a+c)).toInt
-    val cy =  y - (a+c) * cj
-
-    val tx = x - (cj % 2) * b
-    val ci = (tx / (2f * b)).toInt
-    val cx =  tx - (2f * b) * ci
-
-    val (row, col) =
-      if (cy > Math.abs(c - a * cx / (b * 2f))) {
-        (cj, ci)
-      } else {
-        (cj - 1, ci + (cj % 2) - (if (cx < b) 1 else 0))
-      }
-    (col - row / 2, row)
-  }
+  def openglToLocation(x: Float, y : Float) =
+    HexTile.fromXY( x / GuiTile.scale, y / GuiTile.scale )
 
 }
