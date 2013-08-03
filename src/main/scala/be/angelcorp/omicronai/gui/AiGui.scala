@@ -135,6 +135,7 @@ class AiGui extends NiftyOverlayGame {
   var container: GameContainer = null
   lazy val view = new ViewPort(this)
   val renderLayers = ListBuffer[LayerRenderer]()
+  var hoverTile: Option[(Int, Int)] = None
 
   def renderGame(container: GameContainer, g: Graphics) {
     g.clear()
@@ -142,6 +143,15 @@ class AiGui extends NiftyOverlayGame {
     g.translate( view.offset._1, view.offset._2)
 
     renderLayers.foreach( _.render(g, view) )
+
+    hoverTile match {
+      case Some(loc) =>
+        new GuiTile( Location(loc._1, loc._2, 0, game.listLevels().iterator().next().getSize) ) {
+          override def borderStyle: DrawStyle = new DrawStyle(Color.orange, 5.0f)
+          override def fillColor: Color = Color.transparent
+        }.render(g)
+      case _ =>
+    }
 
     g.resetTransform()
   }
