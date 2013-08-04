@@ -1,10 +1,9 @@
 package be.angelcorp.omicronai.assets
 
-import collection.JavaConverters._
-import com.lyndir.omicron.api.model._
-import com.lyndir.omicron.api.controller._
-import com.typesafe.scalalogging.slf4j.Logger
+import scala.collection.JavaConverters._
 import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.slf4j.Logger
+import com.lyndir.omicron.api.model._
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.Conversions._
 
@@ -15,6 +14,6 @@ class Asset( val aiPlayer: Player, val gameObject: GameObject) {
 
   def observableTiles = gameObject.listObservableTiles(aiPlayer).iterator().asScala
 
-  lazy val mobility = toOption( gameObject.getModule( classOf[MobilityModule] ) )
+  lazy val mobility = toOption( gameObject.getModule( ModuleType.MOBILITY, 0 ) )
 
 }

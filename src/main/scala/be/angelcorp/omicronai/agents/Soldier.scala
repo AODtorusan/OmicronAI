@@ -1,9 +1,9 @@
 package be.angelcorp.omicronai.agents
 
-import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import be.angelcorp.omicronai.Location
+import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.Player
+import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.assets.Asset
 
 class Soldier( val owner: Player, val name: String, val asset: Asset ) extends Agent {
@@ -47,14 +47,15 @@ class Soldier( val owner: Player, val name: String, val asset: Asset ) extends A
           asset.mobility match {
             case Some(m) =>
               implicit val game = m.getGameObject.getLocation.getLevel.getGame
-              if (m.canMove( owner, destination )) {
-                if (simulate || m.move( owner, destination )) {
+              val move = m.movement( owner, destination )
+              if (move.isPossible) {
+                if (simulate || move.execute() ) {
                   ActionSuccess( action, asset.observableTiles.map( l => UpdateLocation(l) ) )
                 } else {
                   ActionFailed( action, s"Asset $name cannot move to $destination" )
                 }
               } else {
-                ActionFailed( action, s"Asset $name cannot move to $destination, insufficient of speed", OutOfSpeed() )
+                ActionFailed( action, s"Asset $name cannot move to $destination, insufficient of speed or no path", OutOfSpeed() )
               }
             case None =>
               ActionFailed( action, s"Tried to move object $name to $destination, but that unit cannot move (no mobility module)", MissingModule() )

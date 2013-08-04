@@ -1,14 +1,14 @@
 package be.angelcorp.omicronai.agents.squad
 
-import collection.mutable
-import com.lyndir.omicron.api.model.{Tile, GameObject, Player}
-import com.typesafe.scalalogging.slf4j.Logger
+import scala.collection.mutable
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor.{ActorRef, Props}
 import org.slf4j.LoggerFactory
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import com.typesafe.scalalogging.slf4j.Logger
+import com.lyndir.omicron.api.model.{Tile, GameObject, Player}
 import be.angelcorp.omicronai.agents._
 import be.angelcorp.omicronai.algorithms.MovementPathfinder
 import be.angelcorp.omicronai.Conversions._
@@ -25,7 +25,7 @@ class SurveySquad(val owner: Player,
   implicit def timeout: Timeout = settings.ai.messageTimeout seconds;
   logger.debug(s"Created a new survey squad: $name")
 
-  val namer = new Namer[GameObject]( _.getTypeName )
+  val namer = new Namer[GameObject]( _.getType.getTypeName )
 
   val actions = mutable.ListBuffer[(ActorRef, Action)]()
   var replan  = true
