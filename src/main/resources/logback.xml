@@ -7,6 +7,9 @@
     </appender>
 
     <logger name="be.angelcorp" level="TRACE" />
+
+    <logger name="be.angelcorp.omicronai.agents.Cartographer" level="DEBUG" />
+
     <logger name="com.lyndir" level="DEBUG" />
     <logger name="org.bushe" level="INFO" />
 

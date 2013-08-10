@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import akka.actor.{ActorRef, Props}
 import com.lyndir.omicron.api.model.Player
-import be.angelcorp.omicronai.{SquareArea, Namer, Location}
+import be.angelcorp.omicronai.{HexArea, SquareArea, Namer, Location}
 import be.angelcorp.omicronai.Location._
 import be.angelcorp.omicronai.agents.squad.{NewSurveyRoi, Squad, SurveySquad}
 
@@ -29,10 +29,7 @@ class PikeTactical(aiPlayer: Player) extends Agent {
 
       val size = unit.getLocation.getLevel.getSize
       val level: Int = unit.getLocation.getLevel
-      squad ! NewSurveyRoi( new SquareArea(
-        new Location(10, 10, level, size),
-        new Location(20, 20, level, size)
-      ) )
+      squad ! NewSurveyRoi( new HexArea(unit.getLocation, 100) )
 
     case NewTurn() =>
       logger.debug( s"$name is starting new turn actions" )

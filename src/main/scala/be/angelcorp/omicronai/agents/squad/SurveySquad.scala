@@ -6,21 +6,23 @@ import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor.{ActorRef, Props}
+import akka.dispatch.Futures
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.{Tile, GameObject, Player}
+import com.lyndir.omicron.api.model.{ResourceType, Tile, GameObject, Player}
 import be.angelcorp.omicronai.agents._
 import be.angelcorp.omicronai.algorithms.MovementPathfinder
 import be.angelcorp.omicronai.Conversions._
 import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.Settings.settings
 import be.angelcorp.omicronai.Location.location2tile
-import be.angelcorp.omicronai.{RegionOfInterest, Namer}
+import be.angelcorp.omicronai.{HexTile, Location, RegionOfInterest, Namer}
+import scala.collection.mutable.ListBuffer
 
 class SurveySquad(val owner: Player,
                   val name: String,
                   val cartographer: ActorRef ) extends Squad {
-  import context.dispatcher // For akka's ExecutionContext
+  import context.dispatcher
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit def timeout: Timeout = settings.ai.messageTimeout seconds;
   logger.debug(s"Created a new survey squad: $name")
@@ -30,7 +32,8 @@ class SurveySquad(val owner: Player,
   val actions = mutable.ListBuffer[(ActorRef, Action)]()
   var replan  = true
 
-  var roi: Option[RegionOfInterest] = None
+  var roi:     Option[RegionOfInterest] = None
+  var roiPath: Option[ Seq[Location]  ] = None
 
   def act = {
     case AddMember( unit ) =>
@@ -49,11 +52,16 @@ class SurveySquad(val owner: Player,
 
     case ActionSuccess(action, updates) =>
       actions.indexWhere( _._2 == action ) match {
-        case -1 => replan = true // Action not found, so it was not in the original planning. Rework the planning
+        case -1 =>
+          logger.debug(s"$name received ActionSuccess, but thus action was not found in the actions queue! Replanning ...")
+          replan = true
         case i  => actions.remove(i)
       }
       updatePlanningFor(updates)
       context.parent ! nextViableAction
+
+    case ActionFailed( action, message, reason ) =>
+      logger.warn( s"Action failed ($action) $reason: $message" )
 
     case any =>
       logger.debug(s"Invalid message received: $any")
@@ -64,7 +72,9 @@ class SurveySquad(val owner: Player,
       implicit val game = owner.getController.getGameController.getGame
       val tile: Tile = location2tile(l)
       toOption(tile.getContents) match {
-        case Some( content ) if content.getPlayer != owner => replan = true
+        case Some( content ) if content.getPlayer != owner =>
+          logger.debug(s"$name is going to replan because an enemy was detected on $tile: $content")
+          replan = true
         case _ =>
       }
       cartographer ! UpdateLocation(l)
@@ -90,28 +100,87 @@ class SurveySquad(val owner: Player,
   }
 
   def planActions() = if (replan || actions.isEmpty) {
+    logger.info(s"$name is replanning actions ...")
     // Remove all old actions
     actions.clear()
 
     roi match {
       case Some(region) =>
-        val moveIntoRoi = for (child <- context.children) yield {
-          val moveActions = for {
+        val (center, radius) = enclosingCircle()
+
+        val scanRadiusFuture = for (child <- context.children) yield {
+          Await.result( for ( asset <- (child ? GetAsset()).mapTo[Asset] ) yield asset.base.getViewRange, timeout.duration)
+        }
+        val scanRadius =  scanRadiusFuture.max
+
+        // The complete scan path
+        val completeSpiralPath = center.spiral(radius, 2*scanRadius+1)
+
+        // Remove tiles where enough information exists
+        val remainingSpiralPath = completeSpiralPath.filter( location => {
+          val tilesInView = location.range( scanRadius )
+          val futureConfidence =
+            for {fu <- (cartographer ? tilesInView.map( ResourcesOn(_, ResourceType.FUEL         )).toSeq ).mapTo[ Seq[ResourceCount] ]
+                 si <- (cartographer ? tilesInView.map( ResourcesOn(_, ResourceType.SILICON      )).toSeq ).mapTo[ Seq[ResourceCount] ]
+                 me <- (cartographer ? tilesInView.map( ResourcesOn(_, ResourceType.METALS       )).toSeq ).mapTo[ Seq[ResourceCount] ]
+                 re <- (cartographer ? tilesInView.map( ResourcesOn(_, ResourceType.RARE_ELEMENTS)).toSeq ).mapTo[ Seq[ResourceCount] ] } yield {
+
+              val fuRMS = math.sqrt( fu.foldLeft( 0.0 )( (squares, value) => squares + math.pow(value.confidence, 2) ) / fu.size.toDouble )
+              val siRMS = math.sqrt( si.foldLeft( 0.0 )( (squares, value) => squares + math.pow(value.confidence, 2) ) / fu.size.toDouble )
+              val meRMS = math.sqrt( me.foldLeft( 0.0 )( (squares, value) => squares + math.pow(value.confidence, 2) ) / fu.size.toDouble )
+              val reRMS = math.sqrt( re.foldLeft( 0.0 )( (squares, value) => squares + math.pow(value.confidence, 2) ) / fu.size.toDouble )
+
+              math.sqrt( (fuRMS*fuRMS + siRMS*siRMS + meRMS*meRMS + reRMS*reRMS) / 4.0 )
+            }
+          val confidence = Await.result(futureConfidence, timeout.duration)
+          confidence < 0.9
+        } )
+
+        val moveActions = for (child <- context.children) yield {
+          val moveActionsFuture = for {
             asset <- (child ? GetAsset()).mapTo[Asset]
             soldier <- (child ? Self()).mapTo[Soldier]
           } yield {
-            if (region inArea asset.location) Nil
-            else {
-              val solution = new MovementPathfinder(region.center, asset).findPath(asset.location)
-              solution._1.path.filterNot(region.inArea).reverse
-            }.map(l => (child, MoveTo(l)))
+            var position = asset.location
+            val actionSequence = ListBuffer[(ActorRef, Action)]()
+            for ( surveyLocation <- remainingSpiralPath ) {
+              if (!(surveyLocation adjacentTo position)) {
+                val solution = new MovementPathfinder(surveyLocation, asset).findPath(position)
+                solution._1.path.reverse.foreach(l => actionSequence.append( (child, MoveTo(l)) ) )
+                position = surveyLocation
+              }
+              actionSequence.append( (child, MoveTo(surveyLocation)) )
+            }
+            actionSequence.result()
           }
-          Await.result(moveActions, timeout.duration)
+          Await.result(moveActionsFuture, timeout.duration)
         }
-        actions.appendAll(moveIntoRoi.flatten)
-
+        actions.appendAll(moveActions.flatten)
+        replan = false
       case None =>
     }
+  }
+
+  // Returns (center, radius)
+  def enclosingCircle() = roi match {
+    case Some( region ) if region.tiles.nonEmpty =>
+      val points = region.tiles
+      val first  = points.head
+
+      var (centerU, centerV) = (0.0, 0.0)
+      for (point <- points) {
+        centerU = centerU + point.u
+        centerV = centerV + point.v
+      }
+      val center = Location( centerU / points.size.toDouble, centerV / points.size.toDouble, first.h, first.size )
+
+      var radius = -1
+      for (point <- points)
+        radius = math.max(radius, center δ point)
+
+      (center, radius)
+    case _ =>
+      ( Location(0,0,0,null), -1)
   }
 
 }

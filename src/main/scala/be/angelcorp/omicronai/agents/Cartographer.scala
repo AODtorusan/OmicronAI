@@ -27,25 +27,36 @@ class Cartographer(val gameController: GameController) extends Agent {
       updateResources(location, tile)
 
     case ResourcesOn(location: Location, typ: ResourceType ) =>
-      val entry = (typ match {
-        case FUEL          => fuel
-        case SILICON       => silicon
-        case METALS        => metal
-        case RARE_ELEMENTS => rare_element
-      }).getOrElse( location, TacticalInfo(0.0, 0.0) )
-      sender ! ResourceCount( location, typ, entry.value, entry.confidence )
+      sender ! resourcesOn( location, typ )
 
     case ThreatOn( location: Location ) =>
       sender ! ThreatIndex( location, 0.0, 0.0 )
 
+    case seq: Seq[_] =>
+      sender ! seq.map( e => e match {
+        case ResourcesOn(location: Location, typ: ResourceType ) =>
+          Some(resourcesOn( location, typ ))
+        case _ => None
+      } ).flatten
+
     case SubmitActions() => sender ! Ready()
+  }
+
+  def resourcesOn(location: Location, typ: ResourceType) = {
+    val entry = (typ match {
+      case FUEL          => fuel
+      case SILICON       => silicon
+      case METALS        => metal
+      case RARE_ELEMENTS => rare_element
+    }).getOrElse( location, TacticalInfo(0.0, 0.0) )
+    ResourceCount( location, typ, entry.value, entry.confidence )
   }
 
   def updateResources(location: Location, tile: Tile) = {
     fuel         update(location, TacticalInfo(tile.getResourceQuantity(FUEL), 1.0) )
-    silicon      update(location, TacticalInfo(tile.getResourceQuantity(FUEL), 1.0) )
-    metal        update(location, TacticalInfo(tile.getResourceQuantity(FUEL), 1.0) )
-    rare_element update(location, TacticalInfo(tile.getResourceQuantity(FUEL), 1.0) )
+    silicon      update(location, TacticalInfo(tile.getResourceQuantity(SILICON), 1.0) )
+    metal        update(location, TacticalInfo(tile.getResourceQuantity(METALS), 1.0) )
+    rare_element update(location, TacticalInfo(tile.getResourceQuantity(RARE_ELEMENTS), 1.0) )
   }
 
 }

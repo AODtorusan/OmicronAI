@@ -42,9 +42,6 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
   // Cube coordinate z
   val z = v
 
-  /** Construct a location based on its cube coordinates (instead of axial coordinates u|v ) */
-  def this( x: Int, y: Int, z: Int, h: Int, size: Size ) = this( x, z, h, size )
-
   override def equals(o: Any) = o match {
     case Location( u2, v2, h2, _ ) => u == u2 && v == v2 && h == h2
     case _ => false
@@ -286,9 +283,9 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
     var prev: (Int, Int, Int) = null
     (for (i <- 0 to N) yield {
       val t = i.toDouble / N.toDouble
-      val p = Location.hexRound(start._1 * t + end.x * (1 - t),
-                                start._2 * t + end.y * (1 - t),
-                                start._3 * t + end.z * (1 - t))
+      val p = Location.roundHexCube(start._1 * t + end.x * (1 - t),
+                                    start._2 * t + end.y * (1 - t),
+                                    start._3 * t + end.z * (1 - t))
       if (p != prev) {
         prev = p
         Some( prev )
@@ -304,22 +301,14 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
 
 object Location {
 
-  implicit def levelType2int(level: LevelType): Int = level.ordinal()
-  implicit def int2levelType(level: Int): LevelType = LevelType.values()(level)
+  /** Round hex axial coordinates to the nearest tile */
+  def roundHexAxial( u: Double, v: Double ) = {
+    val (x, y, z) = roundHexCube(u, -u-v, v)
+    (x, z)
+  }
 
-  implicit def level2int(level: Level): Int = level.getType
-  implicit def int2level(level: Int)(implicit game: Game): Level = game.getLevel( level )
-
-  implicit def tile2location( tile: Tile ) =
-    new Location( tile.getPosition.getU, tile.getPosition.getV, tile.getLevel, tile.getLevel.getSize )
-
-  implicit def location2tile( l: Location )(implicit game: Game) =
-    game.getLevel(l.h).getTile(l.u, l.v).get()
-
-  /**
-   * Round hex cubic coordinates to the nearest tile
-   */
-  def hexRound( x: Double, y: Double, z: Double ) = {
+  /** Round hex cubic coordinates to the nearest tile */
+  def roundHexCube( x: Double, y: Double, z: Double ): (Int, Int, Int) = {
     val rx = round(x).toInt
     val ry = round(y).toInt
     val rz = round(z).toInt
@@ -335,6 +324,35 @@ object Location {
     else
       (rx, ry, -rx-ry)
   }
+
+  /** Construct a location based on its approximate axial coordinates */
+  def apply( u: Double, v: Double, h: Int, size: Size ): Location = {
+    val (u2, v2) = roundHexAxial(u, v)
+    Location( u2, v2, h, size )
+  }
+
+  /** Construct a location based on its cube coordinates (instead of axial coordinates u|v ) */
+  def apply( x: Int, y: Int, z: Int, h: Int, size: Size ): Location = {
+    Location( x, z, h, size )
+  }
+
+  /** Construct a location based on its approximate cube coordinates */
+  def apply( x: Double, y: Double, z: Double, h: Int, size: Size ): Location = {
+    val (x2, y2, z2) = roundHexCube(x,y,z)
+    Location( x2, z2, h, size )
+  }
+
+  implicit def levelType2int(level: LevelType): Int = level.ordinal()
+  implicit def int2levelType(level: Int): LevelType = LevelType.values()(level)
+
+  implicit def level2int(level: Level): Int = level.getType
+  implicit def int2level(level: Int)(implicit game: Game): Level = game.getLevel( level )
+
+  implicit def tile2location( tile: Tile ) =
+    new Location( tile.getPosition.getU, tile.getPosition.getV, tile.getLevel, tile.getLevel.getSize )
+
+  implicit def location2tile( l: Location )(implicit game: Game) =
+    game.getLevel(l.h).getTile(l.u, l.v).get()
 
 }
 

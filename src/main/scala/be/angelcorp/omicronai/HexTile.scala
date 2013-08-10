@@ -5,6 +5,9 @@ import com.lyndir.omicron.api.model.{Tile, Coordinate}
 
 case class HexTile(u: Int, v: Int) {
 
+  // Construct from cubic coordinates
+  def this( x: Int, y: Int, z: Int ) = this( x, z )
+
   val centerXY = ( (u + (v - v%1) / 2f) * HexTile.width, v * 0.75f * HexTile.height )
 
   val verticesXY = Seq(

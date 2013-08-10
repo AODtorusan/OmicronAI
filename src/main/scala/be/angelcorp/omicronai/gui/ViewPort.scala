@@ -119,6 +119,6 @@ class ViewPort(gui: AiGui,
     _changed = false
   }
 
-  override def toString = s"layer=$activeLayer, offset=$offset, scale=$scale, width=$width, height=$height, tiles in view:${tilesInView.size}"
+  override def toString = f"layer=$activeLayer offset=$offset scale=$scale width=$width%.1f height=$height%.1f tiles in view:${tilesInView.size}"
 
 }

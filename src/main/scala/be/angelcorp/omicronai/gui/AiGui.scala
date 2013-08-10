@@ -163,7 +163,18 @@ class AiGui extends NiftyOverlayGame {
       case _ =>
     }
 
+    val statusStrings = ListBuffer[String]( view.toString )
+    if (hoverTile.isDefined) statusStrings.append( hoverTile.get.toString )
+
+    var y = 30f
     g.resetTransform()
+    g.setColor( new Color(0f, 0f, 0f, 0.6f))
+    g.fillRect(5, 5, container.getWidth - 10f , 30f + statusStrings.size * 20f )
+    g.setColor(Color.white)
+    for ( str <- statusStrings ) {
+      g.getFont.drawString(10, y, str)
+      y = y + 20f
+    }
   }
 
 }
@@ -173,6 +184,6 @@ object AiGui extends App {
 
   val app = new AppGameContainer(new AiGui())
   app.setTargetFrameRate(24)
-  app.setDisplayMode(800, 550, false)
+  app.setDisplayMode(1000, 550, false)
   app.start()
 }

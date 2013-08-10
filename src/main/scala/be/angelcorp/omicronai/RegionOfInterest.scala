@@ -43,17 +43,7 @@ class HexArea(val center: Location, val radius: Int) extends RegionOfInterest {
 
   def inArea(l: Location) = abs( center δ l ) <= radius
 
-  lazy val tiles = grow(Seq(center), radius)
-
-  @tailrec
-  private def grow( tiles: Seq[Location], growTimes: Int ): Seq[Location] =
-    if (growTimes <= 0)
-      tiles
-    else
-      grow(
-        (for ( tile <- tiles ) yield tile :: tile.neighbours ).flatten.distinct,
-        growTimes - 1
-      )
+  lazy val tiles = center.range( radius )
 
 }
 
