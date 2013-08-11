@@ -7,6 +7,7 @@ import com.lyndir.omicron.api.controller.GameController
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.ResourceType._
 import be.angelcorp.omicronai.Location
+import be.angelcorp.omicronai.metadata
 
 
 class Cartographer(val gameController: GameController) extends Agent {
@@ -38,6 +39,9 @@ class Cartographer(val gameController: GameController) extends Agent {
           Some(resourcesOn( location, typ ))
         case _ => None
       } ).flatten
+
+    case ListMetadata() =>
+      sender ! Iterable( new metadata.Resources(self) )
 
     case SubmitActions() => sender ! Ready()
   }

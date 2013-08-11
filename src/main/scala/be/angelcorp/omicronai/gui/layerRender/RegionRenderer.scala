@@ -6,7 +6,7 @@ import org.newdawn.slick.{Color, Graphics}
 import be.angelcorp.omicronai.gui.{DrawStyle, GuiTile, ViewPort}
 import scala.collection.mutable.ListBuffer
 import org.newdawn.slick.geom.Polygon
-import be.angelcorp.omicronai.{HexTile, RegionOfInterest}
+import be.angelcorp.omicronai.{HexTileEdge, HexTile, RegionOfInterest}
 
 class RegionRenderer(val roi:    RegionOfInterest,
                      val border: DrawStyle = new DrawStyle(Color.red, 3.0f),
@@ -20,6 +20,7 @@ class RegionRenderer(val roi:    RegionOfInterest,
       case _ => false
     }
     override def hashCode() = (x0, y0).hashCode ^ (x1, y1).hashCode
+    override def toString = s"($x0, $y0) to ($x1, $y1)"
   }
 
   val shapes = {
@@ -27,42 +28,43 @@ class RegionRenderer(val roi:    RegionOfInterest,
     // For each tile we add all the required contour segments to a list
     // If the list already contains that segment, it is removed
     // This results in a collection of segments that define the outer contour(s) of the ROI
-    val segments = mutable.Set[Segment]()
-    roi.tiles.foreach( tile => {
-      val vertices = HexTile( tile ).verticesXY.toBuffer
-      vertices.append( vertices.head )
-      val tileSegments = vertices.sliding(2).map( elem => {
-        val p0 = elem(0)
-        val p1 = elem(1)
-        new Segment( round(p0._1 * GuiTile.scale), round(p0._2 * GuiTile.scale),
-                     round(p1._1 * GuiTile.scale), round(p1._2 * GuiTile.scale) ) // <= rounding required so that == works
-      } )
-      tileSegments.foreach( s => if (!segments.add(s)) segments.remove(s) )
+    val segments = mutable.Set[HexTileEdge]()
+    roi.tiles.foreach( location => {
+      val tile = location: HexTile
+      tile.edgesXY.foreach( edge => if (!segments.add(edge)) segments.remove(edge) )
     } )
 
     // Join the spectate segments into polygons for improved render speed and fill capabilities
     // This simply walks along all the segments until a closed contour is found
+    val eps = 1E-4f
     val shapes = ListBuffer[Polygon]()
     while (segments.nonEmpty) {
       val start = segments.head
       segments.remove(start)
 
-      val endPoint = (start.x0, start.y0)
-      var nowPoint = (start.x1, start.y1)
+      val endPoint = start.startXY
+      var nowPoint = start.endXY
 
       val points = ListBuffer[(Float, Float)]( endPoint )
       while ( nowPoint != endPoint && segments.nonEmpty ) {
         points.append(nowPoint)
         // Find the next segment, touching the current one
-        segments.find( s => s.x0 == nowPoint._1 && s.y0 == nowPoint._2 || s.x1 == nowPoint._1 && s.y1 == nowPoint._2 ) match {
+        segments.find( s => {
+          val (x0, y0) = s.startXY
+          val (x1, y1) = s.endXY
+          abs(x0-nowPoint._1) < eps && abs(y0-nowPoint._2) < eps || abs(x1-nowPoint._1) < eps && abs(y1-nowPoint._2) < eps
+        } ) match {
           case Some(p) =>
-            nowPoint = if (p.x0 == nowPoint._1) (p.x1, p.y1) else (p.x0, p.y0)
+            val (x0, y0) = p.startXY
+            val (x1, y1) = p.endXY
+            nowPoint = if (abs(x0-nowPoint._1) < eps) (x1, y1) else (x0, y0)
             segments.remove(p)
-          case _ => throw new Exception("Contour not closed")
+          case _ =>
+            throw new Exception("Contour not closed")
         }
       }
 
-      shapes.append( new Polygon( points.map( v => Seq( v._1, v._2 ) ).flatten.toArray ) )
+      shapes.append( new Polygon( points.map( v => Seq( v._1 * GuiTile.scale, v._2 * GuiTile.scale ) ).flatten.toArray ) )
     }
     shapes.toList
   }

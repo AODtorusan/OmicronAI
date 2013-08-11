@@ -6,6 +6,7 @@ import de.lessvoid.nifty.Nifty
 import be.angelcorp.omicronai.gui.AiGui
 import de.lessvoid.nifty.builder.{LayerBuilder, ScreenBuilder}
 import be.angelcorp.omicronai.gui.effects.FadeEffectBuilder
+import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
 object Introduction extends GuiScreen {
 
@@ -13,7 +14,7 @@ object Introduction extends GuiScreen {
 
   def screen(nifty: Nifty, gui: AiGui) = {
     val controller_ = new DefaultScreenController{
-      override def onStartScreen() { gotoScreen( MainMenu.name ) }
+      override def onStartScreen() { gotoScreen( UserInterface.name ) }
     }
 
     val xml =

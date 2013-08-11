@@ -18,6 +18,10 @@ import be.angelcorp.omicronai.Settings.settings
 import be.angelcorp.omicronai.Location.location2tile
 import be.angelcorp.omicronai.{HexTile, Location, RegionOfInterest, Namer}
 import scala.collection.mutable.ListBuffer
+import be.angelcorp.omicronai.gui.layerRender.{PolyLineRenderer, LayerRenderer, RegionRenderer}
+import be.angelcorp.omicronai.metadata.MetaData
+import org.newdawn.slick.Color
+import be.angelcorp.omicronai.gui.DrawStyle
 
 class SurveySquad(val owner: Player,
                   val name: String,
@@ -62,6 +66,15 @@ class SurveySquad(val owner: Player,
 
     case ActionFailed( action, message, reason ) =>
       logger.warn( s"Action failed ($action) $reason: $message" )
+
+    case ListMetadata() =>
+      sender ! Iterable( new MetaData() {
+        def title: String = "Survey area"
+        def layers: Map[String, LayerRenderer] = Map(
+          "Region of interest" -> new RegionRenderer(roi.get, Color.transparent, new Color(1f, 1f, 1f, 0.5f)),
+          "Survey path" -> new PolyLineRenderer( actions.map( _._2.asInstanceOf[MoveTo].location ), new DrawStyle(Color.yellow, 3f) )
+        )
+      } )
 
     case any =>
       logger.debug(s"Invalid message received: $any")

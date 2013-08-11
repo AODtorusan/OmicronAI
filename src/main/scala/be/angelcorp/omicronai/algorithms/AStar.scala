@@ -5,7 +5,8 @@ import java.util.Comparator
 import collection.JavaConverters._
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import be.angelcorp.omicronai.{MetaData, PathfinderMetadata, Location}
+import be.angelcorp.omicronai.{Location}
+import be.angelcorp.omicronai.metadata.{PathfinderMetadata, MetaData}
 
 abstract class AStar {
 

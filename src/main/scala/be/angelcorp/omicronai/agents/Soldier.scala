@@ -30,6 +30,9 @@ class Soldier( val owner: Player, val name: String, val asset: Asset ) extends A
       logger.debug(s"Soldier $name was asked for its asset by $sender")
       sender ! asset
 
+    case ListMetadata() =>
+      sender ! Nil
+
     case msg =>
       logger.info( s"Asset received an unknown message: $msg" )
   }

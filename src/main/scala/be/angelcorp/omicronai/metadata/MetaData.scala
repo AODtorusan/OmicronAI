@@ -1,9 +1,10 @@
-package be.angelcorp.omicronai
+package be.angelcorp.omicronai.metadata
 
 import be.angelcorp.omicronai.gui.layerRender.{PolyLineRenderer, HeatMapRenderer, GridRenderer, LayerRenderer}
 import be.angelcorp.omicronai.algorithms.AStarSolution
 import be.angelcorp.omicronai.gui.DrawStyle
 import org.newdawn.slick.Color
+import be.angelcorp.omicronai.Location
 
 trait MetaData {
 

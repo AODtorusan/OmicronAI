@@ -29,7 +29,7 @@ class PikeTactical(aiPlayer: Player) extends Agent {
 
       val size = unit.getLocation.getLevel.getSize
       val level: Int = unit.getLocation.getLevel
-      squad ! NewSurveyRoi( new HexArea(unit.getLocation, 100) )
+      squad ! NewSurveyRoi( new HexArea(unit.getLocation, 20) )
 
     case NewTurn() =>
       logger.debug( s"$name is starting new turn actions" )
@@ -46,13 +46,8 @@ class PikeTactical(aiPlayer: Player) extends Agent {
       logger.trace( s"$name received order validation request" )
       unit ! ExecuteAction( action )
 
-    case Name() =>
-      logger.trace(s"$name was asked for a its name by $sender")
-      sender ! name
-
-    case ListMembers() =>
-      logger.debug(s"$name was asked for a list of members by $sender")
-      sender ! context.children
+    case ListMetadata() =>
+      sender ! Nil
 
     case any =>
       logger.warn( s"Received an unknown tactical message: $any" )

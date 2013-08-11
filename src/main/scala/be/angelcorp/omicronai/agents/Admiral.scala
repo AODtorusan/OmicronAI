@@ -45,6 +45,9 @@ class Admiral(owner: Player) extends PlayerController(owner) with Agent {
       if ( context.children.forall( readyUnits.contains ) )
         getGameController.setReady( owner )
 
+    case ListMetadata() =>
+      sender ! Nil
+
     case event =>
       logger.warn(s"Dude what the hell are you trying to tell me, I don't get this: $event")
   }
@@ -89,6 +92,7 @@ case class ActionFailed(  action: Action, message: String, reason: FailureReason
 
 case class AddMember(  unit: GameObject )       extends AdmiralMessage
 case class ListMembers()                        extends AdmiralMessage
+case class ListMetadata()                       extends AdmiralMessage
 case class Name()                               extends AdmiralMessage
 
 abstract class FailureReason
