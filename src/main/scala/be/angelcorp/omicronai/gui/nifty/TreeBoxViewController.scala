@@ -18,7 +18,6 @@ trait TreeBoxViewController[T] extends ListBox.ListBoxViewConverter[TreeItem[T]]
     spacer.setConstraintHeight(SizeValue.px(1))
     spacer.setVisible(item.getIndent > 0)
 
-    /*
     val icon = element.findElementById("#tree-item-icon")
     if (item.isLeaf)
       icon.setStyle(element.getStyle + "#leaf")
@@ -26,7 +25,6 @@ trait TreeBoxViewController[T] extends ListBox.ListBoxViewConverter[TreeItem[T]]
       icon.setStyle(element.getStyle + "#opened")
     else
       icon.setStyle(element.getStyle + "#closed")
-    */
 
     val text = element.findElementById("#tree-item-content")
     text.findNiftyControl("#label", classOf[Label]) match {

@@ -15,7 +15,7 @@ class MovementPathfinder( destination: Location, asset: Asset ) extends AStar {
   def costOnto(fromTile: Location, toTile: Location) = {
     implicit val game = asset.owner.getController.getGameController.getGame
     val baseCost = asset.mobility match {
-      case Some(m) if (toTile: Tile).isAccessible =>
+      case Some(m) if (toTile: Tile).checkAccessible() =>
         if ( fromTile.h == toTile.h )
           m.costForMovingInLevel( fromTile.h ) +
             settings.pathfinder.layerPenalty( toTile.h )

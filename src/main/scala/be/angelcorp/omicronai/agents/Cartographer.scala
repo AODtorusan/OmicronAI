@@ -3,11 +3,12 @@ package be.angelcorp.omicronai.agents
 import scala.collection.mutable
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import com.lyndir.omicron.api.controller.GameController
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.ResourceType._
-import be.angelcorp.omicronai.Location
-import be.angelcorp.omicronai.metadata
+import be.angelcorp.omicronai.Conversions._
+import be.angelcorp.omicronai._
+import be.angelcorp.omicronai.Present
+import scala.Some
 
 
 class Cartographer(val gameController: GameController) extends Agent {
@@ -56,11 +57,20 @@ class Cartographer(val gameController: GameController) extends Agent {
     ResourceCount( location, typ, entry.value, entry.confidence )
   }
 
+  def resourceOn( tile: Tile, typ: ResourceType ) = {
+    toMaybe( tile.checkResourceQuantity(typ) ) match {
+      case Present( value ) => TacticalInfo( value.toDouble, 1.0)
+      case Unknown          => TacticalInfo( 0.0, 0.0)
+      case Absent           => TacticalInfo( 0.0, 1.0)
+    }
+
+  }
+
   def updateResources(location: Location, tile: Tile) = {
-    fuel         update(location, TacticalInfo(tile.getResourceQuantity(FUEL), 1.0) )
-    silicon      update(location, TacticalInfo(tile.getResourceQuantity(SILICON), 1.0) )
-    metal        update(location, TacticalInfo(tile.getResourceQuantity(METALS), 1.0) )
-    rare_element update(location, TacticalInfo(tile.getResourceQuantity(RARE_ELEMENTS), 1.0) )
+    fuel         update(location, resourceOn(tile, FUEL) )
+    silicon      update(location, resourceOn(tile, SILICON) )
+    metal        update(location, resourceOn(tile, METALS) )
+    rare_element update(location, resourceOn(tile, RARE_ELEMENTS) )
   }
 
 }

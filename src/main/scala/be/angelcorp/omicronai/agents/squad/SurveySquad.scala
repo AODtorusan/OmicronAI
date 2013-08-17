@@ -84,8 +84,8 @@ class SurveySquad(val owner: Player,
     case UpdateLocation(l) =>
       implicit val game = owner.getController.getGameController.getGame
       val tile: Tile = location2tile(l)
-      toOption(tile.getContents) match {
-        case Some( content ) if content.getPlayer != owner =>
+      toMaybe(tile.checkContents()).asOption match {
+        case Some( content ) if content.getOwner.isPresent && content.getOwner.get != owner =>
           logger.debug(s"$name is going to replan because an enemy was detected on $tile: $content")
           replan = true
         case _ =>

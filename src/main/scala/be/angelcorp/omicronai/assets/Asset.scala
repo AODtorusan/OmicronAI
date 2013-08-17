@@ -12,7 +12,7 @@ class Asset( val owner: Player, val gameObject: GameObject) {
 
   def location: Location = gameObject.getLocation
 
-  def observableTiles = gameObject.listObservableTiles(owner).iterator().asScala
+  def observableTiles = gameObject.listObservableTiles().iterator().asScala
 
   lazy val base       = gameObject.getModule( ModuleType.BASE, 0 ).get()
 

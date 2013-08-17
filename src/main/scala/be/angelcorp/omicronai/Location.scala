@@ -350,9 +350,11 @@ object Location {
 
   implicit def tile2location( tile: Tile ) =
     new Location( tile.getPosition.getU, tile.getPosition.getV, tile.getLevel, tile.getLevel.getSize )
-
   implicit def location2tile( l: Location )(implicit game: Game) =
-    game.getLevel(l.h).getTile(l.u, l.v).get()
+    game.getLevel(l.h).getTile( l: Coordinate ).get()
+
+  implicit def location2coordinate( l: Location ): Coordinate =
+    new Coordinate( l.u, l.v, l.size )
 
 }
 

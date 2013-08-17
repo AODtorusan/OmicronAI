@@ -50,9 +50,9 @@ class Soldier( val owner: Player, val name: String, val asset: Asset ) extends A
           asset.mobility match {
             case Some(m) =>
               implicit val game = m.getGameObject.getLocation.getLevel.getGame
-              val move = m.movement( owner, destination )
+              val move = m.movement( destination )
               if (move.isPossible) {
-                if (simulate || move.execute() ) {
+                if (simulate || (try { move.execute(); true } catch { case e: IllegalStateException => false }) ) {
                   ActionSuccess( action, asset.observableTiles.map( l => UpdateLocation(l) ) )
                 } else {
                   ActionFailed( action, s"Asset $name cannot move to $destination" )

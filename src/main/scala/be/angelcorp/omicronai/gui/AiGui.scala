@@ -12,7 +12,7 @@ import de.lessvoid.nifty.loaderv2.types.NiftyType
 import de.lessvoid.nifty.slick2d.NiftyOverlayGame
 import de.lessvoid.nifty.{NiftyEventAnnotationProcessor, Nifty}
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.{LevelType, Game}
+import com.lyndir.omicron.api.model.{Security, LevelType, Game}
 import be.angelcorp.omicronai._
 import be.angelcorp.omicronai.agents._
 import scala.collection.mutable.ListBuffer
@@ -41,8 +41,10 @@ class AiGui extends NiftyOverlayGame {
   val pike = new PikeAi( (player, system) => {
     system.actorOf(Props(new Admiral(player)), name = "AdmiralPike")
   }, builder )
-  builder.getPlayers.add( pike )
+  builder.addPlayer(pike)
+  builder.addGameListener(pike.admiral)
   val game = builder.build
+  logger.info("Game build!")
 
   val closeRequested = false
   val getTitle = "PikeAi gui"
@@ -60,7 +62,8 @@ class AiGui extends NiftyOverlayGame {
     SwingUtilities.invokeLater( new Runnable {
       def run() {
         Thread.sleep(1000)
-        game.getController.start()
+        game.getController.addGameListener(pike.admiral)
+        game.getController.setReady()
       }
     } )
   }

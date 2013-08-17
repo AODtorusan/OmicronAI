@@ -8,7 +8,7 @@ import be.angelcorp.omicronai.gui.{ViewPort, DrawStyle, GuiTile}
 class FieldOfView(player: Player, fill: Color = Color.white) extends LayerRenderer {
 
   def render(g: Graphics, view: ViewPort) {
-    player.listObservableTiles(player).iterator().asScala.filter( view.inView(_) ).foreach( tile =>
+    player.listObservableTiles().iterator().asScala.filter( view.inView(_) ).foreach( tile =>
       new GuiTile( tile ) {
         override def borderStyle: DrawStyle = Color.transparent
         override def fillColor: Color       = fill
