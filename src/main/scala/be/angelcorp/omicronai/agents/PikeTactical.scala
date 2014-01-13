@@ -5,9 +5,9 @@ import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import akka.actor.{ActorRef, Props}
 import com.lyndir.omicron.api.model.Player
-import be.angelcorp.omicronai.{HexArea, SquareArea, Namer, Location}
-import be.angelcorp.omicronai.Location._
+import be.angelcorp.omicronai.{HexArea, Namer}
 import be.angelcorp.omicronai.agents.squad.{NewSurveyRoi, Squad, SurveySquad}
+import be.angelcorp.omicronai.bridge.NewTurn
 
 class PikeTactical(aiPlayer: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -26,12 +26,9 @@ class PikeTactical(aiPlayer: Player) extends Agent {
       val newName = namer.nameFor(classOf[SurveySquad])
       val squad = context.actorOf(Props(classOf[SurveySquad], aiPlayer, newName, cartographer ), name = newName)
       squad ! AddMember( unit )
+      squad ! NewSurveyRoi( new HexArea(unit.location, 20) )
 
-      val size = unit.getLocation.getLevel.getSize
-      val level: Int = unit.getLocation.getLevel
-      squad ! NewSurveyRoi( new HexArea(unit.getLocation, 20) )
-
-    case NewTurn() =>
+    case NewTurn( currentTurn ) =>
       logger.debug( s"$name is starting new turn actions" )
       readyUnits.clear()
       context.children.foreach( child => child ! SubmitActions() )

@@ -9,6 +9,7 @@ import be.angelcorp.omicronai.Conversions._
 import be.angelcorp.omicronai._
 import be.angelcorp.omicronai.Present
 import scala.Some
+import akka.actor.Actor
 
 
 class Cartographer(val gameController: GameController) extends Agent {
@@ -24,7 +25,6 @@ class Cartographer(val gameController: GameController) extends Agent {
 
   def act = {
     case UpdateLocation( location ) =>
-      logger.trace(s"Updating map information on location $location")
       val tile: Tile = location
       updateResources(location, tile)
 

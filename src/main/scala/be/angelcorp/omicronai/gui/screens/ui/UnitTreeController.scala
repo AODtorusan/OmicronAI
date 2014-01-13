@@ -14,10 +14,11 @@ import de.lessvoid.nifty.controls._
 import be.angelcorp.omicronai.gui.{AiGui, GuiController}
 import be.angelcorp.omicronai.agents.ListMembers
 import be.angelcorp.omicronai.Settings.settings
+import de.lessvoid.nifty.controls.treebox.TreeBoxControl
 
 class UnitTreeController(gui: AiGui, nifty: Nifty) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit val timeout: Timeout = settings.ai.messageTimeout seconds;
+  implicit val timeout: Timeout = settings.gui.messageTimeout seconds;
 
   lazy val uiScreen       = nifty.getScreen(UserInterface.name)
   lazy val unitTree       = uiScreen.findNiftyControl("unitTree",       classOf[TreeBox[ActorRef]])
@@ -33,20 +34,23 @@ class UnitTreeController(gui: AiGui, nifty: Nifty) extends GuiController {
     }
   }
 
-  def buildTree(actor: ActorRef): Future[TreeItem[ActorRef]] = {
+  def buildTree(parent: TreeItem[ActorRef], actor: ActorRef) {
     import scala.concurrent.ExecutionContext.Implicits.global
-    val node = Future(new TreeItem[ActorRef](actor))
-    for (n <- node; children <- (actor ? ListMembers()).mapTo[Iterable[ActorRef]])
+    val node = new TreeItem[ActorRef](actor)
+    parent.addTreeItem(node)
+
+    // Dirty trick to update the gui element
+    unitTree.asInstanceOf[TreeBoxControl[ActorRef]].updateList( unitTree.getSelection.asScala.headOption.getOrElse(null))
+
+    for (children <- (actor ? ListMembers()).mapTo[Iterable[ActorRef]])
       for (child <- children)
-        for ( childNode <- buildTree(child) )
-          n.addTreeItem( childNode )
-    node
+        buildTree(node, child)
   }
 
   def resetTree() {
     val root = new TreeItem[ActorRef](ActorRef.noSender)
-    root.addTreeItem( Await.result(buildTree(gui.pike.admiralRef), timeout.duration) )
     unitTree.setTree( root )
+    buildTree(root, gui.pike.admiralRef)
   }
 
   @NiftyEventSubscriber(id = "unitTreeUpdate")

@@ -21,7 +21,7 @@ import be.angelcorp.omicronai.metadata.MetaData
 
 class ProbeTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeController) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit val timeout: Timeout = settings.ai.messageTimeout seconds;
+  implicit val timeout: Timeout = settings.gui.messageTimeout seconds;
 
   lazy val uiScreen   = nifty.getScreen(UserInterface.name)
   lazy val probesTree = uiScreen.findNiftyControl("probesTree", classOf[TreeBox[LayerRenderer]])
@@ -57,17 +57,18 @@ class ProbeTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeContr
     import scala.concurrent.ExecutionContext.Implicits.global
     val root = new TreeItem[LayerRenderer](null)
 
-    val metadatas = Await.result( (unit ? ListMetadata()).mapTo[Iterable[MetaData]], timeout.duration)
-      for (metadata <- metadatas) {
-        val metadataNode = new TreeItem[LayerRenderer]( new LayerRenderer {
-          def render(g: Graphics, view: ViewPort) {}
-          override def toString: String = metadata.title
-        } )
-        root.addTreeItem(metadataNode)
-        for (layer <- metadata.layers)
-          metadataNode.addTreeItem( new TreeItem[LayerRenderer]( new WrappedLayer(layer._2, layer._1) ) )
-      }
-
+    (unit ? ListMetadata()).mapTo[Iterable[MetaData]].onSuccess( {
+      case metadatas =>
+        for (metadata <- metadatas) {
+          val metadataNode = new TreeItem[LayerRenderer]( new LayerRenderer {
+            def render(g: Graphics, view: ViewPort) {}
+            override def toString: String = metadata.title
+          } )
+          root.addTreeItem(metadataNode)
+          for (layer <- metadata.layers)
+            metadataNode.addTreeItem( new TreeItem[LayerRenderer]( new WrappedLayer(layer._2, layer._1) ) )
+        }
+    } )
     root
   }
 

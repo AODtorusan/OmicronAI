@@ -31,7 +31,7 @@ class SurveySquad(val owner: Player,
   implicit def timeout: Timeout = settings.ai.messageTimeout seconds;
   logger.debug(s"Created a new survey squad: $name")
 
-  val namer = new Namer[GameObject]( _.getType.getTypeName )
+  val namer = new Namer[Asset]( _.gameObject.getType.getTypeName )
 
   val actions = mutable.ListBuffer[(ActorRef, Action)]()
   var replan  = true
@@ -43,9 +43,10 @@ class SurveySquad(val owner: Player,
     case AddMember( unit ) =>
       logger.debug(s"$name was asked to absorb a new member: $unit")
       val newName = namer.nameFor(unit)
-      context.actorOf(Props(new Soldier(owner, newName, new Asset(owner, unit) )), name=newName )
+      context.actorOf(Props(new Soldier(owner, newName, unit )), name=newName )
 
     case NewSurveyRoi( newRoi ) =>
+      logger.debug(s"$name is updating the region of interest to $newRoi")
       roi    = Some(newRoi)
       replan = true
 
@@ -95,6 +96,7 @@ class SurveySquad(val owner: Player,
   }
 
   def nextViableAction = {
+    logger.trace(s"Finding next action for $name")
     val canDoAction = mutable.Map[ActorRef, Boolean]()
     actions.find( entry => {
       val unit   = entry._1
@@ -107,8 +109,12 @@ class SurveySquad(val owner: Player,
         }
       } )
     } ) match {
-      case Some(action) => ValidateAction(action._2, action._1)
-      case None => Ready()
+      case Some(action) =>
+        logger.trace(s"Found action for unit $name: $action")
+        ValidateAction(action._2, action._1)
+      case None =>
+        logger.trace(s"No more action possible for $name (queue: $actions)")
+        Ready()
     }
   }
 

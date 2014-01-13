@@ -1,43 +1,69 @@
 package be.angelcorp.omicronai.agents
 
-import collection.mutable
+import scala.collection.mutable
+import scala.concurrent.Await
+import scala.concurrent.duration._
+import akka.util.Timeout
 import akka.actor.{Props, ActorRef}
+import akka.pattern._
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api._
+import be.angelcorp.omicronai.assets.Asset
+import be.angelcorp.omicronai.bridge._
+import be.angelcorp.omicronai.Settings._
+import be.angelcorp.omicronai.agents._
+import be.angelcorp.omicronai.bridge._
 
-class Admiral(owner: Player) extends GameListener with Agent {
+class Admiral(owner: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
+  implicit def timeout: Timeout = settings.ai.messageTimeout seconds;
 
   val name = "Admiral"
 
   // Joint Chiefs of Staff
-  var resourceGeneral: ActorRef = null
-  var strategyGeneral: ActorRef = null
-  var tacticalGeneral: ActorRef = null
+  private var resourceGeneral:   ActorRef = null
+  private var strategyGeneral:   ActorRef = null
+  private var tacticalGeneral:   ActorRef = null
+  private var gameMessageBridge: ActorRef = null
 
-  val readyUnits = mutable.Set[ActorRef]()
+  private val readyUnits = mutable.Set[ActorRef]()
+
+  private val assets = mutable.HashMap[GameObject, Asset]()
 
   override def preStart {
     //resourceGeneral = context.actorOf(Props[DeafAgent], "resource general")
     //strategyGeneral = context.actorOf(Props[DeafAgent], "strategy general")
-
-    tacticalGeneral = context.actorOf(Props(new PikeTactical(owner)), name = "TacticalGeneral")
-
-    //aiPlayer.getController.iterateObservableObjects(aiPlayer).iterator.foreach( unit => {
-    //  tacticalGeneral ! NewUnit( unit )
-    //} )
+    tacticalGeneral   = context.actorOf(Props(classOf[PikeTactical], owner), name = "TacticalGeneral"   )
+    gameMessageBridge = context.actorOf(Props[GameListenerBridge],           name = "GameListenerBridge")
   }
+
+  def messageListener =
+    Await.result(gameMessageBridge ? Self(), timeout.duration).asInstanceOf[GameListenerBridge]
 
   def act = {
     case Self() =>
       sender ! this
 
-    case NewTurn() =>
-      logger.debug(s"Admiral is asking for proposed orders by all units")
+    case PlayerGainedObject( player, unit ) =>
+      logger.info(s"Ai ${owner.getName} received new unit: $unit")
+      require( player == owner )
+      val asset = new Asset(owner, unit)
+      assets += ((unit, asset))
+      tacticalGeneral ! AddMember( asset )
+
+    case PlayerLostObject( player, unit) =>
+      if (player == owner) {
+        logger.info(s"Lost object: $unit")
+      } else {
+        logger.info(s"Enemy $player lost object: $unit")
+      }
+
+    case NewTurn( currentTurn ) =>
+      logger.info(s"Ai ${owner.getName} is starting turn ${currentTurn.getNumber}")
       readyUnits.clear()
-      tacticalGeneral ! NewTurn()
+      tacticalGeneral ! NewTurn( currentTurn )
 
     case Ready() =>
       readyUnits.add( sender )
@@ -47,54 +73,16 @@ class Admiral(owner: Player) extends GameListener with Agent {
 
     case ListMetadata() =>
       sender ! Nil
-
-    case event =>
-      logger.warn(s"Dude what the hell are you trying to tell me, I don't get this: $event")
   }
 
-  override def onPlayerReady(readyPlayer: Player) = logger.warn("No action implemented for onPlayerReady")
-  override def onNewTurn(currentTurn: Turn) {
-    logger.info(s"Ai ${owner.getName} is starting turn ${currentTurn.getNumber}")
-    self ! NewTurn()
+  override def unhandled(event: Any) {
+    logger.warn(s"$name ignored message: $event")
   }
-  override def onBaseDamaged(baseModule: BaseModule, damage: ChangeInt) = logger.warn("No action implemented for onBaseDamaged")
-  override def onTileContents(tile: Tile, contents: Change[GameObject]) {
-    logger.info(s"Contents of tile $tile changed to: ${contents.getTo}")
-  }
-  override def onTileResources(tile: Tile, resourceType: ResourceType, resourceQuantity: ChangeInt) = logger.warn("No action implemented for onTileResources")
-  override def onPlayerScore(player: Player, score: ChangeInt) = logger.warn("No action implemented for onPlayerScore")
-  override def onPlayerGainedObject(player: Player, unit: GameObject) {
-    logger.info(s"Ai ${owner.getName} received new unit: $unit")
-    require( player == owner )
-    tacticalGeneral ! AddMember( unit )
-  }
-  override def onPlayerLostObject(player: Player, gameObject: GameObject) {
-    if (player == owner) {
-      logger.info(s"Lost object: $gameObject")
-    } else {
-      logger.info(s"Enemy $player lost object: $gameObject")
-    }
-  }
-  override def onUnitCaptured(gameObject: GameObject, owner: Change[Player]) = logger.warn("No action implemented for onUnitCaptured")
-  override def onUnitMoved(gameObject: GameObject, location: Change[Tile]) {
-    logger.warn(s"Object moved: $gameObject to ${location.getTo}")
-  }
-  override def onUnitDied(gameObject: GameObject) = logger.warn("No action implemented for onUnitDied")
-  override def onContainerStockChanged(containerModule: ContainerModule, stock: ChangeInt) = logger.warn("No action implemented for onContainerStockChanged")
-  override def onConstructorWorked(constructorModule: ConstructorModule, remainingSpeed: ChangeInt) = logger.warn("No action implemented for onConstructorWorked")
-  override def onConstructorTargeted(constructorModule: ConstructorModule, target: Change[GameObject]) = logger.warn("No action implemented for onConstructorTargeted")
-  override def onConstructionSiteWorked(constructionSite: ConstructorModule.ConstructionSite, moduleType: ModuleType[_], remainingWork: ChangeInt) = logger.warn("No action implemented for onConstructionSiteWorked")
 
-  override def onMobilityLeveled(mobilityModule: MobilityModule, location: Change[Tile], remainingSpeed: ChangeDbl) = logger.warn("No action implemented for onMobilityLeveled")
-  override def onMobilityMoved(mobilityModule: MobilityModule, location: Change[Tile], remainingSpeed: ChangeDbl) = logger.warn("No action implemented for onMobilityMoved")
-  override def onWeaponFired(weaponModule: WeaponModule, target: Tile, repeated: ChangeInt, ammunition: ChangeInt) = logger.warn("No action implemented for onWeaponFired")
-  override def onGameStarted(game: Game) = logger.warn("No action implemented for onGameStarted")
-  override def onGameEnded(game: Game, victoryCondition: VictoryConditionType, victor: Player) = logger.warn("No action implemented for onGameEnded")
 }
 
 sealed abstract class AdmiralMessage
 case class Self()                               extends AdmiralMessage
-case class NewTurn()                            extends AdmiralMessage
 
 /** Asks children to submit actions that they will perform */
 case class SubmitActions() extends AdmiralMessage
@@ -115,7 +103,7 @@ sealed abstract class ActionResult
 case class ActionSuccess( action: Action, updates: Iterator[Any] = Iterator() ) extends ActionResult
 case class ActionFailed(  action: Action, message: String, reason: FailureReason = UnknownError() ) extends ActionResult
 
-case class AddMember(  unit: GameObject )       extends AdmiralMessage
+case class AddMember(  unit: Asset )       extends AdmiralMessage
 case class ListMembers()                        extends AdmiralMessage
 case class ListMetadata()                       extends AdmiralMessage
 case class Name()                               extends AdmiralMessage

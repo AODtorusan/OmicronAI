@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 class Settings( config: Config ) {
 
   val ai = new AISettings( config.getConfig("ai") )
+  val gui = new GuiSettings( config.getConfig("gui") )
   val pathfinder = new PathfinderSettings( config.getConfig("pathfinder") )
 }
 
@@ -27,6 +28,10 @@ class AiSupervisorSettings(config: Config) {
       case e: ConfigException.Missing => false
     }
   } )
+}
+
+class GuiSettings(config: Config) {
+  val messageTimeout = config.getDouble("messageTimeout")
 }
 
 class PathfinderSettings( config: Config ) {

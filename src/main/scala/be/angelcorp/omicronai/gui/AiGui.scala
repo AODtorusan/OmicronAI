@@ -42,7 +42,7 @@ class AiGui extends NiftyOverlayGame {
     system.actorOf(Props(new Admiral(player)), name = "AdmiralPike")
   }, builder )
   builder.addPlayer(pike)
-  builder.addGameListener(pike.admiral)
+  builder.addGameListener(pike.admiral.messageListener)
   val game = builder.build
   logger.info("Game build!")
 
@@ -62,7 +62,6 @@ class AiGui extends NiftyOverlayGame {
     SwingUtilities.invokeLater( new Runnable {
       def run() {
         Thread.sleep(1000)
-        game.getController.addGameListener(pike.admiral)
         game.getController.setReady()
       }
     } )

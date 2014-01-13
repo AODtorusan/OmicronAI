@@ -3,6 +3,7 @@ package be.angelcorp.omicronai
 import scala.math._
 import com.lyndir.omicron.api.model._
 import scala.collection.mutable.ListBuffer
+import be.angelcorp.omicronai.algorithms.WorldSize
 
 /**
  * A location of a specific tile on the u-v-h game map.
@@ -33,7 +34,7 @@ import scala.collection.mutable.ListBuffer
  * @param h Height-axis coordinate
  * @param size Size of the in-plane map (u-v plane)
  */
-case class Location( u: Int, v: Int, h: Int, size: Size ) {
+case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
 
   // Cube coordinate x
   val x = u
@@ -48,7 +49,7 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
   }
 
   /** Indicates if this location is on the top layer */
-  def atTop = h == 2
+  def atTop = h == size.hSize - 1
   /** Indicates if this location is on the bottom layer */
   def atBottom = h == 0
 
@@ -56,10 +57,10 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
   def δu(l: Location) = {
     val du = l.u - u
 
-    if (du > size.getWidth / 2)
-      du - size.getWidth
-    else if (du < -size.getWidth / 2)
-      du + size.getWidth
+    if (du > size.uSize / 2)
+      du - size.uSize
+    else if (du < -size.uSize / 2)
+      du + size.uSize
     else
       du
   }
@@ -71,10 +72,10 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
   def δv(l: Location) = {
     val dv = l.v - v
 
-    if (dv > size.getHeight / 2)
-      dv - size.getHeight
-    else if (dv < -size.getHeight / 2)
-      dv + size.getHeight
+    if (dv > size.vSize / 2)
+      dv - size.vSize
+    else if (dv < -size.vSize / 2)
+      dv + size.vSize
     else
       dv
   }
@@ -107,8 +108,8 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
 
   /** Get the location given by its distance along the u, v, and h axis from this location */
   def Δ(δu: Int, δv: Int, δh: Int): Location = new Location(
-    (size.getWidth  + u + δu) % size.getWidth,
-    (size.getHeight + v + δv) % size.getHeight,
+    (size.uSize + u + δu) % size.uSize,
+    (size.vSize + v + δv) % size.vSize,
     h + δh, size
   )
 
@@ -121,16 +122,24 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
 
   /** Get the in-layer location given by its distance along the u and v axis from this location */
   def Δ2(δu: Int, δv: Int): Location = new Location(
-    (size.getWidth  + u + δu) % size.getWidth,
-    (size.getHeight + v + δv) % size.getHeight,
+    (size.uSize + u + δu) % size.uSize,
+    (size.vSize + v + δv) % size.vSize,
     h, size
   )
 
   /** Returns a list containing all the locations that neighbour this tile (including up/down if available) */
-  lazy val neighbours =
-    (if (atTop)    Nil else List[Location]( Δ(0, 0,  1))) :::
-    (if (atBottom) Nil else List[Location]( Δ(0, 0, -1))) :::
-      List[Location]( toNE, toE, toSE, toSW, toW, toNW )
+  lazy val neighbours = {
+    val neighbours = Map.newBuilder[Direction, Location]
+    if (!atTop)    neighbours += UP()   -> Δ(0, 0,  1)
+    if (!atBottom) neighbours += DOWN() -> Δ(0, 0, -1)
+    neighbours += NE() -> toNE
+    neighbours += E()  -> toE
+    neighbours += SE() -> toSE
+    neighbours += SW() -> toSW
+    neighbours += W()  -> toW
+    neighbours += NW() -> toNW
+    neighbours.result()
+  }
 
   /**
    * Location laying to in a specified direction of this location.
@@ -138,15 +147,9 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
    * Note: All in-layer directions always return a tile. However when moving up and down, the map does not wrap around,
    * so no location in that direction may be present.
    */
-  def neighbour( direction: Direction ): Option[Location] = direction match {
-    case UP()   => if (atTop)    None else Some( Δ(0, 0,  1) )
-    case DOWN() => if (atBottom) None else Some( Δ(0, 0, -1) )
-    case NE()   => Some( toNE )
-    case E()    => Some( toE  )
-    case SE()   => Some( toSE )
-    case SW()   => Some( toSW )
-    case W()    => Some( toW  )
-    case NW()   => Some( toNW )
+  def neighbour( direction: Direction ): Option[Location] = {
+    val tile = this Δ (direction.du, direction.dv, direction.dh)
+    if (size.inBounds(tile)) Some(tile) else None
   }
 
   /** Location laying to the North-East of this location */
@@ -164,10 +167,10 @@ case class Location( u: Int, v: Int, h: Int, size: Size ) {
 
   /** List of its four mirror locations outside of the map (which is a parallelogram) */
   lazy val mirrors = List(
-    new Location(u + size.getWidth, v, h, size),
-    new Location(u - size.getWidth, v, h, size),
-    new Location(u, v + size.getHeight, h, size),
-    new Location(u, v - size.getHeight, h, size)
+    new Location(u + size.uSize, v, h, size),
+    new Location(u - size.uSize, v, h, size),
+    new Location(u, v + size.vSize, h, size),
+    new Location(u, v - size.vSize, h, size)
   )
 
   /**
@@ -326,20 +329,20 @@ object Location {
   }
 
   /** Construct a location based on its approximate axial coordinates */
-  def apply( u: Double, v: Double, h: Int, size: Size ): Location = {
+  def apply( u: Double, v: Double, h: Int, size: WorldSize ): Location = {
     val (u2, v2) = roundHexAxial(u, v)
-    Location( u2, v2, h, size )
+    new Location( u2, v2, h, size )
   }
 
   /** Construct a location based on its cube coordinates (instead of axial coordinates u|v ) */
-  def apply( x: Int, y: Int, z: Int, h: Int, size: Size ): Location = {
-    Location( x, z, h, size )
+  def apply( x: Int, y: Int, z: Int, h: Int, size: WorldSize ): Location = {
+    new Location( x, z, h, size )
   }
 
   /** Construct a location based on its approximate cube coordinates */
-  def apply( x: Double, y: Double, z: Double, h: Int, size: Size ): Location = {
+  def apply( x: Double, y: Double, z: Double, h: Int, size: WorldSize ): Location = {
     val (x2, y2, z2) = roundHexCube(x,y,z)
-    Location( x2, z2, h, size )
+    new Location( x2, z2, h, size )
   }
 
   implicit def levelType2int(level: LevelType): Int = level.ordinal()
@@ -358,12 +361,15 @@ object Location {
 
 }
 
-sealed abstract class Direction
-case class UP()   extends Direction
-case class DOWN() extends Direction
-case class NE()   extends Direction
-case class E()    extends Direction
-case class SE()   extends Direction
-case class SW()   extends Direction
-case class W()    extends Direction
-case class NW()   extends Direction
+sealed abstract class Direction(val du: Int, val dv: Int, val dh: Int)
+case class UP()   extends Direction(+0, +0, +1)
+case class DOWN() extends Direction(+0, +0, -1)
+case class NE()   extends Direction(+1, -1, +0)
+case class E()    extends Direction(+1, +0, +0)
+case class SE()   extends Direction(+0, +1, +0)
+case class SW()   extends Direction(-1, +1, +0)
+case class W()    extends Direction(-1, +0, +0)
+case class NW()   extends Direction(+0, -1, +0)
+object Direction {
+  val all = List(UP(), DOWN(), NE(), E(), SE(), SW(), W(), NW())
+}

@@ -7,10 +7,13 @@ import be.angelcorp.omicronai.gui.{DrawStyle, GuiTile, ViewPort}
 import scala.collection.mutable.ListBuffer
 import org.newdawn.slick.geom.Polygon
 import be.angelcorp.omicronai.{HexTileEdge, HexTile, RegionOfInterest}
+import com.typesafe.scalalogging.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class RegionRenderer(val roi:    RegionOfInterest,
                      val border: DrawStyle = new DrawStyle(Color.red, 3.0f),
                      val fill:   Color     = new Color(255,0,0,128)) extends LayerRenderer {
+  val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   /** Line segment between two data points  */
   class Segment(val x0: Float, val y0: Float, val x1: Float, val y1: Float) {
@@ -60,7 +63,8 @@ class RegionRenderer(val roi:    RegionOfInterest,
             nowPoint = if (abs(x0-nowPoint._1) < eps) (x1, y1) else (x0, y0)
             segments.remove(p)
           case _ =>
-            throw new Exception("Contour not closed")
+            logger.warn("Gui, region contour not closed!", new Exception("Cannot find closed contour of region shape!"))
+            segments.clear()
         }
       }
 

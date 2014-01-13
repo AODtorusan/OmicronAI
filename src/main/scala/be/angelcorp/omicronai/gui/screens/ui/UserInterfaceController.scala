@@ -16,7 +16,7 @@ import be.angelcorp.omicronai.gui.{AiGui, GuiController, GuiSupervisorInterface}
 
 class UserInterfaceController(gui: AiGui, nifty: Nifty, unitController: UnitTreeController) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit val timeout: Timeout = settings.ai.messageTimeout seconds;
+  implicit val timeout: Timeout = settings.gui.messageTimeout seconds;
 
   lazy val uiScreen     = nifty.getScreen(UserInterface.name)
   lazy val autoButton   = uiScreen.findNiftyControl("autoButton",   classOf[Button])
@@ -41,12 +41,8 @@ class UserInterfaceController(gui: AiGui, nifty: Nifty, unitController: UnitTree
     case e: ButtonClickedEvent =>
       selectedUnit match {
         case Some(unit) =>
-          try {
-            val asset = Await.result( ask(unit, GetAsset()), timeout.duration).asInstanceOf[Asset]
-            gui.view.centerOn( asset.location )
-          } catch {
-            case e: Throwable => logger.info(s"Cannot center on unit ($unit), it does not have an asset or was not received in time!")
-          }
+          import scala.concurrent.ExecutionContext.Implicits.global
+          for ( asset <- ask(unit, GetAsset()).mapTo[Asset] ) gui.view.centerOn( asset.location )
         case None =>
       }
     case _ =>

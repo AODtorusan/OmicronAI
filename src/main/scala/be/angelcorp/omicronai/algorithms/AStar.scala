@@ -34,7 +34,7 @@ abstract class AStar {
       open.remove( q.tile )
       closed.put( q.tile, q )
 
-      for ( target <- q.tile.neighbours ) {
+      for ( target <- q.tile.neighbours.values ) {
         val g = q.g + costOnto( q.tile, target )
         val h = heuristic(target)
         val targetSubSolution = new AStarSolution(g, h, target :: q.path)

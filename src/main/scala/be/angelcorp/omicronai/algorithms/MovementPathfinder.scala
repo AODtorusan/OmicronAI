@@ -7,6 +7,7 @@ import be.angelcorp.omicronai.Location._
 import be.angelcorp.omicronai.Settings.settings
 import be.angelcorp.omicronai.assets.Asset
 import com.lyndir.omicron.api.model.Tile
+import com.lyndir.omicron.api.util.Maybe.Presence
 
 class MovementPathfinder( destination: Location, asset: Asset ) extends AStar {
 
@@ -15,7 +16,7 @@ class MovementPathfinder( destination: Location, asset: Asset ) extends AStar {
   def costOnto(fromTile: Location, toTile: Location) = {
     implicit val game = asset.owner.getController.getGameController.getGame
     val baseCost = asset.mobility match {
-      case Some(m) if (toTile: Tile).checkAccessible() =>
+      case Some(m) if (toTile: Tile).checkContents.presence() != Presence.PRESENT  =>
         if ( fromTile.h == toTile.h )
           m.costForMovingInLevel( fromTile.h ) +
             settings.pathfinder.layerPenalty( toTile.h )

@@ -16,6 +16,7 @@ import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.nifty.TreeBoxViewController
 import be.angelcorp.omicronai.agents.Name
 import be.angelcorp.omicronai.gui.screens.GuiScreen
+import scala.util.{Failure, Success}
 
 object UserInterface extends GuiScreen {
 
@@ -26,8 +27,15 @@ object UserInterface extends GuiScreen {
       implicit val timeout: Timeout = 5 seconds;
       val names = mutable.Map[ActorRef, String]()
 
-      def stringify(item: ActorRef) = names.getOrElseUpdate(item, {
-        Await.result( ask(item, Name()), timeout.duration).asInstanceOf[String]
+      def stringify(item: ActorRef) = names.getOrElse(item, {
+        import scala.concurrent.ExecutionContext.Implicits.global
+        ask(item, Name()).onComplete( {
+          case Success(name) => names.update(item, name.toString)
+          case Failure(e) =>
+            logger.warn(s"Gui cannot get name of actor $item", e)
+            names.update(item, s"<cannot retrieve name for $item: ${e.getMessage}>")
+        } )
+        "<name update in progress ...>"
       })
     }
     class ProbeConverter extends TreeBoxViewController[LayerRenderer] {
@@ -58,7 +66,7 @@ object UserInterface extends GuiScreen {
               </panel>
 
               <panel id="unitTreePanel" childLayout="vertical" height="100%" width="200px" >
-                <control id="unitTree" name="treeBox" width="100%" vertical="on" horizontal="optional" displayItems="5" selectionMode="Single"   viewConverterClass={classOf[ActorConverter].getName} />
+                <control id="unitTree" name="treeBox" width="100%" vertical="on" horizontal="on" displayItems="4" selectionMode="Single"   viewConverterClass={classOf[ActorConverter].getName} />
                 <control id="unitTreeUpdate" name="button" label="update unit tree" width="100%" />
               </panel>
 

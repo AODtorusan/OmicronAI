@@ -15,10 +15,13 @@ trait Agent extends Actor {
 
   def receive: Actor.Receive = ({
     case UnSupervisedMessage(Name()) | Name() =>
+      logger.trace(s"Sending name of $name to $sender")
       sender ! name
     case UnSupervisedMessage(Self()) | Self() =>
+      logger.trace(s"This handle of $name to $sender")
       sender ! this
     case UnSupervisedMessage(ListMembers()) | ListMembers() =>
+      logger.trace(s"Children of $name to $sender (${context.children}})")
       sender ! context.children
 
     case UnSupervisedMessage(any) if act.isDefinedAt(any) =>
