@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.agents
+package be.angelcorp.omicronai.ai.pike.agents
 
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -9,12 +9,8 @@ import akka.pattern._
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
-import com.lyndir.omicron.api._
 import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.bridge._
 import be.angelcorp.omicronai.Settings._
-import be.angelcorp.omicronai.agents._
-import be.angelcorp.omicronai.bridge._
 
 class Admiral(owner: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )

@@ -1,14 +1,12 @@
-package be.angelcorp.omicronai.gui.screens.ui
+package be.angelcorp.omicronai.gui.screens.ui.pike
 
 import scala.Some
-import scala.concurrent.Future
-import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.collection.JavaConverters._
 import akka.util.Timeout
 import akka.actor.ActorRef
 import akka.pattern._
-import de.lessvoid.nifty.{NiftyEventSubscriber, Nifty}
+import de.lessvoid.nifty.NiftyEventSubscriber
 import de.lessvoid.nifty.controls.{TreeBox, TreeItemSelectionChangedEvent, TreeItem}
 import org.newdawn.slick.Graphics
 import com.typesafe.scalalogging.slf4j.Logger
@@ -16,14 +14,16 @@ import org.slf4j.LoggerFactory
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
 import be.angelcorp.omicronai.Settings._
-import be.angelcorp.omicronai.agents.ListMetadata
 import be.angelcorp.omicronai.metadata.MetaData
+import be.angelcorp.omicronai.ai.pike.PikeInterface
+import be.angelcorp.omicronai.ai.pike.agents.ListMetadata
+import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
-class ProbeTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeController) extends GuiController {
+class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeController) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit val timeout: Timeout = settings.gui.messageTimeout seconds;
 
-  lazy val uiScreen   = nifty.getScreen(UserInterface.name)
+  lazy val uiScreen   = pikeInt.nifty.getScreen(UserInterface.name)
   lazy val probesTree = uiScreen.findNiftyControl("probesTree", classOf[TreeBox[LayerRenderer]])
 
   def selectedUnit    = unitController.selectedUnit
@@ -34,13 +34,13 @@ class ProbeTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeContr
   @NiftyEventSubscriber(id = "probesTree")
   def updateProbesTree(id: String, event: TreeItemSelectionChangedEvent[LayerRenderer]) {
     event.getTreeBoxControl.getItems.asScala.foreach( p => {
-      val i = gui.renderLayers.indexOf(p.getValue)
-      if (i != -1) gui.renderLayers.remove( i )
+      val i = pikeInt.activeLayers.indexOf(p.getValue)
+      if (i != -1) pikeInt.activeLayers.remove( i )
     } )
     selectedProbe match {
       case Some(probe) =>
-        gui.renderLayers.append( probe )
-        probe.update( gui.view )
+        pikeInt.activeLayers.append( probe )
+        probe.update( pikeInt.gui.view )
       case None =>
     }
   }
@@ -74,8 +74,8 @@ class ProbeTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeContr
 
   override def updateUI() {
     probesTree.getItems.asScala.foreach( p => {
-      val i = gui.renderLayers.indexOf(p.getValue)
-      if (i != -1) gui.renderLayers.remove( i )
+      val i = pikeInt.activeLayers.indexOf(p.getValue)
+      if (i != -1) pikeInt.activeLayers.remove( i )
     } )
     selectedUnit match {
       case Some(unit) =>

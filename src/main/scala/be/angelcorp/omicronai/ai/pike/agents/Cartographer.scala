@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.agents
+package be.angelcorp.omicronai.ai.pike.agents
 
 import scala.collection.mutable
 import com.typesafe.scalalogging.slf4j.Logger

@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.agents
+package be.angelcorp.omicronai.ai.pike.agents
 
 import akka.actor.Actor
 import be.angelcorp.omicronai.{UnSupervisedMessage, SupervisorMessage, AiSupervisor}

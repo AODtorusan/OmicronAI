@@ -12,6 +12,7 @@ class Settings( config: Config ) {
 }
 
 class AISettings(config: Config) {
+  val engine      = config.getString( "engine" )
   val name        = config.getString( "name" )
   val supervisor  = new AiSupervisorSettings( config.getConfig( "supervisor" ) )
   val messageTimeout = config.getDouble("messageTimeout")

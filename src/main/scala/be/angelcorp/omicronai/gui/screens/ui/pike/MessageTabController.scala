@@ -1,18 +1,19 @@
-package be.angelcorp.omicronai.gui.screens.ui
+package be.angelcorp.omicronai.gui.screens.ui.pike
 
 import scala.collection.JavaConverters._
-import akka.actor.ActorRef
-import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber, Nifty}
-import de.lessvoid.nifty.controls.{TreeItem, ButtonClickedEvent, Button, ListBox}
-import be.angelcorp.omicronai.gui.{GuiSupervisorInterface, AiGui, GuiController}
-import be.angelcorp.omicronai.SupervisorMessage
-import com.typesafe.scalalogging.slf4j.Logger
+import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber}
+import de.lessvoid.nifty.controls.{ButtonClickedEvent, Button, ListBox}
 import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.slf4j.Logger
+import be.angelcorp.omicronai.SupervisorMessage
+import be.angelcorp.omicronai.ai.pike.PikeInterface
+import be.angelcorp.omicronai.gui.{GuiSupervisorInterface, GuiController}
+import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
-class MessageTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeController) extends GuiController with GuiSupervisorInterface {
+class MessageTabController(val pikeInt: PikeInterface, unitController: UnitTreeController) extends GuiController with GuiSupervisorInterface {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  lazy val uiScreen     = nifty.getScreen(UserInterface.name)
+  lazy val uiScreen     = pikeInt.nifty.getScreen(UserInterface.name)
   lazy val messageList  = uiScreen.findNiftyControl("messageList",  classOf[ListBox[SupervisorMessage]])
   lazy val acceptButton = uiScreen.findNiftyControl("acceptButton", classOf[Button])
   lazy val rejectButton = uiScreen.findNiftyControl("rejectButton", classOf[Button])
@@ -27,7 +28,7 @@ class MessageTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeCon
     case e: ButtonClickedEvent => selectedMessage match {
       case Some(message) =>
         messageList.removeItem(message)
-        gui.supervisor.acceptMessage( message )
+        pikeInt.pike.supervisor.acceptMessage( message )
       case None =>
     }
     case _ =>
@@ -38,7 +39,7 @@ class MessageTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeCon
     case e: ButtonClickedEvent => selectedMessage match {
       case Some(message) =>
         messageList.removeItem(message)
-        gui.supervisor.rejectMessage(message)
+        pikeInt.pike.supervisor.rejectMessage(message)
       case None =>
     }
     case _ =>
@@ -60,7 +61,7 @@ class MessageTabController(gui: AiGui, nifty: Nifty, unitController: UnitTreeCon
         enable(acceptButton)
         enable(rejectButton)
         enable(modifyButton)
-        messageList.addAllItems( gui.supervisor.messagesFor(unit).asJava )
+        messageList.addAllItems( pikeInt.pike.supervisor.messagesFor(unit).asJava )
       case _ =>
         disable(acceptButton)
         disable(rejectButton)

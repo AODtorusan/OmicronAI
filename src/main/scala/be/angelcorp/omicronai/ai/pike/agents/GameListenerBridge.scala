@@ -1,10 +1,9 @@
-package be.angelcorp.omicronai.bridge
+package be.angelcorp.omicronai.ai.pike.agents
 
 import com.lyndir.omicron.api._
 import com.lyndir.omicron.api.model._
-import be.angelcorp.omicronai.Location
 import com.lyndir.omicron.api.model.ConstructorModule.ConstructionSite
-import be.angelcorp.omicronai.agents.{Ready, Agent}
+import be.angelcorp.omicronai.Location
 
 class GameListenerBridge extends GameListener with Agent {
 

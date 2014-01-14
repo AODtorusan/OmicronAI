@@ -1,27 +1,26 @@
-package be.angelcorp.omicronai.agents.squad
+package be.angelcorp.omicronai.ai.pike.agents.squad
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor.{ActorRef, Props}
-import akka.dispatch.Futures
 import org.slf4j.LoggerFactory
+import org.newdawn.slick.Color
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.{ResourceType, Tile, GameObject, Player}
-import be.angelcorp.omicronai.agents._
+import com.lyndir.omicron.api.model.{ResourceType, Tile, Player}
 import be.angelcorp.omicronai.algorithms.MovementPathfinder
 import be.angelcorp.omicronai.Conversions._
 import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.Settings.settings
 import be.angelcorp.omicronai.Location.location2tile
-import be.angelcorp.omicronai.{HexTile, Location, RegionOfInterest, Namer}
-import scala.collection.mutable.ListBuffer
+import be.angelcorp.omicronai.{Location, RegionOfInterest, Namer}
 import be.angelcorp.omicronai.gui.layerRender.{PolyLineRenderer, LayerRenderer, RegionRenderer}
 import be.angelcorp.omicronai.metadata.MetaData
-import org.newdawn.slick.Color
 import be.angelcorp.omicronai.gui.DrawStyle
+import be.angelcorp.omicronai.ai.pike.agents._
 
 class SurveySquad(val owner: Player,
                   val name: String,

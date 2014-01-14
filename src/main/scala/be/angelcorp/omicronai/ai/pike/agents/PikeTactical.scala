@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.agents
+package be.angelcorp.omicronai.ai.pike.agents
 
 import collection.mutable
 import com.typesafe.scalalogging.slf4j.Logger
@@ -6,8 +6,7 @@ import org.slf4j.LoggerFactory
 import akka.actor.{ActorRef, Props}
 import com.lyndir.omicron.api.model.Player
 import be.angelcorp.omicronai.{HexArea, Namer}
-import be.angelcorp.omicronai.agents.squad.{NewSurveyRoi, Squad, SurveySquad}
-import be.angelcorp.omicronai.bridge.NewTurn
+import be.angelcorp.omicronai.ai.pike.agents.squad.{NewSurveyRoi, SurveySquad, Squad}
 
 class PikeTactical(aiPlayer: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )

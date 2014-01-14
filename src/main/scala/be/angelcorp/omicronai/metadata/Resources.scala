@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.ResourceType
 import be.angelcorp.omicronai.Settings._
-import be.angelcorp.omicronai.agents._
+import be.angelcorp.omicronai.ai.pike.agents._
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
 import be.angelcorp.omicronai.gui.{ViewPort, GuiTile}
 

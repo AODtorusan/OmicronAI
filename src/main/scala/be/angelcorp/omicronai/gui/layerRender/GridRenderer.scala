@@ -2,10 +2,12 @@ package be.angelcorp.omicronai.gui.layerRender
 
 import be.angelcorp.omicronai.gui.{ViewPort, DrawStyle, GuiTile}
 import org.newdawn.slick.{Graphics, Color}
-import be.angelcorp.omicronai.{HexTile, PikeAi}
+import be.angelcorp.omicronai.{HexTile}
 import org.newdawn.slick.geom.Polygon
+import be.angelcorp.omicronai.ai.pike.PikeAi
+import be.angelcorp.omicronai.ai.AI
 
-class GridRenderer(player: PikeAi, border: DrawStyle = Color.white) extends LayerRenderer {
+class GridRenderer(player: AI, border: DrawStyle = Color.white) extends LayerRenderer {
 
   lazy val game  = player.getController.getGameController
   lazy val xsize = game.listLevels().iterator().next().getSize.getWidth

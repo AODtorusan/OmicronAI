@@ -1,18 +1,13 @@
 package be.angelcorp.omicronai.gui
 
-import collection.mutable
-import concurrent.duration._
-import concurrent.Await
+import scala.collection.mutable
 import akka.actor._
-import akka.pattern.ask
-import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import be.angelcorp.omicronai.{UnSupervisedMessage, SupervisorMessage, PikeAi, AiSupervisor}
-import be.angelcorp.omicronai.actions.Action
+import be.angelcorp.omicronai.{UnSupervisedMessage, SupervisorMessage, AiSupervisor}
 import be.angelcorp.omicronai.Settings.settings
-
-import be.angelcorp.omicronai.agents._
+import be.angelcorp.omicronai.ai.pike.PikeAi
+import be.angelcorp.omicronai.ai.pike.agents.{ListMembers, Self, Name}
 
 class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiSupervisorInterface] = None) extends AiSupervisor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
