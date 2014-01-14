@@ -345,6 +345,9 @@ object Location {
     new Location( x2, z2, h, size )
   }
 
+  def apply(tile: HexTile, h: Int, size: WorldSize): Location =
+    new Location(tile.u, tile.v, h, size)
+
   implicit def levelType2int(level: LevelType): Int = level.ordinal()
   implicit def int2levelType(level: Int): LevelType = LevelType.values()(level)
 

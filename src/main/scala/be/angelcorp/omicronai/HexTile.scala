@@ -2,7 +2,7 @@ package be.angelcorp.omicronai
 
 import scala.math._
 import com.lyndir.omicron.api.model.{Tile, Coordinate}
-import be.angelcorp.omicronai
+
 
 case class HexTile(u: Int, v: Int) {
 

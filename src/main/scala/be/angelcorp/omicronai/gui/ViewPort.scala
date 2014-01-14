@@ -1,7 +1,7 @@
 package be.angelcorp.omicronai.gui
 
 import collection.JavaConverters._
-import be.angelcorp.omicronai.Location
+import be.angelcorp.omicronai.{HexTile, Location}
 import be.angelcorp.omicronai.Location._
 import com.lyndir.omicron.api.model.LevelType
 import com.typesafe.scalalogging.slf4j.Logger
@@ -120,5 +120,28 @@ class ViewPort(gui: AiGui,
   }
 
   override def toString = f"layer=$activeLayer offset=$offset scale=$scale width=$width%.1f height=$height%.1f tiles in view:${tilesInView.size}"
+
+  /**
+   * Convert an on-screen pixel to an OpenGL (in-game) coordinate.
+   *
+   * @param x Horizontal pixel index, relative to top-left.
+   * @param y Vertical   pixel index, relative to top-left.
+   * @return OpenGL coordinate (x, y).
+   */
+  def pixelToOpengl(x: Int, y: Int) = {
+    val xInScreen = x * width  / gui.container.getWidth
+    val yInScreen = y * height / gui.container.getHeight
+    ( xInScreen - offset._1, yInScreen - offset._2 )
+  }
+
+  /**
+   * Convert OpenGL coordinates to the index to a specific tile containing the coordinate.
+   *
+   * @param x OpenGL x coordinate.
+   * @param y OpenGL y coordinate.
+   * @return Tile coordinate (u, v)
+   */
+  def openglToTile(x: Float, y : Float) =
+    HexTile.fromXY( x / GuiTile.scale, y / GuiTile.scale )
 
 }

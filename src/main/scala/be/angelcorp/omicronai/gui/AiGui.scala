@@ -1,11 +1,8 @@
 package be.angelcorp.omicronai.gui
 
 import scala.Some
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import scala.collection.mutable.ListBuffer
 import akka.actor.Props
-import akka.util.Timeout
 import javax.swing.SwingUtilities
 import org.newdawn.slick.{Color, Graphics, GameContainer, AppGameContainer}
 import org.slf4j.LoggerFactory
@@ -13,7 +10,6 @@ import org.slf4j.bridge.SLF4JBridgeHandler
 import de.lessvoid.nifty.loaderv2.types.NiftyType
 import de.lessvoid.nifty.slick2d.NiftyOverlayGame
 import de.lessvoid.nifty.Nifty
-import de.lessvoid.nifty.slick2d.input.SlickSlickInputSystem
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.Game
 import be.angelcorp.omicronai._
@@ -22,6 +18,7 @@ import be.angelcorp.omicronai.Settings.settings
 import be.angelcorp.omicronai.ai.lance.LanceAi
 import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.ai.pike.agents.Admiral
+import be.angelcorp.omicronai.gui.input.{InputSystem, AiGuiInput}
 
 class AiGui extends NiftyOverlayGame {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -42,10 +39,12 @@ class AiGui extends NiftyOverlayGame {
   val getTitle = "PikeAi gui"
   var closeRequested = false
   var guiInterface: GuiInterface = null
+  val input = new InputSystem()
+  input.inputHandlers += new AiGuiInput(this)
 
   def initGameAndGUI(container: GameContainer) {
     this.container = container
-    initNifty(container, new SlickSlickInputSystem( new AiGuiInput(this) ) )
+    initNifty(container, input )
     SwingUtilities.invokeLater( new Runnable {
       def run() {
         Thread.sleep(1000)
