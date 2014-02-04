@@ -49,4 +49,9 @@ class NoAiSideBarController(ui: NoAiUserInterfaceController) extends GuiControll
     case _ =>
   }
 
+  @NiftyEventSubscriber(id = "resourceButton")
+  def resourceButtonAction(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent => ui.gui.resourcesOn = !ui.gui.resourcesOn
+    case _ =>
+  }
 }

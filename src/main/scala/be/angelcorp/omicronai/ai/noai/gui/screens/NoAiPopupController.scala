@@ -15,41 +15,16 @@ import be.angelcorp.omicronai.gui.input.MouseClicked
 import be.angelcorp.omicronai.ai.noai.actions.{ConstructionAssistAction, FireAction, MoveAction}
 import de.lessvoid.nifty.controls.menu.MenuControl
 import be.angelcorp.omicronai.{DOWN, Location, UP}
+import be.angelcorp.omicronai.gui.nifty.PopupController
+import de.lessvoid.nifty.Nifty
 
-class NoAiPopupController(ui: NoAiUserInterfaceController) extends GuiController with InputHandler {
-  val logger = Logger( LoggerFactory.getLogger( getClass ) )
+class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupController {
 
-  var popup: Element = null
-  val menuClickHandler = new EventTopicSubscriber[MenuItemActivatedEvent[() => Unit ]] {
-    def onEvent(id: String, event: MenuItemActivatedEvent[() => Unit ]) {
-      ui.nifty.closePopup(popup.getId)
-      val callback = event.getItem
-      logger.info(s"Clicked on $id; $callback")
-      callback()
-    }
-  }
+  /** Nifty gui */
+  override def nifty: Nifty = ui.nifty
 
-  def showMenu( entries: Iterable[(String, () => Unit)] ) {
-    popup = ui.nifty.createPopup("niftyPopupMenu")
-    val popupMenu  = popup.findNiftyControl("#menu", classOf[Menu[ () => Unit ]])
-    popupMenu.setWidth(new SizeValue("200px"))
-
-    for( (entryString, callback) <- entries )
-      popupMenu.addMenuItem( entryString, callback )
-    popupMenu.addMenuItem("Close", () => {} )
-
-    ui.nifty.subscribe( ui.nifty.getScreen(NoAiUserInterface.name), popupMenu.getId, classOf[MenuItemActivatedEvent[() => Unit ]], menuClickHandler )
-    ui.nifty.showPopup( ui.nifty.getCurrentScreen, popup.getId, null )
-  }
-
-  def handleInputEvent(event: GuiInputEvent): Boolean = event match {
-    case MouseClicked(x, y, 1, 1) =>
-      showMenu( tileMenu )
-      true
-    case _ => false
-  }
-
-  private def tileMenu = {
+  /** Generates the content for the default right-click popup menu  */
+  override def defaultMenu = {
     val entries = List.newBuilder[(String, () => Unit)]
     val location = ui.gui.frame.hoverLocation
     ui.gui.noai.selected match {

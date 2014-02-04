@@ -53,7 +53,7 @@ class Soldier( val owner: Player, val name: String, val asset: Asset ) extends A
               val move = m.movement( destination )
               if (move.isPossible) {
                 if (simulate || (try { move.execute(); true } catch { case e: IllegalStateException => false }) ) {
-                  ActionSuccess( action, asset.observableTiles.map( l => UpdateLocation(l) ) )
+                  ActionSuccess( action )
                 } else {
                   ActionFailed( action, s"Asset $name cannot move to $destination" )
                 }

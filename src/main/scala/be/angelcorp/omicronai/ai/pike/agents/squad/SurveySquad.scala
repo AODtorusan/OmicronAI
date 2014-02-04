@@ -22,10 +22,11 @@ import be.angelcorp.omicronai.gui.layerRender.{PolyLineRenderer, LayerRenderer, 
 import be.angelcorp.omicronai.metadata.MetaData
 import be.angelcorp.omicronai.ai.pike.agents._
 import be.angelcorp.omicronai.gui.slick.DrawStyle
+import be.angelcorp.omicronai.world.{GhostState, KnownState, LocationStates, WorldState}
 
 class SurveySquad(val owner: Player,
                   val name: String,
-                  val cartographer: ActorRef ) extends Squad {
+                  val world: ActorRef ) extends Squad {
   import context.dispatcher
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit def timeout: Timeout = config.ai.messageTimeout seconds;
@@ -55,14 +56,13 @@ class SurveySquad(val owner: Player,
       planActions()
       sender ! nextViableAction
 
-    case ActionSuccess(action, updates) =>
+    case ActionSuccess(action, _) =>
       actions.indexWhere( _._2 == action ) match {
         case -1 =>
           logger.debug(s"$name received ActionSuccess, but thus action was not found in the actions queue! Replanning ...")
           replan = true
         case i  => actions.remove(i)
       }
-      updatePlanningFor(updates)
       context.parent ! nextViableAction
 
     case ActionFailed( action, message, reason ) =>
@@ -79,20 +79,6 @@ class SurveySquad(val owner: Player,
 
     case any =>
       logger.debug(s"Invalid message received: $any")
-  }
-
-  def updatePlanningFor( updates: Iterator[Any] ) = for (update <- updates)  update match {
-    case UpdateLocation(l) =>
-      implicit val game = owner.getController.getGameController.getGame
-      val tile: Tile = location2tile(l)
-      toMaybe(tile.checkContents()).asOption match {
-        case Some( content ) if content.getOwner.isPresent && content.getOwner.get != owner =>
-          logger.debug(s"$name is going to replan because an enemy was detected on $tile: $content")
-          replan = true
-        case _ =>
-      }
-      cartographer ! UpdateLocation(l)
-    case _ =>
   }
 
   def nextViableAction = {
@@ -139,19 +125,13 @@ class SurveySquad(val owner: Player,
         val remainingSpiralPath = completeSpiralPath.filter( location => {
           val tilesInView = location.range( scanRadius )
           val futureConfidence =
-            for {fu <- (cartographer ? tilesInView.map( ResourcesOn(_, ResourceType.FUEL         )).toSeq ).mapTo[ Seq[ResourceCount] ]
-                 si <- (cartographer ? tilesInView.map( ResourcesOn(_, ResourceType.SILICON      )).toSeq ).mapTo[ Seq[ResourceCount] ]
-                 me <- (cartographer ? tilesInView.map( ResourcesOn(_, ResourceType.METALS       )).toSeq ).mapTo[ Seq[ResourceCount] ]
-                 re <- (cartographer ? tilesInView.map( ResourcesOn(_, ResourceType.RARE_ELEMENTS)).toSeq ).mapTo[ Seq[ResourceCount] ] } yield {
-
-              val fuRMS = math.sqrt( fu.foldLeft( 0.0 )( (squares, value) => squares + math.pow(value.confidence, 2) ) / fu.size.toDouble )
-              val siRMS = math.sqrt( si.foldLeft( 0.0 )( (squares, value) => squares + math.pow(value.confidence, 2) ) / fu.size.toDouble )
-              val meRMS = math.sqrt( me.foldLeft( 0.0 )( (squares, value) => squares + math.pow(value.confidence, 2) ) / fu.size.toDouble )
-              val reRMS = math.sqrt( re.foldLeft( 0.0 )( (squares, value) => squares + math.pow(value.confidence, 2) ) / fu.size.toDouble )
-
-              math.sqrt( (fuRMS*fuRMS + siRMS*siRMS + meRMS*meRMS + reRMS*reRMS) / 4.0 )
-            }
-          val confidence = Await.result(futureConfidence, timeout.duration)
+            for {states <- (world ? LocationStates(tilesInView)).mapTo[ Seq[WorldState] ] } yield
+              for (state <- states) yield state match {
+                case s: KnownState => 1.0
+                case s: GhostState => 0.8
+                case _             => 0.0
+              }
+          val confidence = Await.result(futureConfidence, timeout.duration).sum / tilesInView.size
           confidence < 0.9
         } )
 

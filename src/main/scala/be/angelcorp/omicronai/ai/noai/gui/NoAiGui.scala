@@ -38,10 +38,13 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
 
   private val messages = ListBuffer[String]()
   private val messageLabel = uiScreen.findNiftyControl("messages", classOf[de.lessvoid.nifty.controls.Label])
-  private val gridRenderer = new GridRenderer(noai)
 
-  protected[gui] var hideGame = false
-  protected[gui] var gridOn   = true
+  private val gridRenderer      = new GridRenderer(noai)
+  private val resourceRenderer  = new ResourceRenderer(noai.world.world)
+
+  protected[gui] var hideGame     = false
+  protected[gui] var gridOn       = true
+  protected[gui] var resourcesOn  = false
 
   private val staticLayers = mutable.ListBuffer[ LayerRenderer ]()
   staticLayers += new LayerRenderer {
@@ -115,6 +118,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
     val layers = ListBuffer[LayerRenderer]( staticLayers: _* )
     if (gridOn)                       layers += gridRenderer
     if (noai.plannedAction.isDefined) layers += noai.plannedAction.get.preview
+    if (resourcesOn)                  layers += resourceRenderer
     layers
   }
 

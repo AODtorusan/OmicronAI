@@ -7,6 +7,7 @@ import akka.actor.{ActorRef, Props}
 import com.lyndir.omicron.api.model.Player
 import be.angelcorp.omicronai.{HexArea, Namer}
 import be.angelcorp.omicronai.ai.pike.agents.squad.{NewSurveyRoi, SurveySquad, Squad}
+import be.angelcorp.omicronai.world.World
 
 class PikeTactical(aiPlayer: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -16,14 +17,13 @@ class PikeTactical(aiPlayer: Player) extends Agent {
 
   val readyUnits = mutable.Set[ActorRef]()
 
-  lazy val cartographer =
-    context.actorOf(Props(classOf[Cartographer], aiPlayer.getController.getGameController ), name = "Cartographer")
+  lazy val state = context.actorOf( World(aiPlayer, aiPlayer.getController.getGameController.getGame.getLevelSize), name = "World" )
 
   def act = {
     case AddMember(unit) =>
       logger.debug( s"$name was asked to assign unit $unit to a new Squad" )
       val newName = namer.nameFor(classOf[SurveySquad])
-      val squad = context.actorOf(Props(classOf[SurveySquad], aiPlayer, newName, cartographer ), name = newName)
+      val squad = context.actorOf(Props(classOf[SurveySquad], aiPlayer, newName, state ), name = newName)
       squad ! AddMember( unit )
       squad ! NewSurveyRoi( new HexArea(unit.location, 20) )
 

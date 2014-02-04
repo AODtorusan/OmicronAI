@@ -1,7 +1,7 @@
 package be.angelcorp.omicronai.ai
 
 import de.lessvoid.nifty.Nifty
-import com.lyndir.omicron.api.model.{Color, PlayerKey, Player}
+import com.lyndir.omicron.api.model.{Security, Color, PlayerKey, Player}
 import com.lyndir.omicron.api.GameListener
 import be.angelcorp.omicronai.gui.{AiGuiOverlay, AiGui, GuiInterface}
 
@@ -10,6 +10,7 @@ abstract class AI( playerId: Int, key: PlayerKey, name: String, primaryColor: Co
   def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty): GuiInterface
 
   def start() {
+    Security.authenticate(this, key)
     getController.getGameController.setReady()
   }
 

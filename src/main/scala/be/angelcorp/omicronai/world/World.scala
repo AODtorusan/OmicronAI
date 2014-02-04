@@ -73,20 +73,23 @@ class World(player: Player, sz: WorldSize) extends Actor {
 
 object World {
 
-  def apply(player: Player, size: WorldSize) = {
+  def apply( player: Player, size: WorldSize ) =
+    Props(classOf[World], player, size).withDispatcher("akka.world-dispatcher")
+
+  def withInterface(player: Player, size: WorldSize) = {
     val system = ActorSystem("WorldActorSystem")
-    val world = system.actorOf(Props(classOf[World], player, size).withDispatcher("akka.world-dispatcher"))
+    val world = system.actorOf( World(player, size) )
     new WorldInterface(world)
   }
 
 }
 
-private sealed abstract class WorldActorMsg
+sealed abstract class WorldActorMsg
 private case class GetWorldListener()               extends WorldActorMsg
 private case class ReloadLocation(l: Location)      extends WorldActorMsg
 private case class ReloadReady()                    extends WorldActorMsg
-private case class LocationState (l: Location)      extends WorldActorMsg
-private case class LocationStates(l: Seq[Location]) extends WorldActorMsg
+case class LocationState (l: Location)              extends WorldActorMsg
+case class LocationStates(l: Seq[Location])         extends WorldActorMsg
 
 class PrioritizedMailbox(settings: ActorSystem.Settings, cfg: Config) extends UnboundedPriorityMailbox(
   PriorityGenerator {

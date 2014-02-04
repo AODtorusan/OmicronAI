@@ -45,12 +45,12 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
     }
   }
 
-  lazy val world = World(this, gameSize)
+  lazy val world = World.withInterface(this, gameSize)
 
   override def start(): Unit = {
     getController.listObjects().asScala.foreach( obj => units_ += new Asset(this, obj) )
     gameController.addGameListener( assetListUpdater )
-    gameController.addGameListener( world.listener )
+    gameController.addGameListener(  world.listener )
     super.start()
   }
 

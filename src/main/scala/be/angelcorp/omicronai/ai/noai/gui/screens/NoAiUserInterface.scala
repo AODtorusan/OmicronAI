@@ -1,7 +1,7 @@
 package be.angelcorp.omicronai.ai.noai.gui.screens
 
 import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
-import be.angelcorp.omicronai.gui.nifty.NiftyConstants
+import be.angelcorp.omicronai.gui.nifty.{PopupController, NiftyConstants}
 import NiftyConstants._
 import be.angelcorp.omicronai.gui.screens.GuiScreen
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
@@ -32,9 +32,9 @@ object NoAiUserInterface extends GuiScreen {
                 <control id="layerDownButton" name="button" label="down"   width="30%" focusable="false" />
               </panel>
               <panel id="layersControlPanel" childLayout="horizontal" width="100%" >
-                <control id="gridButton"      name="button" label="grid"  width="33%" focusable="false" />
-                <control id="errr"            name="button" label="???"   width="34%" focusable="false" />
-                <control id="errr2"           name="button" label="???"   width="33%" focusable="false" />
+                <control id="gridButton"      name="button" label="grid"      width="33%" focusable="false" />
+                <control id="resourceButton"  name="button" label="resources" width="34%" focusable="false" />
+                <control id="errr2"           name="button" label="???"       width="33%" focusable="false" />
               </panel>
 
               <control name="label"  text=""  width="*" color={transparent} />
@@ -51,10 +51,7 @@ object NoAiUserInterface extends GuiScreen {
             </panel>
           </layer>
         </screen>
-        <popup id="niftyPopupMenu" childLayout="absolute-inside" controller={classOf[NoAiPopupController].getName} width="100px">
-          <interact onClick="closePopup()" onSecondaryClick="closePopup()" onTertiaryClick="closePopup()" />
-          <control id="#menu" name="niftyMenu" />
-        </popup>
+        {PopupController.xml[NoAiPopupController]}
       </nifty>;
 
     loadNiftyXml( noaiGui.nifty, xml, new NoAiUserInterfaceController(noaiGui) )

@@ -59,6 +59,8 @@ class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) e
   nifty.addScreen( screens.Introduction.name,     screens.Introduction.screen(nifty, gui)     )
   nifty.addScreen( screens.ui.UserInterface.name, screens.ui.pike.PikeUserInterface.screen(nifty, gui) )
 
+  val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
+
   val lc  = new LayerController(this)
   val utc = new UnitTreeController(this)
   val uic = new UserInterfaceController(this, utc)
@@ -72,8 +74,6 @@ class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) e
   }
 
   nifty.gotoScreen( screens.Introduction.name )
-
-  val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
 
   def updateUI() {
     controllers.foreach( _.updateUI() )
