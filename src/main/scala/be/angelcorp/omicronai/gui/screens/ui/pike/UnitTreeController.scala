@@ -11,7 +11,8 @@ import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber}
 import de.lessvoid.nifty.controls._
 import be.angelcorp.omicronai.gui.GuiController
-import be.angelcorp.omicronai.Settings.settings
+import be.angelcorp.omicronai.configuration.Configuration
+import Configuration.config
 import de.lessvoid.nifty.controls.treebox.TreeBoxControl
 import be.angelcorp.omicronai.ai.pike.PikeInterface
 import be.angelcorp.omicronai.ai.pike.agents.ListMembers
@@ -19,7 +20,7 @@ import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
 class UnitTreeController(val pikeInt: PikeInterface) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit val timeout: Timeout = settings.gui.messageTimeout seconds;
+  implicit val timeout: Timeout = config.gui.messageTimeout seconds;
 
   lazy val uiScreen       = pikeInt.nifty.getScreen(UserInterface.name)
   lazy val unitTree       = uiScreen.findNiftyControl("unitTree",       classOf[TreeBox[ActorRef]])

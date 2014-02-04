@@ -13,7 +13,8 @@ import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
-import be.angelcorp.omicronai.Settings._
+import be.angelcorp.omicronai.configuration.Configuration
+import Configuration._
 import be.angelcorp.omicronai.metadata.MetaData
 import be.angelcorp.omicronai.ai.pike.PikeInterface
 import be.angelcorp.omicronai.ai.pike.agents.ListMetadata
@@ -21,7 +22,7 @@ import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
 class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeController) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit val timeout: Timeout = settings.gui.messageTimeout seconds;
+  implicit val timeout: Timeout = config.gui.messageTimeout seconds;
 
   lazy val uiScreen   = pikeInt.nifty.getScreen(UserInterface.name)
   lazy val probesTree = uiScreen.findNiftyControl("probesTree", classOf[TreeBox[LayerRenderer]])

@@ -13,7 +13,7 @@ case class HexTile(u: Int, v: Int) {
 
   val centerXY = ( (u + (v - v%1) / 2f) * HexTile.width, v * 0.75f * HexTile.height )
 
-  val verticesXY = Seq(
+  lazy val verticesXY = Seq(
     ( 0.00f * HexTile.width + centerXY._1,  0.50f * HexTile.height + centerXY._2),
     ( 0.50f * HexTile.width + centerXY._1,  0.25f * HexTile.height + centerXY._2),
     ( 0.50f * HexTile.width + centerXY._1, -0.25f * HexTile.height + centerXY._2),
@@ -22,7 +22,7 @@ case class HexTile(u: Int, v: Int) {
     (-0.50f * HexTile.width + centerXY._1,  0.25f * HexTile.height + centerXY._2)
   )
 
-  val edgesXY = List[HexTileEdge](
+  lazy val edgesXY = List[HexTileEdge](
     HexTileNE(this), HexTileE(this), HexTileSE(this), HexTileSW(this), HexTileW(this), HexTileNW(this)
   )
 

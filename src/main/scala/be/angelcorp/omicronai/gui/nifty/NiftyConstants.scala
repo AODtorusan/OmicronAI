@@ -1,6 +1,5 @@
-package be.angelcorp.omicronai.gui
+package be.angelcorp.omicronai.gui.nifty
 
-import com.lyndir.omicron.api.model.Color
 
 object NiftyConstants {
 

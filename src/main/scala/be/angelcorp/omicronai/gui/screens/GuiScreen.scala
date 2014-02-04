@@ -13,7 +13,6 @@ trait GuiScreen {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   val name: String
-  def screen(nifty: Nifty, gui: AiGui): Screen
 
   def loadNiftyXml(nifty: Nifty, xml: Elem, controller: ScreenController*) {
     val xmlStream = new ByteArrayInputStream( xml.toString().getBytes )

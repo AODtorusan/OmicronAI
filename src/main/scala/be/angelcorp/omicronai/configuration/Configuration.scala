@@ -1,14 +1,19 @@
-package be.angelcorp.omicronai
+package be.angelcorp.omicronai.configuration
 
 import collection.mutable
 import com.typesafe.config.{ConfigException, Config, ConfigFactory}
 import org.slf4j.LoggerFactory
 
-class Settings( config: Config ) {
-
+class Configuration( config: Config ) {
   val ai = new AISettings( config.getConfig("ai") )
   val gui = new GuiSettings( config.getConfig("gui") )
   val pathfinder = new PathfinderSettings( config.getConfig("pathfinder") )
+
+  val graphics = GraphicsSettings( config.getConfig("graphics") )
+}
+
+object Configuration {
+  val config = new Configuration( ConfigFactory.load() )
 }
 
 class AISettings(config: Config) {
@@ -49,8 +54,4 @@ class PathfinderSettings( config: Config ) {
     case _ => LoggerFactory.getLogger( getClass ).warn("Could not find pathfinder layer penalty for layer {}, assuming 0", h); 0.0
   }
 
-}
-
-object Settings {
-  val settings = new Settings( ConfigFactory.load() )
 }

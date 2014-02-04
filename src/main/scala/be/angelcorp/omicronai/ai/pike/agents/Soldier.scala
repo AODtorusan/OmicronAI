@@ -39,7 +39,7 @@ class Soldier( val owner: Player, val name: String, val asset: Asset ) extends A
 
   def performAction( action: Action, simulate: Boolean = false ): ActionResult = action match {
     case MoveTo(destination) =>
-      val origin = asset.gameObject.getLocation: Location
+      val origin = asset.gameObject.checkLocation().get: Location
       logger.debug( s"Moving $name from $origin to $destination (simulate=$simulate)" )
 
       origin δ destination match {
@@ -49,7 +49,7 @@ class Soldier( val owner: Player, val name: String, val asset: Asset ) extends A
         case 1 =>
           asset.mobility match {
             case Some(m) =>
-              implicit val game = m.getGameObject.getLocation.getLevel.getGame
+              implicit val game = m.getGameObject.checkLocation().get.getLevel.getGame
               val move = m.movement( destination )
               if (move.isPossible) {
                 if (simulate || (try { move.execute(); true } catch { case e: IllegalStateException => false }) ) {

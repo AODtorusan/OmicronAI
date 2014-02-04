@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.gui.effects
+package be.angelcorp.omicronai.gui.nifty.effects
 
 import de.lessvoid.nifty.builder.EffectBuilder
 

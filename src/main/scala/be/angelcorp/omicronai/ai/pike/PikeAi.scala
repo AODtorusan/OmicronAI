@@ -13,23 +13,26 @@ import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.Color.Template._
 import com.lyndir.omicron.api.GameListener
 import be.angelcorp.omicronai.ai.AI
-import be.angelcorp.omicronai.Settings.settings
+import be.angelcorp.omicronai.configuration.Configuration
+import Configuration.config
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.ai.pike.agents.Admiral
 import be.angelcorp.omicronai.AiSupervisor
 import be.angelcorp.omicronai.gui.screens.ui.pike._
 import be.angelcorp.omicronai.ai.pike.agents.Self
+import scala.collection.mutable
+import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
 
 
 class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit def timeout: Timeout = settings.ai.messageTimeout seconds;
+  implicit def timeout: Timeout = config.ai.messageTimeout seconds;
 
   Security.authenticate(this, key)
   val actorSystem = ActorSystem()
 
   def this( aiBuilder: (PikeAi, ActorSystem) => ActorRef, builder: Game.Builder) =
-    this( aiBuilder, builder.nextPlayerID, new PlayerKey, settings.ai.name, RED.get )
+    this( aiBuilder, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
 
   lazy val admiralRef = {
     logger.info(s"Building AI logic for AI player ${getName}")
@@ -48,11 +51,11 @@ class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: 
 
   def gameListener: GameListener = admiral.messageListener
 
-  def buildGuiInterface(gui: AiGui, nifty: Nifty) = new PikeInterface(this, gui, nifty)
+  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = new PikeInterface(this, gui, nifty)
 
 }
 
-class PikeInterface(val pike: PikeAi, val gui: AiGui, val nifty: Nifty) extends GuiInterface {
+class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
   nifty.addScreen( screens.Introduction.name,     screens.Introduction.screen(nifty, gui)     )
   nifty.addScreen( screens.ui.UserInterface.name, screens.ui.pike.PikeUserInterface.screen(nifty, gui) )
 
@@ -69,6 +72,8 @@ class PikeInterface(val pike: PikeAi, val gui: AiGui, val nifty: Nifty) extends 
   }
 
   nifty.gotoScreen( screens.Introduction.name )
+
+  val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
 
   def updateUI() {
     controllers.foreach( _.updateUI() )

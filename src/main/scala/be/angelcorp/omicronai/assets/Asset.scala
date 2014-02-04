@@ -7,21 +7,24 @@ import com.lyndir.omicron.api.model._
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.Conversions._
 
-class Asset( val owner: Player, val gameObject: GameObject) {
+class Asset( val owner: Player, val gameObject: IGameObject) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  def location: Location = gameObject.getLocation
+  def objectType          = gameObject.getType
+  def location: Location  = gameObject.checkLocation().get()
 
-  def observableTiles = gameObject.listObservableTiles().iterator().asScala
+  def observableTiles     = gameObject.listObservableTiles().iterator().asScala
 
-  lazy val base       = gameObject.getModule( ModuleType.BASE, 0 ).get()
+  lazy val base           = gameObject.getModule( ModuleType.BASE, 0 ).get()
+  lazy val mobility       = toOption( gameObject.getModule( ModuleType.MOBILITY, 0 ) )
+  lazy val constructors   = gameObject.getModules( ModuleType.CONSTRUCTOR ).asScala
+  lazy val containers     = gameObject.getModules( ModuleType.CONTAINER   ).asScala
+  lazy val extractors     = gameObject.getModules( ModuleType.EXTRACTOR   ).asScala
+  lazy val weapons        = gameObject.getModules( ModuleType.WEAPON      ).asScala
 
-  lazy val constructor= toOption( gameObject.getModule( ModuleType.CONSTRUCTOR, 0 ) )
-  lazy val container  = toOption( gameObject.getModule( ModuleType.CONTAINER, 0 ) )
-  lazy val extractor  = toOption( gameObject.getModule( ModuleType.EXTRACTOR, 0 ) )
-  lazy val mobility   = toOption( gameObject.getModule( ModuleType.MOBILITY, 0 ) )
-
-  lazy val weapons    = gameObject.getModules( ModuleType.WEAPON ).asScala
-
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case asset: Asset => asset.gameObject == gameObject
+    case _ => false
+  }
 
 }

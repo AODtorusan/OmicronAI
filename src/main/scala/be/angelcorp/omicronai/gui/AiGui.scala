@@ -1,118 +1,116 @@
 package be.angelcorp.omicronai.gui
 
-import scala.Some
-import scala.collection.mutable.ListBuffer
+import java.util.concurrent.LinkedBlockingDeque
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 import akka.actor.Props
-import javax.swing.SwingUtilities
-import org.newdawn.slick.{Color, Graphics, GameContainer, AppGameContainer}
 import org.slf4j.LoggerFactory
-import org.slf4j.bridge.SLF4JBridgeHandler
-import de.lessvoid.nifty.loaderv2.types.NiftyType
-import de.lessvoid.nifty.slick2d.NiftyOverlayGame
-import de.lessvoid.nifty.Nifty
+import org.newdawn.slick._
+import org.newdawn.slick.state.GameState
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.Game
+import de.lessvoid.nifty.slick2d.{NiftyOverlayBasicGameState, NiftyStateBasedGame, NiftyOverlayGameState}
 import be.angelcorp.omicronai._
 import be.angelcorp.omicronai.ai.pike.PikeAi
-import be.angelcorp.omicronai.Settings.settings
 import be.angelcorp.omicronai.ai.lance.LanceAi
 import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.ai.pike.agents.Admiral
-import be.angelcorp.omicronai.gui.input.{InputSystem, AiGuiInput}
+import be.angelcorp.omicronai.ai.noai.NoAi
+import be.angelcorp.omicronai.configuration.Configuration.config
 
-class AiGui extends NiftyOverlayGame {
+class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
+  val splash = new SplashOverlay()
 
-  logger.info("Building new game")
-  val builder = Game.builder
+  val workList = new LinkedBlockingDeque[Runnable]()
 
-  val ai: AI = settings.ai.engine match {
-    case "PikeAI" => new PikeAi( (player, system) => system.actorOf(Props(new Admiral(player)), name = "AdmiralPike"), builder )
-    case _ => new LanceAi( builder )
-  }
-
-  builder.addPlayer(ai)
-  builder.addGameListener(ai.gameListener)
-  val game = builder.build
-  logger.info("Game build!")
-
-  val getTitle = "PikeAi gui"
-  var closeRequested = false
-  var guiInterface: GuiInterface = null
-  val input = new InputSystem()
-  input.inputHandlers += new AiGuiInput(this)
-
-  def initGameAndGUI(container: GameContainer) {
-    this.container = container
-    initNifty(container, input )
-    SwingUtilities.invokeLater( new Runnable {
-      def run() {
-        Thread.sleep(1000)
-        game.getController.setReady()
+  val loadThread = new Thread {
+    override def run() {
+      implicit val openglContext: ExecutionContext = AiGui.this
+      splash.progress(0.1f, "Building AI ...")
+      logger.info("Building new ai")
+      val builder = Game.builder
+      val ai: AI = config.ai.engine match {
+        case "PikeAI"  => new PikeAi( (player, system) => system.actorOf(Props(new Admiral(player)), name = "AdmiralPike"), builder )
+        case "LanceAI" => new LanceAi( builder )
+        case _ => new NoAi( builder )
       }
-    } )
+      logger.info("AI build!")
+
+      splash.progress(0.4f, "Building game ...")
+      logger.info("Building new game")
+      builder.addGameListener(new GameListenerLogger)
+      builder.addPlayer(ai)
+      val game = builder.build
+      logger.info("Game build!")
+
+      splash.progress(0.8f, "Finalizing GUI ...")
+      logger.info("Building AI gui")
+      val aiGui = new AiGuiOverlay(game, ai)
+      Await.result( Future{ add(aiGui) }, 1 minute )
+      logger.info("AI gui build!")
+
+      splash.progress(1f, "Done preloading!")
+      logger.info("Done preloading!")
+      Future {
+        enterState(aiGui.getID)
+      }
+    }
   }
 
-  def prepareNifty(nifty: Nifty) {
-    val niftyType = new NiftyType()
-
-    // This stuff is a workaround to have nifty styles and default controls available in the builder
-    val niftyLoader = nifty.getLoader
-    niftyLoader.loadStyleFile(  "nifty-styles.nxs",   "nifty-default-styles.xml",   niftyType, nifty)
-    niftyLoader.loadControlFile("nifty-controls.nxs", "nifty-default-controls.xml", niftyType)
-    niftyType.create(nifty, nifty.getTimeProvider)
-
-    guiInterface = ai.buildGuiInterface(this, nifty)
+  override def initStatesList(container: GameContainer) {
+    addState( splash )
+    enterState( splash.getID )
+    loadThread.start()
   }
 
-  def updateGame(container: GameContainer, delta: Int) {}
-
-  var container: GameContainer = null
-  lazy val view = new ViewPort(this)
-  var hoverTile: Option[HexTile] = None
-
-  def renderGame(container: GameContainer, g: Graphics) {
-    g.clear()
-    g.scale( view.scale, view.scale)
-    g.translate( view.offset._1, view.offset._2)
-
-    if (view.changed) {
-      guiInterface.activeLayers.par.foreach( _.update(view) )
-      view.unsetChanged()
+  override def preUpdateState(container: GameContainer, delta: Int) {
+    while( !workList.isEmpty ) {
+      val work = workList.takeLast()
+      work.run()
     }
+  }
 
-    guiInterface.activeLayers.foreach( _.render(g, view) )
+  override def reportFailure(t: Throwable) {
+    logger.warn("Problem in AiGui GL execution callbacks", t)
+  }
 
-    hoverTile match {
-      case Some(loc) =>
-        new GuiTile( loc ) {
-          override def borderStyle: DrawStyle = new DrawStyle(Color.orange, 5.0f)
-          override def fillColor: Color = Color.transparent
-        }.render(g)
-      case _ =>
-    }
+  override def execute(runnable: Runnable) {
+    workList.push(runnable)
+  }
 
-    val statusStrings = ListBuffer[String]( view.toString )
-    if (hoverTile.isDefined) statusStrings.append( hoverTile.get.toString )
 
-    var y = 30f
-    g.resetTransform()
-    g.setColor( new Color(0f, 0f, 0f, 0.6f))
-    g.fillRect(5, 5, container.getWidth - 10f , 30f + statusStrings.size * 20f )
-    g.setColor(Color.white)
-    for ( str <- statusStrings ) {
-      g.getFont.drawString(10, y, str)
-      y = y + 20f
-    }
+  def add(gameState: GameState): Unit = {
+    addState(gameState)
+    gameState.init(getContainer, this)
+  }
+
+  def add(gameState: NiftyOverlayBasicGameState): Unit = {
+    addState(gameState)
+    gameState.init(getContainer, this)
+  }
+
+  def add(gameState: NiftyOverlayGameState): Unit = {
+    addState(gameState)
+    gameState.init(getContainer, this)
   }
 
 }
 
-object AiGui extends App {
-  SLF4JBridgeHandler.install()
+object AiGui {
 
-  val app = new AppGameContainer(new AiGui())
-  app.setTargetFrameRate(24)
-  app.setDisplayMode(1000, 550, false)
-  app.start()
+  def start() {
+    val gui = new AiGui
+
+    val g   = config.graphics
+    val app = new AppGameContainer(gui, g.width, g.height, g.fullscreen)
+    app.setClearEachFrame(false)
+    app.setAlwaysRender(g.alwaysRender)
+    app.setMultiSample(g.multisampling)
+    app.setShowFPS(g.showFPS)
+    app.setTargetFrameRate(g.targetFrameRate)
+    app.setVSync(g.vSync)
+    app.start()
+  }
+
 }

@@ -3,12 +3,13 @@ package be.angelcorp.omicronai.gui.layerRender
 import math._
 import collection.mutable
 import org.newdawn.slick.{Color, Graphics}
-import be.angelcorp.omicronai.gui.{DrawStyle, GuiTile, ViewPort}
+import be.angelcorp.omicronai.gui.{Canvas, ViewPort}
 import scala.collection.mutable.ListBuffer
 import org.newdawn.slick.geom.Polygon
 import be.angelcorp.omicronai.{HexTileEdge, HexTile, RegionOfInterest}
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
+import be.angelcorp.omicronai.gui.slick.DrawStyle
 
 class RegionRenderer(val roi:    RegionOfInterest,
                      val border: DrawStyle = new DrawStyle(Color.red, 3.0f),
@@ -68,7 +69,7 @@ class RegionRenderer(val roi:    RegionOfInterest,
         }
       }
 
-      shapes.append( new Polygon( points.map( v => Seq( v._1 * GuiTile.scale, v._2 * GuiTile.scale ) ).flatten.toArray ) )
+      shapes.append( new Polygon( points.map( v => Seq( v._1 * Canvas.scale, v._2 * Canvas.scale ) ).flatten.toArray ) )
     }
     shapes.toList
   }

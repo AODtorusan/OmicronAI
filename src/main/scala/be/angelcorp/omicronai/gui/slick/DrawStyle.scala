@@ -1,10 +1,9 @@
-package be.angelcorp.omicronai.gui
+package be.angelcorp.omicronai.gui.slick
 
-import scala.util.control.Breaks
 import org.newdawn.slick.{Graphics, Color}
 
 
-class DrawStyle(val color: Color, val lineWidth: Float = 1.0f) {
+case class DrawStyle(val color: Color, val lineWidth: Float = 1.0f) {
 
   def applyOnto(g: Graphics) {
     g.setColor( color )

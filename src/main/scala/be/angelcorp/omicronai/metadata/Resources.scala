@@ -10,10 +10,11 @@ import org.newdawn.slick.{Color, Graphics}
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.ResourceType
-import be.angelcorp.omicronai.Settings._
+import be.angelcorp.omicronai.configuration.Configuration
+import Configuration._
 import be.angelcorp.omicronai.ai.pike.agents._
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
-import be.angelcorp.omicronai.gui.{ViewPort, GuiTile}
+import be.angelcorp.omicronai.gui.{ViewPort, Canvas}
 
 class Resources(val cartographer: ActorRef) extends MetaData {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -31,9 +32,9 @@ class Resources(val cartographer: ActorRef) extends MetaData {
 
 class ResourceRenderer(val cartographer: ActorRef, val resourceType: ResourceType) extends LayerRenderer {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit val timeout: Timeout = settings.ai.messageTimeout seconds;
+  implicit val timeout: Timeout = config.ai.messageTimeout seconds;
 
-  val tiles = ListBuffer[GuiTile]()
+  val tiles = ListBuffer[Canvas]()
 
   override def update(view: ViewPort) {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +44,7 @@ class ResourceRenderer(val cartographer: ActorRef, val resourceType: ResourceTyp
     } ) )
     val resources = Await.result( futureResources, timeout.duration).map( _.asInstanceOf[ResourceCount] )
     tiles.appendAll( resources.map( c => {
-      new GuiTile( c.l ) {
+      new Canvas( c.l ) {
         override def fillColor   = if (c.quantity > 0.0 )   new Color(0f, 0.5f, 0f, 1.0f)                 else Color.transparent
         override def borderStyle = if (c.confidence != 0.0) new Color(0f, 0.5f, 0f, c.confidence.toFloat) else Color.transparent
         override def textColor   = Color.white

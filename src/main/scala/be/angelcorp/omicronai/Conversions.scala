@@ -5,9 +5,9 @@ import com.lyndir.omicron.api.util.Maybe.Presence._
 
 object Conversions {
 
-  def toOption[T]( o: Optional[T] ) = if (o.isPresent) Some(o.get) else None
+  implicit def toOption[T]( o: Optional[T] ) = if (o.isPresent) Some(o.get) else None
 
-  def toMaybe[T]( o: com.lyndir.omicron.api.util.Maybe[T] ) = o.presence() match {
+  implicit def toMaybe[T]( o: com.lyndir.omicron.api.util.Maybe[T] ) = o.presence() match {
     case ABSENT  => Absent
     case UNKNOWN => Unknown
     case PRESENT => Present(o.get())

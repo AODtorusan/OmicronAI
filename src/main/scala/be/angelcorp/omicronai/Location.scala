@@ -3,7 +3,7 @@ package be.angelcorp.omicronai
 import scala.math._
 import com.lyndir.omicron.api.model._
 import scala.collection.mutable.ListBuffer
-import be.angelcorp.omicronai.algorithms.WorldSize
+import be.angelcorp.omicronai.world.WorldSize
 
 /**
  * A location of a specific tile on the u-v-h game map.
@@ -298,6 +298,9 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
 
   def adjacentTo(l: Location) = δ(l) == 1
 
+  /** Return a location that is ensured to be within the map constraints (and not one of its mirrors)  */
+  def reduce: Location = new Location(u % size.uSize, v % size.vSize, h, size)
+
   override def toString: String = s"Location($u, $v, $h)"
 
 }
@@ -351,10 +354,10 @@ object Location {
   implicit def levelType2int(level: LevelType): Int = level.ordinal()
   implicit def int2levelType(level: Int): LevelType = LevelType.values()(level)
 
-  implicit def level2int(level: Level): Int = level.getType
+  implicit def level2int(level: ILevel): Int = level.getType
   implicit def int2level(level: Int)(implicit game: Game): Level = game.getLevel( level )
 
-  implicit def tile2location( tile: Tile ) =
+  implicit def tile2location( tile: ITile ) =
     new Location( tile.getPosition.getU, tile.getPosition.getV, tile.getLevel, tile.getLevel.getSize )
   implicit def location2tile( l: Location )(implicit game: Game) =
     game.getLevel(l.h).getTile( l: Coordinate ).get()

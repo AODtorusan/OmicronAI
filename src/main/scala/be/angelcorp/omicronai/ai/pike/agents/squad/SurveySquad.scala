@@ -14,20 +14,21 @@ import com.lyndir.omicron.api.model.{ResourceType, Tile, Player}
 import be.angelcorp.omicronai.algorithms.MovementPathfinder
 import be.angelcorp.omicronai.Conversions._
 import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.Settings.settings
+import be.angelcorp.omicronai.configuration.Configuration
+import Configuration.config
 import be.angelcorp.omicronai.Location.location2tile
 import be.angelcorp.omicronai.{Location, RegionOfInterest, Namer}
 import be.angelcorp.omicronai.gui.layerRender.{PolyLineRenderer, LayerRenderer, RegionRenderer}
 import be.angelcorp.omicronai.metadata.MetaData
-import be.angelcorp.omicronai.gui.DrawStyle
 import be.angelcorp.omicronai.ai.pike.agents._
+import be.angelcorp.omicronai.gui.slick.DrawStyle
 
 class SurveySquad(val owner: Player,
                   val name: String,
                   val cartographer: ActorRef ) extends Squad {
   import context.dispatcher
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit def timeout: Timeout = settings.ai.messageTimeout seconds;
+  implicit def timeout: Timeout = config.ai.messageTimeout seconds;
   logger.debug(s"Created a new survey squad: $name")
 
   val namer = new Namer[Asset]( _.gameObject.getType.getTypeName )

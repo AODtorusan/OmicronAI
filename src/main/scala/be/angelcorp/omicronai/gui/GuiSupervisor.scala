@@ -5,7 +5,8 @@ import akka.actor._
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import be.angelcorp.omicronai.{UnSupervisedMessage, SupervisorMessage, AiSupervisor}
-import be.angelcorp.omicronai.Settings.settings
+import be.angelcorp.omicronai.configuration.Configuration
+import Configuration.config
 import be.angelcorp.omicronai.ai.pike.PikeAi
 import be.angelcorp.omicronai.ai.pike.agents.{ListMembers, Self, Name}
 
@@ -17,7 +18,7 @@ class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiS
   // [actor, isActorOnAuto]
   private val onAuto        = mutable.Map[ActorRef, Boolean]()
 
-  def isOnAuto( unit: ActorRef ) = onAuto.getOrElseUpdate(unit, settings.ai.supervisor.defaultAuto )
+  def isOnAuto( unit: ActorRef ) = onAuto.getOrElseUpdate(unit, config.ai.supervisor.defaultAuto )
 
   def toggleAuto( unit: ActorRef ) {
     val newMode = !isOnAuto( unit )

@@ -1,18 +1,19 @@
 package be.angelcorp.omicronai.gui.screens
 
-import be.angelcorp.omicronai.gui.NiftyConstants._
+import be.angelcorp.omicronai.gui.nifty.NiftyConstants
+import NiftyConstants._
 import de.lessvoid.nifty.screen.DefaultScreenController
 import de.lessvoid.nifty.Nifty
-import be.angelcorp.omicronai.gui.AiGui
+import be.angelcorp.omicronai.gui.{AiGuiOverlay, AiGui}
 import de.lessvoid.nifty.builder.{LayerBuilder, ScreenBuilder}
-import be.angelcorp.omicronai.gui.effects.FadeEffectBuilder
+import be.angelcorp.omicronai.gui.nifty.effects.FadeEffectBuilder
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
 object Introduction extends GuiScreen {
 
   val name = "introductionScreen"
 
-  def screen(nifty: Nifty, gui: AiGui) = {
+  def screen(nifty: Nifty, gui: AiGuiOverlay) = {
     val controller_ = new DefaultScreenController{
       override def onStartScreen() { gotoScreen( UserInterface.name ) }
     }

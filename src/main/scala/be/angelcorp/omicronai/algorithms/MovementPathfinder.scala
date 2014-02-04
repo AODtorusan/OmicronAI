@@ -4,7 +4,8 @@ import math._
 import scala.languageFeature.implicitConversions
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.Location._
-import be.angelcorp.omicronai.Settings.settings
+import be.angelcorp.omicronai.configuration.Configuration
+import Configuration.config
 import be.angelcorp.omicronai.assets.Asset
 import com.lyndir.omicron.api.model.Tile
 import com.lyndir.omicron.api.util.Maybe.Presence
@@ -19,11 +20,11 @@ class MovementPathfinder( destination: Location, asset: Asset ) extends AStar {
       case Some(m) if (toTile: Tile).checkContents.presence() != Presence.PRESENT  =>
         if ( fromTile.h == toTile.h )
           m.costForMovingInLevel( fromTile.h ) +
-            settings.pathfinder.layerPenalty( toTile.h )
+            config.pathfinder.layerPenalty( toTile.h )
         else {
           m.costForLevelingToLevel( toTile.h ) +
-            settings.pathfinder.layerChangePenalty +
-            settings.pathfinder.layerPenalty( toTile.h )
+            config.pathfinder.layerChangePenalty +
+            config.pathfinder.layerPenalty( toTile.h )
         }
       case _ => Double.PositiveInfinity
     }

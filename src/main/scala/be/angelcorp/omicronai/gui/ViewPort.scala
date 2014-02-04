@@ -7,9 +7,9 @@ import com.lyndir.omicron.api.model.LevelType
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class ViewPort(gui: AiGui,
+class ViewPort(gui: AiGuiOverlay,
                private var _activeLayer: Int       = LevelType.GROUND,
-               private var _scale:   Float         =  0.5f,
+               private var _scale:   Float         = 1f,
                private var _offset: (Float, Float) = (0, 0),
                private var _changed: Boolean       = true) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -28,7 +28,7 @@ class ViewPort(gui: AiGui,
 
   /** Checks if a given location is currently visible through the viewport */
   def inView( location: Location ) = {
-    val center = GuiTile.center( location )
+    val center = Canvas.center( location )
 
     location.h == _activeLayer &&
       screenBounds._1 < center._1 && center._1 < screenBounds._3 &&
@@ -41,8 +41,8 @@ class ViewPort(gui: AiGui,
     height = gui.container.getHeight /_scale
 
     screenBounds = (
-      -_offset._1-GuiTile.scale,       -_offset._2-GuiTile.scale,
-      -_offset._1+width+GuiTile.scale, -_offset._2+height+GuiTile.scale
+      -_offset._1-Canvas.scale,       -_offset._2-Canvas.scale,
+      -_offset._1+width+Canvas.scale, -_offset._2+height+Canvas.scale
     )
     tilesInView = gui.game.getLevel( _activeLayer ).getTiles.values().asScala.map( tile => {
       val loc: Location = tile
@@ -96,12 +96,15 @@ class ViewPort(gui: AiGui,
   }
 
   /** Move the viewport so that a specific tile is in the center of the view */
-  def centerOn(l: Location) = {
-    val center = GuiTile.center(l)
+  def centerOn(u: Int, v: Int) {
+    val center = Canvas.center(u, v)
     val newX = - center._1 + width  / 2.0f
     val newY = - center._2 + height / 2.0f
     moveTo( newX, newY )
   }
+
+  /** Move the viewport so that a specific tile is in the center of the view */
+  def centerOn(l: Location) { centerOn( l.u, l.v ) }
 
   /** Get the active displayed being displayed in the viewport */
   def activeLayer = _activeLayer
@@ -119,7 +122,7 @@ class ViewPort(gui: AiGui,
     _changed = false
   }
 
-  override def toString = f"layer=$activeLayer offset=$offset scale=$scale width=$width%.1f height=$height%.1f tiles in view:${tilesInView.size}"
+  override def toString = f"h=$activeLayer p=(${offset._1}%.0f, ${offset._2}%.0f) s=$scale%.2f w=$width%.0f h=$height%.0f tiles=${tilesInView.size}"
 
   /**
    * Convert an on-screen pixel to an OpenGL (in-game) coordinate.
@@ -142,6 +145,11 @@ class ViewPort(gui: AiGui,
    * @return Tile coordinate (u, v)
    */
   def openglToTile(x: Float, y : Float) =
-    HexTile.fromXY( x / GuiTile.scale, y / GuiTile.scale )
+    HexTile.fromXY( x / Canvas.scale, y / Canvas.scale )
+
+  def pixelToTile( x: Int, y: Int ) = {
+    val (oglx, ogly) = pixelToOpengl(x, y)
+    openglToTile(oglx, ogly)
+  }
 
 }

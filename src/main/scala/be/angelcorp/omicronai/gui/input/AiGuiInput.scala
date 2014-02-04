@@ -3,9 +3,9 @@ package be.angelcorp.omicronai.gui.input
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.newdawn.slick.Input._
-import be.angelcorp.omicronai.gui.AiGui
+import be.angelcorp.omicronai.gui.{AiGuiOverlay, AiGui}
 
-class AiGuiInput(gui: AiGui) extends InputHandler {
+class AiGuiInput(gui: AiGuiOverlay) extends InputHandler {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   private var altDown = false
@@ -26,8 +26,8 @@ class AiGuiInput(gui: AiGui) extends InputHandler {
 
     case KeyPressed(KEY_ADD, _, _, _, _)      => gui.view.scaleBy( 0.1f); true
     case KeyPressed(KEY_SUBTRACT, _, _, _, _) => gui.view.scaleBy(-0.1f); true
-    case KeyPressed(KEY_DELETE, _, _, _, _)   => gui.view.scaleTo(0.5f); gui.view.moveTo(0, 0); true
-    case KeyPressed(KEY_F4, _, _, _, _) if altDown  => System.exit(0); true
+    case KeyPressed(KEY_DELETE, _, _, _, _)   => gui.view.scaleTo(1f); gui.view.moveTo(0, 0); true
+    case KeyPressed(KEY_F4, _, _, _, _) if altDown => System.exit(0); true
 
     case KeyPressed(KEY_LALT, _, _, _, _)     => altDown = true; false
     case KeyReleased(KEY_LALT, _, _, _, _)    => altDown = false; false

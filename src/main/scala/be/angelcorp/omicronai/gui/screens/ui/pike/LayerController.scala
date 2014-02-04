@@ -63,9 +63,9 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
 
     val lb = uiScreen.findNiftyControl("layerList", classOf[ListBox[LayerRenderer]])
     lb.addItem( new GridRenderer(pike, Color.white) )
-    lb.addItem( new FieldOfView(pike, Color.white)     )
-    lb.addItem( new ObjectLayer(pike, go => go.getOwner.isPresent  && go.getOwner.get() == pike, "Friendly units", Color.green, Color.transparent ) )
-    lb.addItem( new ObjectLayer(pike, go => !go.getOwner.isPresent || go.getOwner.get() != pike, "Enemy units",    Color.red,   Color.transparent ) )
+    //lb.addItem( new FieldOfView(pike, Color.white)     )
+    //lb.addItem( new ObjectLayer(pike, go => go.getOwner.isPresent  && go.getOwner.get() == pike, "Friendly units", Color.green, Color.transparent ) )
+    //lb.addItem( new ObjectLayer(pike, go => !go.getOwner.isPresent || go.getOwner.get() != pike, "Enemy units",    Color.red,   Color.transparent ) )
     lb.addItem( new LayerRenderer {
       val logger = Logger( LoggerFactory.getLogger( getClass ) )
       def selected = {

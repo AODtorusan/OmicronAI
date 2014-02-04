@@ -11,17 +11,17 @@ import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
 import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicronai.gui.screens.GuiScreen
-import be.angelcorp.omicronai.gui.AiGui
-import be.angelcorp.omicronai.gui.nifty.TreeBoxViewController
+import be.angelcorp.omicronai.gui.{AiGuiOverlay, AiGui}
+import be.angelcorp.omicronai.gui.nifty.{NiftyConstants, TreeBoxViewController}
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
-import be.angelcorp.omicronai.gui.NiftyConstants._
+import NiftyConstants._
 import be.angelcorp.omicronai.ai.pike.agents.Name
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
 object LanceUserInterface extends GuiScreen {
   val name = UserInterface.name
 
-  def screen(nifty: Nifty, gui: AiGui) = {
+  def screen(nifty: Nifty, gui: AiGuiOverlay) = {
     val xml =
     //<?xml version="1.0" encoding="UTF-8"?>
       <nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
@@ -86,7 +86,7 @@ object LanceUserInterface extends GuiScreen {
 
 }
 
-class LanceUserInterfaceScreenController(gui: AiGui) extends ScreenController {
+class LanceUserInterfaceScreenController(gui: AiGuiOverlay) extends ScreenController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   var nifty: Nifty = null

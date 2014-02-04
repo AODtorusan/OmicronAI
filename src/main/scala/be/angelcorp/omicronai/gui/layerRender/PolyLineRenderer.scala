@@ -1,10 +1,11 @@
 package be.angelcorp.omicronai.gui.layerRender
 
 import be.angelcorp.omicronai.Location
-import be.angelcorp.omicronai.gui.{GuiTile, ViewPort, DrawStyle}
+import be.angelcorp.omicronai.gui.{Canvas, ViewPort}
 import org.newdawn.slick.{Color, Graphics}
 import org.newdawn.slick.geom.Polygon
 import scala.collection.mutable.ListBuffer
+import be.angelcorp.omicronai.gui.slick.DrawStyle
 
 class PolyLineRenderer(path: Seq[Location], style: DrawStyle, description: String = "PolyLine") extends LayerRenderer {
 
@@ -21,7 +22,7 @@ class PolyLineRenderer(path: Seq[Location], style: DrawStyle, description: Strin
       if (last.isDefined && (loc.size.getWidth / 2 < math.abs(last.get.δuUnwrap(loc)) || loc.size.getWidth / 2 < math.abs(last.get.δvUnwrap(loc)) ) ) {
         // Add the next line segment (from onto the map to out-of-map)
         val virtualNext = loc.mirrors.minBy( mirror => mirror δunwrap last.get )
-        val centerNext  = GuiTile.center(virtualNext)
+        val centerNext  = Canvas.center(virtualNext)
         poly.addPoint( centerNext._1, centerNext._2 )
 
         // Start a new line
@@ -31,12 +32,12 @@ class PolyLineRenderer(path: Seq[Location], style: DrawStyle, description: Strin
 
         // Add the out-of-map equivalent to location to the last line segment (from out-of-map onto the map)
         val trueLast = last.get.mirrors.minBy( mirror => mirror δunwrap loc )
-        val center = GuiTile.center(trueLast)
+        val center = Canvas.center(trueLast)
         poly.addPoint( center._1, center._2 )
       }
 
       // Add the next vertex to the polyline
-      val center = GuiTile.center(loc)
+      val center = Canvas.center(loc)
       poly.addPoint( center._1, center._2 )
 
       last = Some(loc)

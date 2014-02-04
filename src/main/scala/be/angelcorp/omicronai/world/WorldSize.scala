@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.algorithms
+package be.angelcorp.omicronai.world
 
 import be.angelcorp.omicronai.Location
 import com.lyndir.omicron.api.model.Size

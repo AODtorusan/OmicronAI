@@ -1,0 +1,46 @@
+ai.engine = "noai"
+ai.name   = "Flubber Master 3000"
+ai.messageTimeout = 300 # seconds
+ai.supervisor {
+    defaultAuto = false
+
+    be.angelcorp.omicronai.ai.pike.agents.NewTurn        = true
+    be.angelcorp.omicronai.ai.pike.agents.ValidateAction = true
+
+}
+gui.messageTimeout = 10 # seconds
+pathfinder.layerChangePenalty = 0
+pathfinder.groundPenalty      = 0
+pathfinder.skyPenalty         = 0
+pathfinder.spacePenalty       = 0
+
+graphics {
+    width           = 1000
+    height          = 550
+    fullscreen      = false
+
+    alwaysRender    = true
+    multisampling   = 0         // 0 | 2 | 4 | 8
+    showFPS         = false
+    targetFrameRate = 24
+    vSync           = false
+}
+
+akka {
+    loggers = ["akka.event.slf4j.Slf4jLogger"]
+    loglevel = "DEBUG"
+    actor {
+        debug {
+            # enable function of LoggingReceive, which is to log any received message at DEBUG level
+            receive = on
+            # enable DEBUG logging of all AutoReceiveMessages (Kill, PoisonPill et.c.)
+            autoreceive = on
+            # enable DEBUG logging of actor lifecycle changes
+            lifecycle = on
+        }
+    }
+    world-dispatcher {
+        type = "Dispatcher"
+        mailbox-type = "be.angelcorp.omicronai.world.PrioritizedMailbox"
+    }
+}

@@ -10,11 +10,12 @@ import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.Settings._
+import be.angelcorp.omicronai.configuration.Configuration
+import Configuration._
 
 class Admiral(owner: Player) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit def timeout: Timeout = settings.ai.messageTimeout seconds;
+  implicit def timeout: Timeout = config.ai.messageTimeout seconds;
 
   val name = "Admiral"
 
@@ -26,7 +27,7 @@ class Admiral(owner: Player) extends Agent {
 
   private val readyUnits = mutable.Set[ActorRef]()
 
-  private val assets = mutable.HashMap[GameObject, Asset]()
+  private val assets = mutable.HashMap[IGameObject, Asset]()
 
   override def preStart {
     //resourceGeneral = context.actorOf(Props[DeafAgent], "resource general")
