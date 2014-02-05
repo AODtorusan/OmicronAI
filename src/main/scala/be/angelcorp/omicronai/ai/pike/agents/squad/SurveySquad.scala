@@ -24,9 +24,7 @@ import be.angelcorp.omicronai.ai.pike.agents._
 import be.angelcorp.omicronai.gui.slick.DrawStyle
 import be.angelcorp.omicronai.world.{GhostState, KnownState, LocationStates, WorldState}
 
-class SurveySquad(val owner: Player,
-                  val name: String,
-                  val world: ActorRef ) extends Squad {
+class SurveySquad(val owner: Player, val world: ActorRef ) extends Squad {
   import context.dispatcher
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit def timeout: Timeout = config.ai.messageTimeout seconds;
@@ -43,8 +41,7 @@ class SurveySquad(val owner: Player,
   def act = {
     case AddMember( unit ) =>
       logger.debug(s"$name was asked to absorb a new member: $unit")
-      val newName = namer.nameFor(unit)
-      context.actorOf(Props(new Soldier(owner, newName, unit )), name=newName )
+      context.actorOf(Props(new Soldier(owner, unit )), name=namer.nameFor(unit) )
 
     case NewSurveyRoi( newRoi ) =>
       logger.debug(s"$name is updating the region of interest to $newRoi")

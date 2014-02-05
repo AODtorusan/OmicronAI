@@ -1,6 +1,8 @@
 package be.angelcorp.omicronai.ai.pike
 
 import scala.Some
+import scala.collection.mutable
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.Await
 import akka.pattern.ask
@@ -11,17 +13,14 @@ import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.Color.Template._
-import com.lyndir.omicron.api.GameListener
 import be.angelcorp.omicronai.ai.AI
-import be.angelcorp.omicronai.configuration.Configuration
-import Configuration.config
+import be.angelcorp.omicronai.configuration.Configuration.config
 import be.angelcorp.omicronai.gui._
-import be.angelcorp.omicronai.ai.pike.agents.Admiral
+import be.angelcorp.omicronai.ai.pike.agents.{ListMembers, PlayerGainedObject, Admiral, Self}
 import be.angelcorp.omicronai.AiSupervisor
 import be.angelcorp.omicronai.gui.screens.ui.pike._
-import be.angelcorp.omicronai.ai.pike.agents.Self
-import scala.collection.mutable
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
+import be.angelcorp.omicronai.world.WorldUpdater
 
 
 class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
@@ -30,6 +29,7 @@ class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: 
 
   Security.authenticate(this, key)
   val actorSystem = ActorSystem()
+  implicit val context = actorSystem.dispatcher
 
   def this( aiBuilder: (PikeAi, ActorSystem) => ActorRef, builder: Game.Builder) =
     this( aiBuilder, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
@@ -41,6 +41,7 @@ class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: 
   lazy val admiral = {
     Await.result( admiralRef ? Self(), timeout.duration ).asInstanceOf[Admiral]
   }
+  def world = admiral.world
 
   val supervisorRef = actorSystem.actorOf( Props( new GuiSupervisor(admiralRef, this) ), name="AiSupervisor" )
   var supervisor = {
@@ -49,10 +50,20 @@ class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: 
   }
   AiSupervisor.supervisor = Some(supervisorRef)
 
-  def gameListener: GameListener = admiral.messageListener
+  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = {
+    Security.authenticate(this, key)
+    new PikeInterface(this, gui, nifty)
+  }
 
-  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = new PikeInterface(this, gui, nifty)
-
+  override def start() {
+    Security.authenticate(this, key)
+    getController.getGameController.addGameListener( admiral.messageListener )
+    getController.getGameController.addGameListener( new WorldUpdater(admiral.world) )
+    getController.listObjects().asScala.foreach( obj => {
+      admiralRef ! PlayerGainedObject( this, obj )
+    })
+    getController.getGameController.setReady()
+  }
 }
 
 class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {

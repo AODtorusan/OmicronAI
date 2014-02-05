@@ -6,7 +6,7 @@ import com.lyndir.omicron.api.model.Player
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.assets.Asset
 
-class Soldier( val owner: Player, val name: String, val asset: Asset ) extends Agent {
+class Soldier( val owner: Player, val asset: Asset ) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   logger.debug(s"Promoted asset $name to a soldier")
 

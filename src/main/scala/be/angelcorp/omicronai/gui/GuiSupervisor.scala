@@ -5,10 +5,9 @@ import akka.actor._
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import be.angelcorp.omicronai.{UnSupervisedMessage, SupervisorMessage, AiSupervisor}
-import be.angelcorp.omicronai.configuration.Configuration
-import Configuration.config
+import be.angelcorp.omicronai.configuration.Configuration.config
 import be.angelcorp.omicronai.ai.pike.PikeAi
-import be.angelcorp.omicronai.ai.pike.agents.{ListMembers, Self, Name}
+import be.angelcorp.omicronai.ai.pike.agents.{ListMembers, Self}
 
 class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiSupervisorInterface] = None) extends AiSupervisor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -49,7 +48,6 @@ class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiS
       } else {
         logger.trace(s"GuiSupervisor intercepted message for $originalReceiver: $message")
         message match {
-          case Name()        => originalReceiver.forward( new UnSupervisedMessage(message) )
           case Self()        => originalReceiver.forward( new UnSupervisedMessage(message) )
           case ListMembers() => originalReceiver.forward( new UnSupervisedMessage(message) )
 

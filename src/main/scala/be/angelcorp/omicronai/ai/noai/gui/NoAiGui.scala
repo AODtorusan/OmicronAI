@@ -40,39 +40,16 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
   private val messageLabel = uiScreen.findNiftyControl("messages", classOf[de.lessvoid.nifty.controls.Label])
 
   private val gridRenderer      = new GridRenderer(noai)
-  private val resourceRenderer  = new ResourceRenderer(noai.world.world)
+  private val resourceRenderer  = new ResourceRenderer(noai.world.worldRef)
 
   protected[gui] var hideGame     = false
   protected[gui] var gridOn       = true
   protected[gui] var resourcesOn  = false
 
   private val staticLayers = mutable.ListBuffer[ LayerRenderer ]()
-  staticLayers += new LayerRenderer {
-    val logger = Logger( LoggerFactory.getLogger( getClass ) )
-    override def render(g: Graphics, view: ViewPort) = {
-      Textures.get("terrain.grass") foreach {
-        img =>
-          val futureStates = noai.world.statesOf(view.tilesInView.toList)
-          try {
-            val locations = Await.result( futureStates, Duration(50, TimeUnit.MILLISECONDS) ).map {
-              case KnownState(loc, _, _) => Some(loc)
-              case GhostState(loc, _, _) => Some(loc)
-              case _ => None
-            }
-            img.startUse()
-            for (optionalLocation <- locations; loc <- optionalLocation) {
-              val (x, y) = Canvas.center(loc)
-              img.drawEmbedded(x - img.getWidth/2, y - img.getHeight/2)
-            }
-            img.endUse()
-          } catch {
-            case e: TimeoutException => logger.warn(s"World layer could not get the state of all the tiles in view within 50ms.")
-          }
-      }
-    }
-  }
-  staticLayers += new ObjectLayer( noai.world, o => o.getOwner.isPresent && o.getOwner.get() == noai, "Friendly units", Color.green, Color.green )
-  staticLayers += new ObjectLayer( noai.world, o => o.getOwner.isPresent && o.getOwner.get() != noai, "Enemy units",    Color.red,   new Color(0.5f, 0f, 0f) )
+  staticLayers += new TexturedWorldRenderer( noai.world.worldRef )
+  staticLayers += new ObjectLayer( noai.world.worldRef, o => o.getOwner.isPresent && o.getOwner.get() == noai, "Friendly units", Color.green, Color.green )
+  staticLayers += new ObjectLayer( noai.world.worldRef, o => o.getOwner.isPresent && o.getOwner.get() != noai, "Enemy units",    Color.red,   new Color(0.5f, 0f, 0f) )
   staticLayers += new LayerRenderer {
     // Renders the currently selected unit
     def render(g: Graphics, view: ViewPort) {
@@ -84,7 +61,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
       }
     }
   }
-  staticLayers += new FieldOfView( noai.world )
+  staticLayers += new FieldOfView( noai.world.worldRef )
 
   new Thread {
     override def run() {

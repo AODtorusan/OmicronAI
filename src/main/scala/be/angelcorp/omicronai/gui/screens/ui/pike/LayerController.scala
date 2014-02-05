@@ -11,8 +11,12 @@ import be.angelcorp.omicronai.SupervisorMessage
 import be.angelcorp.omicronai.ai.pike.PikeInterface
 import be.angelcorp.omicronai.ai.pike.agents.ValidateAction
 import be.angelcorp.omicronai.gui.{ViewPort, GuiController}
-import be.angelcorp.omicronai.gui.layerRender.{ObjectLayer, FieldOfView, GridRenderer, LayerRenderer}
+import be.angelcorp.omicronai.gui.layerRender._
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
+import be.angelcorp.omicronai.ai.pike.agents.ValidateAction
+import scala.Some
+import be.angelcorp.omicronai.SupervisorMessage
+import de.lessvoid.nifty.controls.ListBox.SelectionMode
 
 class LayerController(val pikeInt: PikeInterface) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -62,10 +66,11 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
     val pike = pikeInt.pike
 
     val lb = uiScreen.findNiftyControl("layerList", classOf[ListBox[LayerRenderer]])
-    lb.addItem( new GridRenderer(pike, Color.white) )
-    //lb.addItem( new FieldOfView(pike, Color.white)     )
-    //lb.addItem( new ObjectLayer(pike, go => go.getOwner.isPresent  && go.getOwner.get() == pike, "Friendly units", Color.green, Color.transparent ) )
-    //lb.addItem( new ObjectLayer(pike, go => !go.getOwner.isPresent || go.getOwner.get() != pike, "Enemy units",    Color.red,   Color.transparent ) )
+    lb.addItem( new TexturedWorldRenderer(pike.world) )
+    lb.addItem( new ObjectLayer(pike.world, go => go.getOwner.isPresent  && go.getOwner.get() == pike, "Friendly units", Color.green, Color.transparent ) )
+    lb.addItem( new ObjectLayer(pike.world, go => !go.getOwner.isPresent || go.getOwner.get() != pike, "Enemy units",    Color.red,   Color.transparent ) )
+    lb.addItem( new FieldOfView(pike.world)           )
+    lb.addItem( new GridRenderer(pike)                )
     lb.addItem( new LayerRenderer {
       val logger = Logger( LoggerFactory.getLogger( getClass ) )
       def selected = {
@@ -85,7 +90,10 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
       }
       override def toString: String = "Planned action preview"
     } )
-    lb.selectItemByIndex(0)
-    pikeInt.activeLayers.appendAll(lb.getSelection.asScala)
+    lb.changeSelectionMode( SelectionMode.Multiple, false )
+    for (layer <- lb.getItems.asScala) {
+      lb.selectItem( layer )
+      pikeInt.activeLayers.append(layer)
+    }
   }
 }

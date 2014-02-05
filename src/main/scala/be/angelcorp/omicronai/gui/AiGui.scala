@@ -17,6 +17,7 @@ import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.ai.pike.agents.Admiral
 import be.angelcorp.omicronai.ai.noai.NoAi
 import be.angelcorp.omicronai.configuration.Configuration.config
+import be.angelcorp.omicronai.gui.textures.Textures
 
 class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -27,22 +28,32 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
   val loadThread = new Thread {
     override def run() {
       implicit val openglContext: ExecutionContext = AiGui.this
-      splash.progress(0.1f, "Building AI ...")
-      logger.info("Building new ai")
+
+      splash.progress(0.1f, "Building game ...")
+      logger.info("Building game framework")
       val builder = Game.builder
+      builder.addGameListener(new GameListenerLogger)
+      logger.info("Game framework build!")
+
+      splash.progress(0.2f, "Building AI ...")
+      logger.info("Building new ai")
       val ai: AI = config.ai.engine match {
         case "PikeAI"  => new PikeAi( (player, system) => system.actorOf(Props(new Admiral(player)), name = "AdmiralPike"), builder )
         case "LanceAI" => new LanceAi( builder )
         case _ => new NoAi( builder )
       }
+      builder.addPlayer(ai)
       logger.info("AI build!")
 
-      splash.progress(0.4f, "Building game ...")
-      logger.info("Building new game")
-      builder.addGameListener(new GameListenerLogger)
-      builder.addPlayer(ai)
+      splash.progress(0.4f, "Starting game ...")
+      logger.info("Starting game")
       val game = builder.build
-      logger.info("Game build!")
+      logger.info("Game started!")
+
+      splash.progress(0.6f, "Loading unit/texture configuration ...")
+      logger.info("Building ...")
+      Textures.load()
+      logger.info("Unit/texture configurations build!")
 
       splash.progress(0.8f, "Finalizing GUI ...")
       logger.info("Building AI gui")

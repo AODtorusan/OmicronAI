@@ -27,7 +27,7 @@ class RegionRenderer(val roi:    RegionOfInterest,
     override def toString = s"($x0, $y0) to ($x1, $y1)"
   }
 
-  val shapes = {
+  lazy val shapes = {
     // Find all the tile segments defining the contour
     // For each tile we add all the required contour segments to a list
     // If the list already contains that segment, it is removed

@@ -5,14 +5,15 @@ import java.util.Comparator
 import collection.JavaConverters._
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import be.angelcorp.omicronai.{Location}
+import be.angelcorp.omicronai.{Direction, Location}
 import be.angelcorp.omicronai.metadata.{PathfinderMetadata, MetaData}
+import be.angelcorp.omicronai.world.WorldGraph
 
 abstract class AStar {
 
   def heuristic( fromTile: Location): Double
 
-  def costOnto( fromTile: Location, toTile: Location ): Double
+  def costGraph: WorldGraph[_, Double]
 
   def goalReached( solution: AStarSolution ): Boolean
 
@@ -34,8 +35,8 @@ abstract class AStar {
       open.remove( q.tile )
       closed.put( q.tile, q )
 
-      for ( target <- q.tile.neighbours.values ) {
-        val g = q.g + costOnto( q.tile, target )
+      for ( (direction, target) <- q.tile.neighbours; cost <- costGraph.edgeAt(q.tile, direction) ) {
+        val g = q.g + cost
         val h = heuristic(target)
         val targetSubSolution = new AStarSolution(g, h, target :: q.path)
 
@@ -54,8 +55,11 @@ object AStar{
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   def apply( destination: Location ) = new AStar {
-    def heuristic(fromTile: Location) = math.abs(fromTile δ destination)
-    def costOnto(fromTile: Location, toTile: Location) = 1
+    def costGraph = new WorldGraph[Null, Double] {
+      def tileAt( l: Location ) = ???
+      def edgeAt( l: Location, d: Direction ) = Some(1.0)
+    }
+    def heuristic(fromTile: Location) = 2.0 * math.abs(fromTile δ destination)
     def goalReached(solution: AStarSolution) = destination == solution.tile
   }
 

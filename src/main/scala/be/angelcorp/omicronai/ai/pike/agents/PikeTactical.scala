@@ -9,21 +9,18 @@ import be.angelcorp.omicronai.{HexArea, Namer}
 import be.angelcorp.omicronai.ai.pike.agents.squad.{NewSurveyRoi, SurveySquad, Squad}
 import be.angelcorp.omicronai.world.World
 
-class PikeTactical(aiPlayer: Player) extends Agent {
+class PikeTactical(aiPlayer: Player, world: ActorRef) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  val name  = "Tactical"
   val namer = new Namer[Class[_ <: Squad]](_.getSimpleName)
 
   val readyUnits = mutable.Set[ActorRef]()
-
-  lazy val state = context.actorOf( World(aiPlayer, aiPlayer.getController.getGameController.getGame.getLevelSize), name = "World" )
 
   def act = {
     case AddMember(unit) =>
       logger.debug( s"$name was asked to assign unit $unit to a new Squad" )
       val newName = namer.nameFor(classOf[SurveySquad])
-      val squad = context.actorOf(Props(classOf[SurveySquad], aiPlayer, newName, state ), name = newName)
+      val squad = context.actorOf(Props(classOf[SurveySquad], aiPlayer, world ), name = newName)
       squad ! AddMember( unit )
       squad ! NewSurveyRoi( new HexArea(unit.location, 20) )
 

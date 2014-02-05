@@ -1,24 +1,28 @@
 package be.angelcorp.omicronai.gui.layerRender
 
-import org.newdawn.slick.{Graphics, Color}
-import be.angelcorp.omicronai.gui.{ViewPort, Canvas}
-import be.angelcorp.omicronai.world.{GhostState, KnownState, WorldInterface}
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
+import akka.actor.ActorRef
+import akka.util.Timeout
+import akka.pattern.ask
 import java.util.concurrent.TimeUnit
-import com.typesafe.scalalogging.slf4j.Logger
+import org.newdawn.slick.{Graphics, Color}
 import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.util.Maybe.Presence
 import be.angelcorp.omicronai.HexTile
+import be.angelcorp.omicronai.gui.{ViewPort, Canvas}
+import be.angelcorp.omicronai.world.{WorldState, LocationStates, GhostState, KnownState}
 
-class FieldOfView(world: WorldInterface, knownColor: Color = Color.transparent, ghostColor: Color = new Color(0, 0, 0, 125), unknownColor: Color = Color.black) extends LayerRenderer {
+class FieldOfView(world: ActorRef, knownColor: Color = Color.transparent, ghostColor: Color = new Color(0, 0, 0, 125), unknownColor: Color = Color.black) extends LayerRenderer {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
+  implicit def timeout: Timeout = 50 milliseconds;
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def render(g: Graphics, view: ViewPort) {
     val viewLocations = view.tilesInView.toSeq
-    val futureVisible = for ( states <- world statesOf viewLocations) yield
+    val futureVisible = for ( states <- ask(world, LocationStates(viewLocations)).mapTo[Seq[WorldState]] ) yield
               states.zip(viewLocations).groupBy( {
                 case (s: KnownState, _) => Presence.PRESENT
                 case (s: GhostState, _) => Presence.UNKNOWN

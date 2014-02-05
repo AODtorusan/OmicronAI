@@ -20,7 +20,7 @@ object Textures {
   private val imageCache  = mutable.Map[String, Image]()
   private val texCfgCache = mutable.Map[String, TextureConfig]()
 
-  {
+  def load() {
     val texConfigPaths = new Reflections(new ConfigurationBuilder()
       .setUrls( ClasspathHelper.forClassLoader() )
       .setScanners(new ResourcesScanner())

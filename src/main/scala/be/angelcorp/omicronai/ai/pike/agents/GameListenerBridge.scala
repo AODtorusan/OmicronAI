@@ -7,7 +7,6 @@ import be.angelcorp.omicronai.Location
 
 class GameListenerBridge extends GameListener with Agent {
 
-  def name = "GameListenerBridge"
   def act = Map.empty
 
   override def onPlayerReady(readyPlayer: IPlayer) {
@@ -16,7 +15,6 @@ class GameListenerBridge extends GameListener with Agent {
 
   override def onNewTurn(currentTurn: Turn) {
     context.parent ! NewTurn(currentTurn)
-    context.parent ! Ready()
   }
 
   override def onBaseDamaged(baseModule: IBaseModule, damage: ChangeInt) {

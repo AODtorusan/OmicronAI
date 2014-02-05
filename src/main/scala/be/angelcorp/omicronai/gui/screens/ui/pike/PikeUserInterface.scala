@@ -22,19 +22,7 @@ object PikeUserInterface extends GuiScreen {
   val name = UserInterface.name
   def screen(nifty: Nifty, gui: AiGuiOverlay) = {
     class ActorConverter extends TreeBoxViewController[ActorRef] {
-      implicit val timeout: Timeout = 5 seconds;
-      val names = mutable.Map[ActorRef, String]()
-
-      def stringify(item: ActorRef) = names.getOrElse(item, {
-        import scala.concurrent.ExecutionContext.Implicits.global
-        ask(item, Name()).onComplete( {
-          case Success(name) => names.update(item, name.toString)
-          case Failure(e) =>
-            logger.warn(s"Gui cannot get name of actor $item", e)
-            names.update(item, s"<cannot retrieve name for $item: ${e.getMessage}>")
-        } )
-        "<name update in progress ...>"
-      })
+      def stringify(item: ActorRef) = item.path.name
     }
     class ProbeConverter extends TreeBoxViewController[LayerRenderer] {
       val names = mutable.Map[ActorRef, String]()

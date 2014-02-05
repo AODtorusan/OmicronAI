@@ -12,29 +12,20 @@ import com.lyndir.omicron.api.model._
 import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.configuration.Configuration
 import Configuration._
+import be.angelcorp.omicronai.world.World
+import be.angelcorp.omicronai.ai.AI
 
-class Admiral(owner: Player) extends Agent {
+class Admiral(owner: AI) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit def timeout: Timeout = config.ai.messageTimeout seconds;
 
-  val name = "Admiral"
-
   // Joint Chiefs of Staff
-  private var resourceGeneral:   ActorRef = null
-  private var strategyGeneral:   ActorRef = null
-  private var tacticalGeneral:   ActorRef = null
-  private var gameMessageBridge: ActorRef = null
+  protected[pike] lazy val world             = context.actorOf(World(owner, owner.getController.getGameController.getGame.getLevelSize), name = "World" )
+  protected[pike] lazy val tacticalGeneral   = context.actorOf(Props(classOf[PikeTactical], owner, world), name = "TacticalGeneral"   )
+  protected[pike] lazy val gameMessageBridge = context.actorOf(Props[GameListenerBridge], name = "GameListenerBridge")
 
   private val readyUnits = mutable.Set[ActorRef]()
-
   private val assets = mutable.HashMap[IGameObject, Asset]()
-
-  override def preStart {
-    //resourceGeneral = context.actorOf(Props[DeafAgent], "resource general")
-    //strategyGeneral = context.actorOf(Props[DeafAgent], "strategy general")
-    tacticalGeneral   = context.actorOf(Props(classOf[PikeTactical], owner), name = "TacticalGeneral"   )
-    gameMessageBridge = context.actorOf(Props[GameListenerBridge],           name = "GameListenerBridge")
-  }
 
   def messageListener =
     Await.result(gameMessageBridge ? Self(), timeout.duration).asInstanceOf[GameListenerBridge]
@@ -60,6 +51,8 @@ class Admiral(owner: Player) extends Agent {
     case NewTurn( currentTurn ) =>
       logger.info(s"Ai ${owner.getName} is starting turn ${currentTurn.getNumber}")
       readyUnits.clear()
+      readyUnits += world
+      readyUnits += gameMessageBridge
       tacticalGeneral ! NewTurn( currentTurn )
 
     case Ready() =>
@@ -101,11 +94,10 @@ case class ActionSuccess( action: Action, updates: Iterator[Any] = Iterator() ) 
 case class ActionFailed(  action: Action, message: String, reason: FailureReason = UnknownError() ) extends ActionResult
 
 case class AddMember(  unit: Asset )       extends AdmiralMessage
-case class ListMembers()                        extends AdmiralMessage
-case class ListMetadata()                       extends AdmiralMessage
-case class Name()                               extends AdmiralMessage
+case class ListMembers()                   extends AdmiralMessage
+case class ListMetadata()                  extends AdmiralMessage
 
 abstract class FailureReason
 case class MissingModule() extends FailureReason
 case class OutOfSpeed()    extends FailureReason
-case class UnknownError()       extends FailureReason
+case class UnknownError()  extends FailureReason

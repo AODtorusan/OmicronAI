@@ -10,14 +10,11 @@ import org.slf4j.LoggerFactory
 trait Agent extends Actor {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  def name: String
-
   def act: Actor.Receive
 
+  def name = self.path.name
+
   def receive: Actor.Receive = ({
-    case UnSupervisedMessage(Name()) | Name() =>
-      logger.trace(s"Sending name of $name to $sender")
-      sender ! name
     case UnSupervisedMessage(Self()) | Self() =>
       logger.trace(s"This handle of $name to $sender")
       sender ! this
