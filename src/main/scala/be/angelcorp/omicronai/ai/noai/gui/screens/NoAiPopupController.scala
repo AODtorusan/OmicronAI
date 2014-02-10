@@ -44,12 +44,12 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
               location match {
                 case Some(l) =>
                   // Move in the same level
-                  entries += ( "Move to", () => ui.gui.noai.updateOrConfirmAction(MoveAction(asset, l)) )
+                  entries += ( "Move to", () => ui.gui.noai.updateOrConfirmAction(MoveAction(asset, l, ui.gui.noai.world)) )
                   // Move up or down
                   implicit val game = ui.gui.frame.game
                   for (d <- Seq(UP(), DOWN()); loc <- l.neighbour(d)) {
                     if (move.costForLevelingToLevel(Location.int2level(loc.h).getType) != Double.MaxValue)
-                      entries += (s"Move ${d.toString.toLowerCase}", () => ui.gui.noai.updateOrConfirmAction( MoveAction(asset, loc) ))
+                      entries += (s"Move ${d.toString.toLowerCase}", () => ui.gui.noai.updateOrConfirmAction( MoveAction(asset, loc, ui.gui.noai.world) ))
                   }
                 case _ => logger.info(s"Cannot move $asset to that tile, not hovering over any tile!")
               }
@@ -65,7 +65,7 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
         location.map( hover => ui.gui.noai.unitOn( hover ).map( hoverAsset => {
           hoverAsset.gameObject.getType match {
             case UnitTypes.CONSTRUCTION =>
-              entries += ("Assist construction", () => ui.gui.noai.updateOrConfirmAction( ConstructionAssistAction(asset, hover) ) )
+              entries += ("Assist construction", () => ui.gui.noai.updateOrConfirmAction( ConstructionAssistAction(asset, hover, ui.gui.noai.world) ) )
             case _ =>
           }
         } ) )

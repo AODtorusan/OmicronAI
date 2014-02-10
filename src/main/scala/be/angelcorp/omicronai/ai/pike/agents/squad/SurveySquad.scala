@@ -34,6 +34,10 @@ class SurveySquad(val ai: AI, val aiExec: ActionExecutor ) extends Squad {
 
   var roi:     Option[RegionOfInterest] = None
 
+  override def preStart(){
+    context.system.eventStream.subscribe(self, classOf[NewTurn])
+  }
+
   def act = {
     case AddMember( unit ) =>
       logger.debug(s"$name was asked to absorb a new member: $unit")
@@ -62,13 +66,16 @@ class SurveySquad(val ai: AI, val aiExec: ActionExecutor ) extends Squad {
 
     case NewTurn( turn ) =>
       readyUnits.clear()
-      context.children. foreach( _ ! NewTurn(turn) )
 
     case Ready() =>
       readyUnits.add( sender )
       logger.debug( s"$name is marking $sender as ready. Waiting for: ${context.children.filterNot(readyUnits.contains)}" )
       if ( context.children.forall( readyUnits.contains ) )
         context.parent ! Ready()
+
+    case NotReady() =>
+      readyUnits.remove( sender )
+      logger.debug( s"$name is marking $sender as NOT ready. Waiting for: ${context.children.filterNot(readyUnits.contains)}" )
 
     case any =>
       logger.debug(s"Invalid message received: $any")
@@ -99,13 +106,12 @@ class SurveySquad(val ai: AI, val aiExec: ActionExecutor ) extends Squad {
             confidence < 0.9
           } )
 
-          val moveActions = for( target <- remainingSpiralPath ) yield MoveAction(asset, target)
+          val moveActions = for( target <- remainingSpiralPath ) yield MoveAction(asset, target, aiExec.world)
           SequencedAction( moveActions )
         }
         action.map( a => ActionUpdate(a) )
-      case None => Future( Sleep() )
+      case None => Future.successful( Sleep() )
     }
-
   }
 
   // Returns (center, radius)

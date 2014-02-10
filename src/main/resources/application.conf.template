@@ -6,7 +6,6 @@ ai.supervisor {
         "AdmiralPike"
     ]
     supervisedMessages = [
-        "be.angelcorp.omicronai.ai.pike.agents.NewTurn"
     ]
 }
 gui.messageTimeout = 10 # seconds
@@ -30,6 +29,10 @@ graphics {
 akka {
     loggers = ["akka.event.slf4j.Slf4jLogger"]
     loglevel = "DEBUG"
+    remote {
+        # If this is "on", Akka will log all outbound messages at DEBUG level, if off then they are not logged
+        log-sent-messages = on
+    }
     actor {
         debug {
             # enable function of LoggingReceive, which is to log any received message at DEBUG level
@@ -38,6 +41,8 @@ akka {
             autoreceive = on
             # enable DEBUG logging of actor lifecycle changes
             lifecycle = on
+            # enable DEBUG logging of subscription changes on the eventStream
+            event-stream = on
         }
     }
     world-dispatcher {

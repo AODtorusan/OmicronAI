@@ -15,6 +15,10 @@ class PikeTactical(val ai: AI, val aiExec: ActionExecutor) extends Agent {
 
   val readyUnits = mutable.Set[ActorRef]()
 
+  override def preStart() {
+    context.system.eventStream.subscribe(self, classOf[NewTurn])
+  }
+
   def act = {
     case AddMember(unit) =>
       logger.debug( s"$name was asked to assign unit $unit to a new Squad" )
@@ -26,13 +30,16 @@ class PikeTactical(val ai: AI, val aiExec: ActionExecutor) extends Agent {
     case NewTurn( turn ) =>
       logger.debug( s"$name is starting new turn actions" )
       readyUnits.clear()
-      context.children.foreach( child => child ! NewTurn( turn ) )
 
     case Ready() =>
       readyUnits.add( sender )
       logger.debug( s"$name is marking $sender as ready. Waiting for: ${context.children.filterNot(readyUnits.contains)}" )
       if ( context.children.forall( readyUnits.contains ) )
         context.parent ! Ready()
+
+    case NotReady() =>
+      readyUnits.remove( sender )
+      logger.debug( s"$name is marking $sender as NOT ready. Waiting for: ${context.children.filterNot(readyUnits.contains)}" )
 
     case ListMetadata() =>
       sender ! Nil

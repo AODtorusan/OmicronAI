@@ -20,7 +20,7 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
           noai.plannedAction match {
             case Some(mv: MoveAction) if mv.destination == selectedLocation => noai.updateOrConfirmAction(mv)
             case _ => noai.selected match {
-              case Some(asset) => noai.updateOrConfirmAction( new MoveAction(asset, selectedLocation) )
+              case Some(asset) => noai.updateOrConfirmAction( new MoveAction(asset, selectedLocation, noai.world) )
               case _ =>
             }
           }

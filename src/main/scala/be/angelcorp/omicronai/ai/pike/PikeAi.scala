@@ -17,10 +17,12 @@ import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.configuration.Configuration.config
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.ai.pike.agents.{ListMembers, PlayerGainedObject, Admiral, Self}
-import be.angelcorp.omicronai.AiSupervisor
+import be.angelcorp.omicronai.{Location, AiSupervisor}
 import be.angelcorp.omicronai.gui.screens.ui.pike._
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
-import be.angelcorp.omicronai.world.WorldUpdater
+import be.angelcorp.omicronai.world.{ReloadLocation, WorldUpdater}
+import com.lyndir.omicron.api.util.Maybe.Presence
+import akka.event.Logging
 
 
 class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
@@ -58,9 +60,9 @@ class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: 
   override def start() {
     Security.authenticate(this, key)
     getController.getGameController.addGameListener( admiral.messageListener )
-    getController.getGameController.addGameListener( new WorldUpdater(admiral.world) )
+    actorSystem.eventStream.setLogLevel(Logging.DebugLevel)
     getController.listObjects().asScala.foreach( obj => {
-      admiralRef ! PlayerGainedObject( this, obj )
+      actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
     })
     getController.getGameController.setReady()
   }

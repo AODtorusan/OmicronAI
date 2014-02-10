@@ -38,5 +38,9 @@ trait Agent extends Actor {
     logger.warn(s"Unhandled message for unit $name ($self): $message")
   }
 
+  override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
+    logger.warn(s"Agent crashed ${if (message.isDefined) "on " + message.get.toString}", reason)
+    super.preRestart(reason, message)
+  }
 }
 

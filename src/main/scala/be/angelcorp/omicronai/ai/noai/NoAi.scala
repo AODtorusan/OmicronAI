@@ -26,6 +26,8 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   Security.authenticate(this, key)
 
+  implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+
   def this( builder: Game.Builder) =
     this( builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
 
@@ -89,18 +91,21 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
     units_.result()
 
   protected[noai] def updateOrConfirmAction( action: Action) =
-    _plannedAction =
-      plannedAction match {
-        // Execute the plan (the same plan was passed in)
-        case Some(plan) if plan == action =>
-          plan.execute(this).flatMap( err => {
-            logger.info(s"Could not finish action $plan successfully: ${err.getMessage}")
-            plan.recover( err )
-          } )
-        // Update the plan
-        case _ =>
-          Some(action)
-      }
+    _plannedAction = plannedAction match {
+      // Execute the plan (the same plan was passed in)
+      case Some(plan) if plan == action =>
+        Await.result(
+          for( result <- plan.execute(this) ) yield result match {
+            case Some( err ) =>
+              logger.info(s"Could not finish action $plan successfully: ${err.getMessage}")
+              plan.recover( err )
+            case None => None
+          }, Duration(1, TimeUnit.MINUTES)
+        )
+      // Update the plan
+      case _ =>
+        Some(action)
+    }
 
 }
 

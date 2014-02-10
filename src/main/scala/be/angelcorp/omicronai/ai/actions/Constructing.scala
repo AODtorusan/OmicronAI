@@ -25,8 +25,9 @@ import be.angelcorp.omicronai.world.KnownState
 import be.angelcorp.omicronai.ai.InFogOfWar
 import be.angelcorp.omicronai.world.LocationState
 import akka.util.Timeout
+import akka.actor.ActorRef
 
-case class ConstructionStartAction( builder: Asset, destination: Location, constructedType: UnitType ) extends Action {
+case class ConstructionStartAction( builder: Asset, destination: Location, constructedType: UnitType, world: ActorRef ) extends Action {
   lazy val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   lazy val preview = new LayerRenderer {
@@ -48,41 +49,34 @@ case class ConstructionStartAction( builder: Asset, destination: Location, const
     }
   }
 
-  override def execute(ai: ActionExecutor) = wasSuccess(
-    ai.constructionStart(builder, constructedType, destination).flatMap(
-      site => ai.constructionAssist(builder, site)
-    )
-  )
+  override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) = wasSuccess( {
+    for( site  <- ai.constructionStart(builder, constructedType, destination)) yield
+      site.map( site => ai.constructionAssist(builder, site) )
+  } )
 
   override def recover(failure: ActionExecutionException) = failure match {
     case TooFar(_, _, _, _) => Some( SequencedAction(
-      Seq( MoveInRangeAction(builder, destination, 1), this )
+      Seq( MoveInRangeAction(builder, destination, 1, world), this )
     ) )
     case _ => Some(this)
   }
 
 }
 
-case class ConstructionAssistAction( builder: Asset, destination: Location) extends Action {
+case class ConstructionAssistAction( builder: Asset, destination: Location, world: ActorRef) extends Action {
   implicit val timeout: Timeout = Duration(1, TimeUnit.MINUTES)
-
   lazy val preview = new PolyLineRenderer( Seq(builder.location, destination), DrawStyle(Color.blue, 2) )
 
-  override def execute(ai: ActionExecutor) = wasSuccess( {
-    val stateOption = ask( ai.world, LocationState(destination) ).mapTo[WorldState]
-    try {
-      Await.result( stateOption, timeout.duration ) match {
-        case KnownState(_, Some(obj), _) => ai.constructionAssist(builder, obj)
-        case _ => Failure( InFogOfWar( s"Cannot access the construction site to assist (at $destination)" ) )
-      }
-    } catch {
-      case e: TimeoutException => Failure( TimedOut(s"Failed to query the state of the destination tile in time", e) )
+  override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) = wasSuccess(
+    ask(ai.world, LocationState(destination)).mapTo[WorldState].flatMap {
+      case KnownState(_, Some(obj), _) => ai.constructionAssist(builder, obj)
+      case _ => Future.successful(Failure(InFogOfWar(s"Cannot access the construction site to assist (at $destination)")))
     }
-  } )
+  )
 
   override def recover(failure: ActionExecutionException) = failure match {
     case TooFar(_, _, _, _) => Some( SequencedAction(
-        Seq( MoveInRangeAction(builder, destination, 1), this )
+        Seq( MoveInRangeAction(builder, destination, 1, world), this )
       ) )
     case _ => Some(this)
   }

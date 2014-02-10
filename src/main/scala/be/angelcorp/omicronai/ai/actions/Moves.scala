@@ -10,33 +10,35 @@ import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.gui.layerRender.{LayerRenderer, PolyLineRenderer}
 import be.angelcorp.omicronai.gui.slick.DrawStyle
 import be.angelcorp.omicronai.metadata.MetaData
+import scala.concurrent.ExecutionContext
+import akka.actor.ActorRef
 
-case class MoveAction( asset: Asset, destination: Location ) extends Action {
-  lazy val solution = new MovementPathfinder(destination, asset).findPath(asset.location)
+case class MoveAction( asset: Asset, destination: Location, world: ActorRef ) extends Action {
+  lazy val solution = new MovementPathfinder(destination, asset, world).findPath(asset.location)
 
   lazy val preview  = solution._2.layers.get("Solution path").get
 
-  def execute(ai: ActionExecutor) =
+  override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) =
     wasSuccess( ai.move(asset, solution._1.path.reverse) )
 
   override def recover(failure: ActionExecutionException) =
-    if ( asset.location == destination ) None else Some(MoveAction( asset, destination ) )
+    if ( asset.location == destination ) None else Some(MoveAction( asset, destination, world ) )
 
 }
 
-case class MoveInRangeAction( asset: Asset, destination: Location, range: Int ) extends Action {
+case class MoveInRangeAction( asset: Asset, destination: Location, range: Int, world: ActorRef ) extends Action {
   lazy val path = {
-    val completePath = new MovementPathfinder(destination, asset).findPath(asset.location)._1.path.reverse
+    val completePath = new MovementPathfinder(destination, asset, world).findPath(asset.location)._1.path.reverse
     completePath.takeWhile( step => (step δ destination) > (range - 1)  ) // -1 because to step into the required range
   }
 
   lazy val preview = new PolyLineRenderer(path, Color.yellow)
 
-  def execute(ai: ActionExecutor) =
+  override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) =
     wasSuccess( ai.move(asset, path) )
 
   override def recover(failure: ActionExecutionException) =
-    if ( asset.location == destination ) None else Some(MoveAction( asset, destination ) )
+    if ( asset.location == destination ) None else Some(MoveAction( asset, destination, world ) )
 
 }
 
@@ -54,7 +56,7 @@ case class MoveTowards( asset: Asset, direction: Direction ) extends Action {
     }
   }
 
-  def execute(ai: ActionExecutor) =
+  override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) =
     wasSuccess( ai.move(asset, direction) )
 
   override def recover(failure: ActionExecutionException) =

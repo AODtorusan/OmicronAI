@@ -20,83 +20,83 @@ class GameListenerBridge extends GameListener with Actor {
   }
 
   override def onPlayerReady(readyPlayer: IPlayer) {
-    context.parent ! PlayerReady( readyPlayer )
+    context.system.eventStream.publish( PlayerReady( readyPlayer ) )
   }
 
   override def onNewTurn(currentTurn: Turn) {
-    context.parent ! NewTurn(currentTurn)
+    context.system.eventStream.publish( NewTurn(currentTurn) )
   }
 
   override def onBaseDamaged(baseModule: IBaseModule, damage: ChangeInt) {
-    context.parent ! BaseDamaged(baseModule, damage)
+    context.system.eventStream.publish( BaseDamaged(baseModule, damage) )
   }
 
   override def onTileContents(tile: ITile, contents: Change[IGameObject]) {
-    context.parent ! TileContentsChanged(tile, contents)
+    context.system.eventStream.publish( TileContentsChanged(tile, contents) )
   }
 
   override def onTileResources(tile: ITile, resourceType: ResourceType, resourceQuantity: ChangeInt) {
-    context.parent ! TileResourcesChanged(tile, resourceType, resourceQuantity)
+    context.system.eventStream.publish( TileResourcesChanged(tile, resourceType, resourceQuantity) )
   }
 
   override def onPlayerScore(player: IPlayer, score: ChangeInt) {
-    context.parent ! PlayerScore(player, score)
+    context.system.eventStream.publish( PlayerScore(player, score) )
   }
 
   override def onPlayerGainedObject(player: IPlayer, gameObject: IGameObject) {
-    context.parent ! PlayerGainedObject(player, gameObject)
+    context.system.eventStream.publish( PlayerGainedObject(player, gameObject) )
   }
 
   override def onPlayerLostObject(player: IPlayer, gameObject: IGameObject) {
-    context.parent ! PlayerLostObject(player, gameObject)
+    context.system.eventStream.publish( PlayerLostObject(player, gameObject) )
   }
 
   override def onUnitCaptured(gameObject: IGameObject, owner: Change[IPlayer]) {
-    context.parent ! UnitCaptured(gameObject, owner)
+    context.system.eventStream.publish( UnitCaptured(gameObject, owner) )
   }
 
   override def onUnitMoved(gameObject: IGameObject, location: Change[ITile]) {
-    context.parent ! UnitMoved(gameObject, location)
+    context.system.eventStream.publish( UnitMoved(gameObject, location) )
   }
 
   override def onUnitDied(gameObject: IGameObject) {
-    context.parent ! UnitDied(gameObject)
+    context.system.eventStream.publish( UnitDied(gameObject) )
   }
 
   override def onContainerStockChanged(containerModule: IContainerModule, stock: ChangeInt) {
-    context.parent ! ContainerStockChanged(containerModule, stock)
+    context.system.eventStream.publish( ContainerStockChanged(containerModule, stock) )
   }
 
   override def onMobilityLeveled(mobilityModule: IMobilityModule, location: Change[ITile], remainingSpeed: ChangeDbl) {
-    context.parent ! MobilityLeveled( mobilityModule, location, remainingSpeed )
+    context.system.eventStream.publish( MobilityLeveled( mobilityModule, location, remainingSpeed ) )
   }
 
   override def onMobilityMoved(mobilityModule: IMobilityModule, location: Change[ITile], remainingSpeed: ChangeDbl) {
-    context.parent ! MobilityMoved( mobilityModule, location, remainingSpeed )
+    context.system.eventStream.publish( MobilityMoved( mobilityModule, location, remainingSpeed ) )
   }
 
   override def onConstructorWorked(constructorModule: IConstructorModule, remainingSpeed: ChangeInt) {
-    context.parent ! ConstructorWorked( constructorModule, remainingSpeed )
+    context.system.eventStream.publish( ConstructorWorked( constructorModule, remainingSpeed ) )
   }
 
   override def onConstructorTargeted(constructorModule: IConstructorModule, target: Change[IGameObject]) {
-    context.parent ! ConstructorTargeted( constructorModule, target )
+    context.system.eventStream.publish( ConstructorTargeted( constructorModule, target ) )
   }
 
   override def onConstructionSiteWorked(constructionSite: IConstructionSite, moduleType: PublicModuleType[_], remainingWork: ChangeInt) {
-    context.parent ! ConstructionSiteWorked( constructionSite, moduleType.asInstanceOf[PublicModuleType[_ <: IModule]], remainingWork )
+    context.system.eventStream.publish( ConstructionSiteWorked( constructionSite, moduleType.asInstanceOf[PublicModuleType[_ <: IModule]], remainingWork ) )
   }
 
   override def onWeaponFired(weaponModule: IWeaponModule, target: ITile, repeated: ChangeInt, ammunition: ChangeInt) {
-    context.parent ! WeaponFired( weaponModule, target, repeated, ammunition )
+    context.system.eventStream.publish( WeaponFired( weaponModule, target, repeated, ammunition ) )
   }
 
   override def onGameStarted(game: IGame) {
-    context.parent ! GameStarted( game )
+    context.system.eventStream.publish( GameStarted( game ) )
   }
 
   override def onGameEnded(game: IGame, victoryCondition: PublicVictoryConditionType, victor: IPlayer) {
-    context.parent ! GameEnded( game, victoryCondition, victor )
+    context.system.eventStream.publish( GameEnded( game, victoryCondition, victor ) )
   }
 
 }

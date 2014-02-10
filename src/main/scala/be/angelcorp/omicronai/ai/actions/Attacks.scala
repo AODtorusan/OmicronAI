@@ -7,6 +7,7 @@ import be.angelcorp.omicronai.ai.{ActionExecutionException, ActionExecutor}
 import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
 import be.angelcorp.omicronai.gui.{Canvas, ViewPort}
+import scala.concurrent.ExecutionContext
 
 case class AttackAction( asset: Asset, module: WeaponModule, destination: Location ) extends Action {
 
@@ -19,8 +20,8 @@ case class AttackAction( asset: Asset, module: WeaponModule, destination: Locati
     }
   }
 
-  def execute(ai: ActionExecutor) =
-    wasSuccess( ai.attack(asset, module, destination) )
+  override def execute(ai: ActionExecutor)(implicit context: ExecutionContext) =
+    wasSuccess( ai.attack(asset, module, destination) )(ai.executionContext)
 
   override def recover(failure: ActionExecutionException) = Some(this)
 

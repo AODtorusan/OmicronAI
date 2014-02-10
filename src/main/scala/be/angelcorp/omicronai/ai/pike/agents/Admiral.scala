@@ -1,7 +1,7 @@
 package be.angelcorp.omicronai.ai.pike.agents
 
 import scala.collection.mutable
-import scala.concurrent.Await
+import scala.concurrent.{ExecutionContext, Await}
 import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.actor.{TypedProps, TypedActor, Props, ActorRef}
@@ -27,6 +27,7 @@ class Admiral(protected val ai: AI) extends Agent {
   protected[pike] lazy val aiExec: ActionExecutor =
     TypedActor(context).typedActorOf(TypedProps(classOf[ActionExecutor], new ActionExecutor {
       override implicit val game = ai.getController.getGameController.getGame
+      override implicit def executionContext = context.dispatcher
       override val world = Admiral.this.world
     } ), name="Ai_Execution_Context")
   private lazy val aiExecActor = TypedActor(context).getActorRefFor(aiExec)
@@ -35,6 +36,11 @@ class Admiral(protected val ai: AI) extends Agent {
 
   def messageListener =
     Await.result(gameMessageBridge ? Self(), timeout.duration).asInstanceOf[GameListenerBridge]
+
+  override def preStart() {
+    val events = List( classOf[PlayerGainedObject], classOf[PlayerLostObject], classOf[NewTurn] )
+    events.foreach( event => context.system.eventStream.subscribe(self, event) )
+  }
 
   def act = {
     case Self() =>
@@ -58,13 +64,19 @@ class Admiral(protected val ai: AI) extends Agent {
       readyUnits += world
       readyUnits += gameMessageBridge
       readyUnits += aiExecActor
-      tacticalGeneral ! NewTurn( currentTurn )
 
     case Ready() =>
       readyUnits.add( sender )
       logger.debug( s"$name is marking $sender as ready. Waiting for: ${context.children.filterNot(readyUnits.contains)}" )
-      if ( context.children.forall( readyUnits.contains ) )
+      if ( context.children.forall( readyUnits.contains ) ) {
+        logger.info("All units have reported to be ready, done with this turn.")
+        Thread.sleep(1000)
         ai.getController.getGameController.setReady()
+      }
+
+    case NotReady() =>
+      readyUnits.remove( sender )
+      logger.debug( s"$name is marking $sender as NOT ready. Waiting for: ${context.children.filterNot(readyUnits.contains)}" )
 
     case ListMetadata() =>
       sender ! Nil
@@ -81,6 +93,8 @@ case class Self()                               extends AdmiralMessage
 
 /** Mark the sender as ready */
 case class Ready()
+/** Mark the sender as ready */
+case class NotReady()
 /** Mark the receiver to not perform any more actions until next turn */
 case class Sleep()
 

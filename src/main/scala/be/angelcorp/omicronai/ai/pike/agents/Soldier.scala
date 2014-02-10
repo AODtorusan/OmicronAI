@@ -1,14 +1,17 @@
 package be.angelcorp.omicronai.ai.pike.agents
 
-import akka.actor.{TypedProps, TypedActor, ActorRef}
+import akka.actor.{TypedProps, TypedActor}
+import akka.pattern.pipe
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.IGameObject
 import be.angelcorp.omicronai.assets.{AssetImpl, Asset}
-import be.angelcorp.omicronai.ai.{ActionExecutor, AI}
+import be.angelcorp.omicronai.ai.{Now, NextTurn, ActionExecutor, AI}
 import be.angelcorp.omicronai.ai.actions.Action
+import scala.concurrent.Future
 
 class Soldier( val ai: AI, val aiExec: ActionExecutor, obj: IGameObject ) extends Agent {
+  implicit val exec = context.dispatcher
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   logger.debug(s"Promoted asset $name to a soldier")
 
@@ -16,16 +19,21 @@ class Soldier( val ai: AI, val aiExec: ActionExecutor, obj: IGameObject ) extend
 
   var nextAction: Option[Action] = None
 
+  override def preStart() {
+    context.system.eventStream.subscribe(self, classOf[NewTurn])
+    context.parent ! ActionRequest()
+  }
+
   def act = {
     case NewTurn( turn ) =>
       nextAction match {
-        case Some( action ) => doAction( action )
+        case Some( action ) => doAction( action ) pipeTo context.parent
         case None => context.parent ! ActionRequest()
       }
 
     case ActionUpdate( newAction ) =>
       nextAction = Some( newAction )
-      doAction( newAction )
+      doAction( newAction ) pipeTo context.parent
 
     case Sleep() =>
       context.parent ! Ready()
@@ -41,17 +49,31 @@ class Soldier( val ai: AI, val aiExec: ActionExecutor, obj: IGameObject ) extend
       logger.info( s"Asset received an unknown message: $msg" )
   }
 
-  def doAction( action: Action ) = {
-    action.execute( aiExec ) match {
+  def doAction( action: Action ): Future[Any] = {
+    logger.debug(s"$name is executing action $action.")
+    action.execute(aiExec).flatMap {
       // Action successful, ask for the next action to take
       case None =>
-        context.parent ! ActionRequest()
+        logger.debug(s"Action successful for $name.")
+        nextAction = None
+        Future.successful(ActionRequest())
       // Action failed, but can be resumed next turn
-      case Some( ex ) if ex.isTurnConstrained =>
+      case Some(ex) if ex.retryHint == Now =>
+        logger.debug(s"Action failed for $name, trying recovery now (${ex.getMessage}).")
+        action.recover(ex) match {
+          case Some(newAction) =>
+            doAction(newAction)
+          case None =>
+            nextAction = None
+            Future.successful(Ready())
+        }
+      case Some(ex) if ex.retryHint == NextTurn =>
+        logger.debug(s"Action failed for $name, trying recovery next turn (${ex.getMessage}).")
         nextAction = action.recover(ex)
-        context.parent ! Ready()
-      case Some( ex ) =>
-        context.parent ! ActionFailed(action, ex)
+        Future.successful(Ready())
+      case Some(ex) =>
+        logger.debug(s"Action failed for $name, not retrying, asking for new orders.", ex)
+        Future.successful(ActionFailed(action, ex))
     }
   }
 

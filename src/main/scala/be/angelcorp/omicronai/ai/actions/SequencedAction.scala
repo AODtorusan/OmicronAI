@@ -1,25 +1,37 @@
 package be.angelcorp.omicronai.ai.actions
 
-import be.angelcorp.omicronai.ai.{ActionExecutionException, ActionExecutor}
+import be.angelcorp.omicronai.ai.{TimedOut, ActionExecutionException, ActionExecutor}
 import be.angelcorp.omicronai.gui.layerRender.{MultiplexRenderer, LayerRenderer}
+import scala.concurrent.{Future, Await, ExecutionContext}
+import scala.concurrent.duration.Duration
+import java.util.concurrent.{TimeoutException, TimeUnit}
+import akka.util.Timeout
+import scala.util.Failure
 
 case class SequencedAction( actions: Seq[Action] ) extends Action {
+  implicit val timeout: Timeout = Duration(1, TimeUnit.MINUTES)
   lazy val preview: LayerRenderer = new MultiplexRenderer( actions.map( _.preview ) )
 
   case class FailedSequence(f: ActionExecutionException, remainingActions: List[Action])
-    extends ActionExecutionException("Could not finish all sequence steps successfully", f.isTurnConstrained, f)
+    extends ActionExecutionException("Could not finish all sequence steps successfully", f.retryHint, f)
 
-  override def execute(ai: ActionExecutor): Option[ActionExecutionException] = {
+  override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) = {
     val result = actions.foldLeft((None: Option[ActionExecutionException], Nil: List[Action]))( (result, action) => {
       result._1 match {
-        case None => (action.execute(ai), List(action))
-        case e    => (e, result._2 :+ action)
+        case None =>
+          (try {
+            val res = Await.result(action.execute(ai), timeout.duration)
+            res
+          } catch {
+            case e: TimeoutException => Some( TimedOut("Failed to execute action in sequence in the allowed time", e) )
+          }, List(action))
+        case e => (e, result._2 :+ action)
       }
     })
-    result match {
+    Future.successful( result match {
       case (Some( err ), remaining) => Some( FailedSequence(err, remaining) )
       case _ => None
-    }
+    })
   }
 
   override def recover(failure: ActionExecutionException) = failure match {
