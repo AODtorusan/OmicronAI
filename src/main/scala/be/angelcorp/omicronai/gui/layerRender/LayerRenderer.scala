@@ -15,3 +15,11 @@ trait LayerRenderer {
   override def toString: String
 
 }
+
+object LayerRenderer {
+
+  def apply() = new LayerRenderer{
+    override def render(g: Graphics, view: ViewPort) = {}
+  }
+
+}

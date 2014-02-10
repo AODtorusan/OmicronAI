@@ -12,7 +12,7 @@ import com.lyndir.omicron.api.model._
 import be.angelcorp.omicronai.gui.GuiController
 import be.angelcorp.omicronai.gui.input.{GuiInputEvent, InputHandler}
 import be.angelcorp.omicronai.gui.input.MouseClicked
-import be.angelcorp.omicronai.ai.noai.actions.{ConstructionAssistAction, FireAction, MoveAction}
+import be.angelcorp.omicronai.ai.actions.{ConstructionAssistAction, AttackAction, MoveAction}
 import de.lessvoid.nifty.controls.menu.MenuControl
 import be.angelcorp.omicronai.{DOWN, Location, UP}
 import be.angelcorp.omicronai.gui.nifty.PopupController
@@ -55,7 +55,7 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
               }
             case weapon: WeaponModule =>
               entries += ( s"Fire at (${weapon.getAmmunition}/${weapon.getAmmunitionLoad})", () => { location match  {
-                case Some(destination) => ui.gui.noai.updateOrConfirmAction( FireAction(asset, weapon, destination) )
+                case Some(destination) => ui.gui.noai.updateOrConfirmAction( AttackAction(asset, weapon, destination) )
                 case _ => logger.info("Cannot shoot at that tile, not hovering over any tile!")
               } } )
             case _ => // Already in list or no action known
@@ -63,7 +63,7 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
         }
         // Right click on unit
         location.map( hover => ui.gui.noai.unitOn( hover ).map( hoverAsset => {
-          hoverAsset.objectType match {
+          hoverAsset.gameObject.getType match {
             case UnitTypes.CONSTRUCTION =>
               entries += ("Assist construction", () => ui.gui.noai.updateOrConfirmAction( ConstructionAssistAction(asset, hover) ) )
             case _ =>

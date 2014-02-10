@@ -1,22 +1,19 @@
 package be.angelcorp.omicronai.gui.screens.ui.pike
 
+import scala.Some
 import scala.collection.JavaConverters._
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber}
 import de.lessvoid.nifty.controls._
-import com.lyndir.omicron.api.model.LevelType
-import com.typesafe.scalalogging.slf4j.Logger
+import de.lessvoid.nifty.controls.ListBox.SelectionMode
 import org.slf4j.LoggerFactory
 import org.newdawn.slick.{Graphics, Color}
-import be.angelcorp.omicronai.SupervisorMessage
+import com.lyndir.omicron.api.model.LevelType
+import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicronai.ai.pike.PikeInterface
-import be.angelcorp.omicronai.ai.pike.agents.ValidateAction
 import be.angelcorp.omicronai.gui.{ViewPort, GuiController}
 import be.angelcorp.omicronai.gui.layerRender._
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
-import be.angelcorp.omicronai.ai.pike.agents.ValidateAction
-import scala.Some
 import be.angelcorp.omicronai.SupervisorMessage
-import de.lessvoid.nifty.controls.ListBox.SelectionMode
 
 class LayerController(val pikeInt: PikeInterface) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -74,19 +71,20 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
     lb.addItem( new LayerRenderer {
       val logger = Logger( LoggerFactory.getLogger( getClass ) )
       def selected = {
-        val messagesList = uiScreen.findNiftyControl("messageList", classOf[ListBox[SupervisorMessage]])
-        messagesList.getSelection.asScala.headOption.flatMap( _.message match {
-          case m: ValidateAction => Some(m)
-          case _ => None
-        } )
+        ???
+//        val messagesList = uiScreen.findNiftyControl("messageList", classOf[ListBox[SupervisorMessage]])
+//        messagesList.getSelection.asScala.headOption.flatMap( _.message match {
+//          case m: ValidateAction => Some(m)
+//          case _ => None
+//        } )
       }
       def render(g: Graphics, view: ViewPort) {
-        selected match {
-          case Some(a) =>
-            logger.warn("No way to retrieve metadata")
-          //for (m <- a.action.metadata; l <- m.layers) l._2.render(g, view)
-          case None =>
-        }
+//        selected match {
+//          case Some(a) =>
+//            logger.warn("No way to retrieve metadata")
+//          for (m <- a.action.metadata; l <- m.layers) l._2.render(g, view)
+//          case None =>
+//        }
       }
       override def toString: String = "Planned action preview"
     } )

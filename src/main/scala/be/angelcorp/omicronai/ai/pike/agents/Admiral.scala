@@ -4,28 +4,34 @@ import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import akka.util.Timeout
-import akka.actor.{Props, ActorRef}
+import akka.actor.{TypedProps, TypedActor, Props, ActorRef}
 import akka.pattern._
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
-import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.configuration.Configuration
-import Configuration._
+import be.angelcorp.omicronai.assets.{AssetImpl, Asset}
+import be.angelcorp.omicronai.configuration.Configuration._
 import be.angelcorp.omicronai.world.World
-import be.angelcorp.omicronai.ai.AI
+import be.angelcorp.omicronai.ai.{ActionExecutor, ActionExecutionException, AI}
+import be.angelcorp.omicronai.ai.actions.Action
 
-class Admiral(owner: AI) extends Agent {
+class Admiral(protected val ai: AI) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit def timeout: Timeout = config.ai.messageTimeout seconds;
 
   // Joint Chiefs of Staff
-  protected[pike] lazy val world             = context.actorOf(World(owner, owner.getController.getGameController.getGame.getLevelSize), name = "World" )
-  protected[pike] lazy val tacticalGeneral   = context.actorOf(Props(classOf[PikeTactical], owner, world), name = "TacticalGeneral"   )
+  protected[pike] lazy val world             = context.actorOf(World(ai, ai.getController.getGameController.getGame.getLevelSize), name = "World" )
+  protected[pike] lazy val tacticalGeneral   = context.actorOf(Props(classOf[PikeTactical], ai, aiExec), name = "TacticalGeneral"   )
   protected[pike] lazy val gameMessageBridge = context.actorOf(Props[GameListenerBridge], name = "GameListenerBridge")
 
+  protected[pike] lazy val aiExec: ActionExecutor =
+    TypedActor(context).typedActorOf(TypedProps(classOf[ActionExecutor], new ActionExecutor {
+      override implicit val game = ai.getController.getGameController.getGame
+      override val world = Admiral.this.world
+    } ), name="Ai_Execution_Context")
+  private lazy val aiExecActor = TypedActor(context).getActorRefFor(aiExec)
+
   private val readyUnits = mutable.Set[ActorRef]()
-  private val assets = mutable.HashMap[IGameObject, Asset]()
 
   def messageListener =
     Await.result(gameMessageBridge ? Self(), timeout.duration).asInstanceOf[GameListenerBridge]
@@ -35,31 +41,30 @@ class Admiral(owner: AI) extends Agent {
       sender ! this
 
     case PlayerGainedObject( player, unit ) =>
-      logger.info(s"Ai ${owner.getName} received new unit: $unit")
-      require( player == owner )
-      val asset = new Asset(owner, unit)
-      assets += ((unit, asset))
-      tacticalGeneral ! AddMember( asset )
+      logger.info(s"Ai ${ai.getName} received new unit: $unit")
+      require( player == ai )
+      tacticalGeneral ! AddMember( unit )
 
     case PlayerLostObject( player, unit) =>
-      if (player == owner) {
+      if (player == ai) {
         logger.info(s"Lost object: $unit")
       } else {
         logger.info(s"Enemy $player lost object: $unit")
       }
 
     case NewTurn( currentTurn ) =>
-      logger.info(s"Ai ${owner.getName} is starting turn ${currentTurn.getNumber}")
+      logger.info(s"Ai ${ai.getName} is starting turn ${currentTurn.getNumber}")
       readyUnits.clear()
       readyUnits += world
       readyUnits += gameMessageBridge
+      readyUnits += aiExecActor
       tacticalGeneral ! NewTurn( currentTurn )
 
     case Ready() =>
       readyUnits.add( sender )
       logger.debug( s"$name is marking $sender as ready. Waiting for: ${context.children.filterNot(readyUnits.contains)}" )
       if ( context.children.forall( readyUnits.contains ) )
-        owner.getController.getGameController.setReady()
+        ai.getController.getGameController.setReady()
 
     case ListMetadata() =>
       sender ! Nil
@@ -74,26 +79,16 @@ class Admiral(owner: AI) extends Agent {
 sealed abstract class AdmiralMessage
 case class Self()                               extends AdmiralMessage
 
-/** Asks children to submit actions that they will perform */
-case class SubmitActions() extends AdmiralMessage
-case class Ready() extends AdmiralMessage
-/** Reply by a child to a parent to clear an action for execution */
-case class ValidateAction( action: Action, unit: ActorRef ) extends AdmiralMessage
-/** Answer from a parent that an action may be executed */
-case class ExecuteAction( action: Action ) extends AdmiralMessage
-/** Answer from a parent that an action may not be executed */
-case class RevokeAction( action: Action ) extends AdmiralMessage
-/** Answer from a parent that an alternative action should be executed */
-case class OverruleAction( oldAction: Action, newAction: Action ) extends AdmiralMessage
+/** Mark the sender as ready */
+case class Ready()
+/** Mark the receiver to not perform any more actions until next turn */
+case class Sleep()
 
-/** Ask a unit to simulate an action (check if it can execute an action) */
-case class SimulateAction( action: Action )
-/** Result of an action */
-sealed abstract class ActionResult
-case class ActionSuccess( action: Action, updates: Iterator[Any] = Iterator() ) extends ActionResult
-case class ActionFailed(  action: Action, message: String, reason: FailureReason = UnknownError() ) extends ActionResult
+case class ActionRequest()
+case class ActionUpdate( action: Action )
+case class ActionFailed( action: Action, ex: ActionExecutionException )
 
-case class AddMember(  unit: Asset )       extends AdmiralMessage
+case class AddMember(  unit: IGameObject ) extends AdmiralMessage
 case class ListMembers()                   extends AdmiralMessage
 case class ListMetadata()                  extends AdmiralMessage
 

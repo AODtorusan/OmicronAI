@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import be.angelcorp.omicronai.{Direction, Location}
 import be.angelcorp.omicronai.metadata.{PathfinderMetadata, MetaData}
 import be.angelcorp.omicronai.world.WorldGraph
+import be.angelcorp.omicronai.assets.Asset
 
 abstract class AStar {
 
@@ -49,20 +50,6 @@ abstract class AStar {
     }
     throw new IllegalArgumentException("AStar did not find any solution")
   }
-}
-
-object AStar{
-  val logger = Logger( LoggerFactory.getLogger( getClass ) )
-
-  def apply( destination: Location ) = new AStar {
-    def costGraph = new WorldGraph[Null, Double] {
-      def tileAt( l: Location ) = ???
-      def edgeAt( l: Location, d: Direction ) = Some(1.0)
-    }
-    def heuristic(fromTile: Location) = 2.0 * math.abs(fromTile δ destination)
-    def goalReached(solution: AStarSolution) = destination == solution.tile
-  }
-
 }
 
 class AStarSolution( val g: Double, val h: Double, val path: List[ Location ] ) {

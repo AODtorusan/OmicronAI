@@ -1,13 +1,23 @@
 package be.angelcorp.omicronai.ai.pike.agents
 
+import akka.actor.Actor
+import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api._
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.IConstructorModule.IConstructionSite
 import be.angelcorp.omicronai.Location
 
-class GameListenerBridge extends GameListener with Agent {
+class GameListenerBridge extends GameListener with Actor {
+  val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  def act = Map.empty
+  def receive = {
+    case Self() => sender ! this
+  }
+
+  override def unhandled(message: Any) {
+    logger.warn(s"Unhandled message for unit GameListenerBridge ($self): $message")
+  }
 
   override def onPlayerReady(readyPlayer: IPlayer) {
     context.parent ! PlayerReady( readyPlayer )

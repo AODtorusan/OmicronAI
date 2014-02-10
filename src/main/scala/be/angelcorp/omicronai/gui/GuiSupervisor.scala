@@ -17,7 +17,9 @@ class GuiSupervisor(admiral: ActorRef, player: PikeAi, var listener: Option[GuiS
   // [actor, isActorOnAuto]
   private val onAuto        = mutable.Map[ActorRef, Boolean]()
 
-  def isOnAuto( unit: ActorRef ) = onAuto.getOrElseUpdate(unit, config.ai.supervisor.defaultAuto )
+  def isOnAuto( unit: ActorRef ) = onAuto.getOrElseUpdate(unit,
+    !config.ai.supervisor.startActorPaused( unit.path )
+  )
 
   def toggleAuto( unit: ActorRef ) {
     val newMode = !isOnAuto( unit )

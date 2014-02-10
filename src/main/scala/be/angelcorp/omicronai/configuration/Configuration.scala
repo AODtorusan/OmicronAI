@@ -1,8 +1,12 @@
 package be.angelcorp.omicronai.configuration
 
-import collection.mutable
+import scala.collection.mutable
+import scala.collection.JavaConverters._
 import com.typesafe.config.{ConfigException, Config, ConfigFactory}
 import org.slf4j.LoggerFactory
+import be.angelcorp.omicronai.configuration.ConfigHelpers._
+import akka.actor.{ActorPath, ActorRef}
+import scala.util.matching.Regex
 
 class Configuration( config: Config ) {
   val ai = new AISettings( config.getConfig("ai") )
@@ -24,16 +28,17 @@ class AISettings(config: Config) {
 }
 
 class AiSupervisorSettings(config: Config) {
-  private val cache = mutable.Map[Class[_], Boolean]()
+  private val autoCache = mutable.Map[ActorPath, Boolean]()
 
-  val defaultAuto = config.getBoolean( "defaultAuto" )
-  def forwardOnFor( m: Any ) = cache.getOrElseUpdate( m.getClass, {
-    try {
-      config.getBoolean( m.getClass.getName )
-    } catch {
-      case e: ConfigException.Missing => false
-    }
-  } )
+  val pausedActors       = config.getOptionalStringList( "pausedActors" ).map(_.asScala).getOrElse(Nil).map( s => new Regex(s).pattern )
+  val supervisedMessages = config.getOptionalStringList( "supervisedMessages" ).map(_.asScala).getOrElse(Nil).map( s => Class.forName(s) )
+
+  def startActorPaused( a: ActorPath ) = autoCache.getOrElseUpdate( a,
+    pausedActors.exists( p => p.matcher(a.name).matches() )
+  )
+
+  def isMessagesSupervised( m: Any ) = supervisedMessages.contains(m.getClass)
+
 }
 
 class GuiSettings(config: Config) {

@@ -1,30 +1,34 @@
 package be.angelcorp.omicronai.ai.pike.agents
 
+import akka.actor.{TypedProps, TypedActor, ActorRef}
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.Player
-import be.angelcorp.omicronai.Location
-import be.angelcorp.omicronai.assets.Asset
+import com.lyndir.omicron.api.model.IGameObject
+import be.angelcorp.omicronai.assets.{AssetImpl, Asset}
+import be.angelcorp.omicronai.ai.{ActionExecutor, AI}
+import be.angelcorp.omicronai.ai.actions.Action
 
-class Soldier( val owner: Player, val asset: Asset ) extends Agent {
+class Soldier( val ai: AI, val aiExec: ActionExecutor, obj: IGameObject ) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   logger.debug(s"Promoted asset $name to a soldier")
 
+  val asset: Asset = TypedActor(context).typedActorOf(TypedProps(classOf[AssetImpl], new AssetImpl(ai, obj)), name="Asset")
+
+  var nextAction: Option[Action] = None
+
   def act = {
-    case SimulateAction( action ) =>
-      logger.debug(s"$name is simulating action: $action")
-      sender ! performAction( action, simulate = true )
+    case NewTurn( turn ) =>
+      nextAction match {
+        case Some( action ) => doAction( action )
+        case None => context.parent ! ActionRequest()
+      }
 
-    case ExecuteAction( action ) =>
-      logger.debug(s"$name is executing action: $action")
-      context.parent ! performAction( action, simulate = false )
+    case ActionUpdate( newAction ) =>
+      nextAction = Some( newAction )
+      doAction( newAction )
 
-    case RevokeAction( action ) =>
-      logger.debug(s"$name is skipping action: $action")
-
-    case OverruleAction(oldAction, newAction) =>
-      logger.debug(s"$name wanted to do the following with ($oldAction) but was overruled to do: $newAction")
-      context.parent ! performAction( newAction, simulate = false )
+    case Sleep() =>
+      context.parent ! Ready()
 
     case GetAsset() =>
       logger.debug(s"Soldier $name was asked for its asset by $sender")
@@ -37,45 +41,21 @@ class Soldier( val owner: Player, val asset: Asset ) extends Agent {
       logger.info( s"Asset received an unknown message: $msg" )
   }
 
-  def performAction( action: Action, simulate: Boolean = false ): ActionResult = action match {
-    case MoveTo(destination) =>
-      val origin = asset.gameObject.checkLocation().get: Location
-      logger.debug( s"Moving $name from $origin to $destination (simulate=$simulate)" )
-
-      origin δ destination match {
-        case 0 =>
-          logger.debug(s"Tried to move $name by 0 tiles (no move, simulate=$simulate)")
-          ActionSuccess( action )
-        case 1 =>
-          asset.mobility match {
-            case Some(m) =>
-              implicit val game = m.getGameObject.checkLocation().get.getLevel.getGame
-              val move = m.movement( destination )
-              if (move.isPossible) {
-                if (simulate || (try { move.execute(); true } catch { case e: IllegalStateException => false }) ) {
-                  ActionSuccess( action )
-                } else {
-                  ActionFailed( action, s"Asset $name cannot move to $destination" )
-                }
-              } else {
-                ActionFailed( action, s"Asset $name cannot move to $destination, insufficient of speed or no path", OutOfSpeed() )
-              }
-            case None =>
-              ActionFailed( action, s"Tried to move object $name to $destination, but that unit cannot move (no mobility module)", MissingModule() )
-          }
-        case distance =>
-          ActionFailed( action, s"Cannot moving asset $name by more than one tile at once ($distance)" )
-      }
-    case _ =>
-      logger.warn(s"$name does not know how to execute action: $action")
-      ActionFailed( action, s"Unknown action: $action" )
-
+  def doAction( action: Action ) = {
+    action.execute( aiExec ) match {
+      // Action successful, ask for the next action to take
+      case None =>
+        context.parent ! ActionRequest()
+      // Action failed, but can be resumed next turn
+      case Some( ex ) if ex.isTurnConstrained =>
+        nextAction = action.recover(ex)
+        context.parent ! Ready()
+      case Some( ex ) =>
+        context.parent ! ActionFailed(action, ex)
+    }
   }
 
 }
 
 sealed abstract class SoldierMessage
 case class GetAsset()                           extends SoldierMessage
-
-sealed abstract class Action
-case class MoveTo( location: Location ) extends Action

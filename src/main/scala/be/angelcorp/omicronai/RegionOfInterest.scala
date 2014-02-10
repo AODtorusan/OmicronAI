@@ -9,7 +9,8 @@ trait RegionOfInterest {
 
   def tiles: Seq[Location]
 
-  def size: Int = tiles.size
+  /** Radius of the bounding sphere from the center */
+  def radius: Int
 
   def center: Location
 
@@ -30,6 +31,11 @@ class SquareArea(val lowerBound: Location, val upperBound: Location) extends Reg
 
     du > 0 && dv > 0 && dh > 0&& du <= sizeU && dv <= sizeV && dh <= sizeH
   }
+
+  val radius =
+    (for (u <- Seq(lowerBound.u, upperBound.u);
+          v <- Seq(lowerBound.v, upperBound.v);
+          h <- Seq(lowerBound.h, upperBound.h)) yield center δ new Location( u, v, h, center.size ) ).max
 
   lazy val tiles: Seq[Location] =
     for (du <- 0 to (lowerBound δu upperBound);
@@ -61,6 +67,8 @@ class TileCollection(locations: Set[Location]) extends RegionOfInterest {
     val mean = ( (sum._1 / N).toInt, (sum._2 / N).toInt, (sum._3 / N).toInt )
     new Location( mean._1, mean._2, mean._3, locations.head.size )
   }
+
+  lazy val radius = tiles.map( _ δ center ).max
 
 }
 

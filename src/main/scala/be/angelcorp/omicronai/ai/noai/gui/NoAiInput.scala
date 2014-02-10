@@ -7,7 +7,7 @@ import be.angelcorp.omicronai.ai.noai.NoAi
 import be.angelcorp.omicronai.gui.input.KeyReleased
 import be.angelcorp.omicronai.gui.input.MouseClicked
 import be.angelcorp.omicronai.Location
-import be.angelcorp.omicronai.ai.noai.actions.MoveAction
+import be.angelcorp.omicronai.ai.actions.MoveAction
 
 class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
 

@@ -2,11 +2,12 @@ ai.engine = "PikeAI"
 ai.name   = "Flubber Master 3000"
 ai.messageTimeout = 300 # seconds
 ai.supervisor {
-    defaultAuto = false
-
-    be.angelcorp.omicronai.ai.pike.agents.NewTurn        = true
-    be.angelcorp.omicronai.ai.pike.agents.ValidateAction = true
-
+    pausedActors = [
+        "AdmiralPike"
+    ]
+    supervisedMessages = [
+        "be.angelcorp.omicronai.ai.pike.agents.NewTurn"
+    ]
 }
 gui.messageTimeout = 10 # seconds
 pathfinder.layerChangePenalty = 0

@@ -40,16 +40,16 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
   private val messageLabel = uiScreen.findNiftyControl("messages", classOf[de.lessvoid.nifty.controls.Label])
 
   private val gridRenderer      = new GridRenderer(noai)
-  private val resourceRenderer  = new ResourceRenderer(noai.world.worldRef)
+  private val resourceRenderer  = new ResourceRenderer(noai.world)
 
   protected[gui] var hideGame     = false
   protected[gui] var gridOn       = true
   protected[gui] var resourcesOn  = false
 
   private val staticLayers = mutable.ListBuffer[ LayerRenderer ]()
-  staticLayers += new TexturedWorldRenderer( noai.world.worldRef )
-  staticLayers += new ObjectLayer( noai.world.worldRef, o => o.getOwner.isPresent && o.getOwner.get() == noai, "Friendly units", Color.green, Color.green )
-  staticLayers += new ObjectLayer( noai.world.worldRef, o => o.getOwner.isPresent && o.getOwner.get() != noai, "Enemy units",    Color.red,   new Color(0.5f, 0f, 0f) )
+  staticLayers += new TexturedWorldRenderer( noai.world )
+  staticLayers += new ObjectLayer( noai.world, o => o.getOwner.isPresent && o.getOwner.get() == noai, "Friendly units", Color.green, Color.green )
+  staticLayers += new ObjectLayer( noai.world, o => o.getOwner.isPresent && o.getOwner.get() != noai, "Enemy units",    Color.red,   new Color(0.5f, 0f, 0f) )
   staticLayers += new LayerRenderer {
     // Renders the currently selected unit
     def render(g: Graphics, view: ViewPort) {
@@ -61,7 +61,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
       }
     }
   }
-  staticLayers += new FieldOfView( noai.world.worldRef )
+  staticLayers += new FieldOfView( noai.world )
 
   new Thread {
     override def run() {

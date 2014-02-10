@@ -10,18 +10,19 @@ import com.lyndir.omicron.api.model.Color.Template._
 import com.lyndir.omicron.api.GameListener
 import be.angelcorp.omicronai.configuration.Configuration
 import Configuration._
-import be.angelcorp.omicronai.ai.AI
+import be.angelcorp.omicronai.ai.{ActionExecutor, AI}
 import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.Location
-import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.ai.noai.actions.NoAiAction
-import be.angelcorp.omicronai.world.{WorldSize, World, WorldInterface}
+import be.angelcorp.omicronai.assets.{AssetImpl, Asset}
+import be.angelcorp.omicronai.ai.actions.Action
+import be.angelcorp.omicronai.world.{WorldUpdater, WorldSize, World, WorldInterface}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeUnit
+import akka.actor.ActorSystem
 
-class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
+class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   Security.authenticate(this, key)
 
@@ -32,7 +33,7 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
     override def onPlayerGainedObject(player: IPlayer, gameObject: IGameObject): Unit = {
       if (player == NoAi.this) {
         logger.debug(s"New unit: $gameObject")
-        units_ += new Asset( NoAi.this, gameObject )
+        units_ += new AssetImpl( NoAi.this, gameObject )
       }
     }
     override def onPlayerLostObject(player: IPlayer, gameObject: IGameObject): Unit = {
@@ -45,12 +46,13 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
     }
   }
 
-  lazy val world = World.withInterface(this, gameSize)
+  val actorSystem = ActorSystem("WorldActorSystem")
+  lazy val world = actorSystem.actorOf( World(this, gameSize) )
 
   override def start(): Unit = {
-    getController.listObjects().asScala.foreach( obj => units_ += new Asset(this, obj) )
+    getController.listObjects().asScala.foreach( obj => units_ += new AssetImpl(this, obj) )
     gameController.addGameListener( assetListUpdater )
-    gameController.addGameListener(  world.listener )
+    gameController.addGameListener( new WorldUpdater(world) )
     super.start()
   }
 
@@ -61,58 +63,19 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
 
   private def gameController = getController.getGameController
 
-  private[noai] implicit lazy val game = getController.getGameController.getGame
-  private[noai] lazy val gameSize: WorldSize = game.getLevelSize
+  implicit lazy val game = getController.getGameController.getGame
+  protected[noai] lazy val gameSize: WorldSize = game.getLevelSize
 
   private val units_ = ListBuffer[Asset]()
 
-  protected[noai] var _plannedAction: Option[NoAiAction] = None
+  protected[noai] var _plannedAction: Option[Action] = None
   protected[noai] def plannedAction = _plannedAction
 
   protected[noai] var _selected: Option[Asset] = None
   protected[noai] def selected = _selected
 
-
-  protected[noai] def attack( asset: Asset, weaponModule: WeaponModule, target: Location): Boolean = {
-    if (!units_.contains(asset)) {
-      logger.warn(s"Tried to attack with unit $asset, but that unit is not owned by the noai instance"); false
-    } else {
-      asset.weapons.find( _ == weaponModule ) match {
-        case Some(module) =>
-          val success = module.fireAt( target )
-          logger.trace( if (success) s"$asset shot at $target with $module" else s"Asset $asset could not successfully fire at $target with $module")
-          success
-        case None =>
-          logger.warn(s"Could not find weapon module $weaponModule on unit $asset"); false
-      }
-    }
-  }
-
   protected[noai] def endTurn(): Unit =
     gameController.setReady()
-
-  protected[noai] def move( asset: Asset, path: Seq[Location]): Unit = {
-    if (!units_.contains(asset))
-      logger.warn(s"Tried to move unit $asset, but that unit is not owned by the noai instance")
-    else if (asset.location != path.head)
-      logger.warn(s"Tried to move unit $asset, but the planned path does not start at the asset location: $path")
-    else {
-      asset.mobility match {
-        case Some(module) =>
-          path.drop(1).foreach( target => {
-            waitForWorld()
-            val action = module.movement( target )
-            if (action.isPossible) {
-              logger.trace(s"Moving asset $asset to $target")
-              action.execute()
-            } else
-              logger.trace(s"Cannot move asset $asset to $target")
-          } )
-        case None =>
-          logger.warn(s"Tried to move unit $asset, but this unit cannot move (no mobility module)")
-      }
-    }
-  }
 
   protected[noai] def select( asset: Asset): Unit = {
     _selected = Some(asset)
@@ -125,15 +88,19 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
   protected[noai] def units =
     units_.result()
 
-  protected[noai] def updateOrConfirmAction( action: NoAiAction) =
-    plannedAction match {
-      case Some(plan) if plan == action => _plannedAction = plan.execute(this)
-      case _ => _plannedAction = Some(action)
-    }
-
-  protected[noai] def waitForWorld() {
-    Await.result( world.isReady, Duration(1, TimeUnit.MINUTES))
-  }
+  protected[noai] def updateOrConfirmAction( action: Action) =
+    _plannedAction =
+      plannedAction match {
+        // Execute the plan (the same plan was passed in)
+        case Some(plan) if plan == action =>
+          plan.execute(this).flatMap( err => {
+            logger.info(s"Could not finish action $plan successfully: ${err.getMessage}")
+            plan.recover( err )
+          } )
+        // Update the plan
+        case _ =>
+          Some(action)
+      }
 
 }
 

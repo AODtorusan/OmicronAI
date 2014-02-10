@@ -87,7 +87,7 @@ object World {
 sealed abstract class WorldActorMsg
 private case class GetWorldListener()               extends WorldActorMsg
 private case class ReloadLocation(l: Location)      extends WorldActorMsg
-private case class ReloadReady()                    extends WorldActorMsg
+case class ReloadReady()                            extends WorldActorMsg
 case class LocationState (l: Location)              extends WorldActorMsg
 case class LocationStates(l: Seq[Location])         extends WorldActorMsg
 

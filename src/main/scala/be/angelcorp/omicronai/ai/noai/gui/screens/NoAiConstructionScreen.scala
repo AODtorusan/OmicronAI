@@ -13,7 +13,7 @@ import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.Location
 import de.lessvoid.nifty.controls.{ListBox, TreeBox, ButtonClickedEvent}
 import com.lyndir.omicron.api.model.{ModuleType, UnitTypes, UnitType, ConstructorModule}
-import be.angelcorp.omicronai.ai.noai.actions.ConstructionStartAction
+import be.angelcorp.omicronai.ai.actions.ConstructionStartAction
 
 object NoAiConstructionScreen extends GuiScreen {
   val name = "buildScreen"
