@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.ai.pike.agents
+package be.angelcorp.omicronai.bridge
 
 import akka.actor.Actor
 import org.slf4j.LoggerFactory
@@ -7,9 +7,14 @@ import com.lyndir.omicron.api._
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.IConstructorModule.IConstructionSite
 import be.angelcorp.omicronai.Location
+import be.angelcorp.omicronai.ai.pike.agents.Self
 
-class GameListenerBridge extends GameListener with Actor {
+class GameListenerBridge( gameController: GameController ) extends GameListener with Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
+
+  override def preStart() {
+    gameController.addGameListener( this )
+  }
 
   def receive = {
     case Self() => sender ! this

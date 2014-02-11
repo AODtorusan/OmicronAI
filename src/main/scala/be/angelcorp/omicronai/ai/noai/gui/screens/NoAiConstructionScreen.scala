@@ -1,19 +1,18 @@
 package be.angelcorp.omicronai.ai.noai.gui.screens
 
 import scala.collection.JavaConverters._
-import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber, Nifty}
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
-import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
-import be.angelcorp.omicronai.gui.nifty.NiftyConstants
-import NiftyConstants._
-import be.angelcorp.omicronai.gui.screens.GuiScreen
-import be.angelcorp.omicronai.assets.Asset
+import de.lessvoid.nifty.controls.{ListBox, ButtonClickedEvent}
+import com.typesafe.scalalogging.slf4j.Logger
+import com.lyndir.omicron.api.model.{ModuleType, UnitTypes, UnitType}
 import be.angelcorp.omicronai.Location
-import de.lessvoid.nifty.controls.{ListBox, TreeBox, ButtonClickedEvent}
-import com.lyndir.omicron.api.model.{ModuleType, UnitTypes, UnitType, ConstructorModule}
 import be.angelcorp.omicronai.ai.actions.ConstructionStartAction
+import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
+import be.angelcorp.omicronai.bridge.Asset
+import be.angelcorp.omicronai.gui.nifty.NiftyConstants._
+import be.angelcorp.omicronai.gui.screens.GuiScreen
 
 object NoAiConstructionScreen extends GuiScreen {
   val name = "buildScreen"

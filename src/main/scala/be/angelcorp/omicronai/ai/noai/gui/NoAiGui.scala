@@ -1,29 +1,16 @@
 package be.angelcorp.omicronai.ai.noai.gui
 
-import de.lessvoid.nifty.{NiftyEventAnnotationProcessor, Nifty}
+import scala.Some
+import scala.collection.mutable
+import de.lessvoid.nifty.Nifty
+import org.newdawn.slick.{Graphics, Color}
+import be.angelcorp.omicronai.Location
+import be.angelcorp.omicronai.ai.noai.{NoAiGameListener, NoAi}
+import be.angelcorp.omicronai.ai.noai.gui.screens.NoAiConstructionScreenController
+import be.angelcorp.omicronai.bridge.Asset
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.layerRender._
-import be.angelcorp.omicronai.ai.noai.{NoAiGameListener, NoAi}
-import scala.collection.mutable.ListBuffer
-import org.newdawn.slick.{Graphics, Color}
-import be.angelcorp.omicronai.ai.noai.gui.screens.{NoAiConstructionScreenController, NoAiPopupController, NoAiSideBarController}
-import com.lyndir.omicron.api.model.LevelType
-import scala.collection.mutable
-import scala.Some
-import javax.swing.SwingUtilities
-import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.{HexTile, Location}
-import be.angelcorp.omicronai.gui.textures.Textures
 import be.angelcorp.omicronai.gui.slick.DrawStyle
-import be.angelcorp.omicronai.world.{GhostState, KnownState}
-import scala.concurrent._
-import java.util.concurrent.{TimeoutException, TimeUnit}
-import scala.concurrent.duration.Duration
-import be.angelcorp.omicronai.world.GhostState
-import scala.Some
-import be.angelcorp.omicronai.world.KnownState
-import com.typesafe.scalalogging.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
   val listener = new NoAiGameListener( this )
@@ -36,7 +23,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
   nifty.addScreen( constructionScreen.getScreenId, constructionScreen )
   nifty.gotoScreen( uiScreen.getScreenId )
 
-  private val messages = ListBuffer[String]()
+  private val messages = mutable.ListBuffer[String]()
   private val messageLabel = uiScreen.findNiftyControl("messages", classOf[de.lessvoid.nifty.controls.Label])
 
   private val gridRenderer      = new GridRenderer(noai)
@@ -92,7 +79,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
   }
 
   def activeLayers: Seq[LayerRenderer] = if (hideGame) Nil else {
-    val layers = ListBuffer[LayerRenderer]( staticLayers: _* )
+    val layers = mutable.ListBuffer[LayerRenderer]( staticLayers: _* )
     if (gridOn)                       layers += gridRenderer
     if (noai.plannedAction.isDefined) layers += noai.plannedAction.get.preview
     if (resourcesOn)                  layers += resourceRenderer

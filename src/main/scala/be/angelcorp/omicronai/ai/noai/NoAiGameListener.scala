@@ -71,7 +71,12 @@ class NoAiGameListener( gui: NoAiGui ) extends GameListener {
   }
 
   override def onConstructorTargeted(constructorModule: IConstructorModule, target: Change[IGameObject]) {
-    gui.message( s"${constructorModule.getGameObject.getType.getTypeName} is now building on ${target.getTo.getType.getTypeName}." )
+    try {
+      gui.message( s"${constructorModule.getGameObject.getType.getTypeName} is now building on ${target.getTo.getType.getTypeName}." )
+    } catch {
+      case e: Throwable =>
+        println("oops")
+    }
   }
 
   override def onConstructionSiteWorked(constructionSite: IConstructionSite, moduleType: PublicModuleType[_], remainingWork: ChangeInt): Unit = {

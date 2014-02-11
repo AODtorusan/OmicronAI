@@ -1,19 +1,20 @@
 package be.angelcorp.omicronai.ai.pike.agents
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Await}
 import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.actor.{TypedProps, TypedActor, Props, ActorRef}
-import akka.pattern._
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
-import be.angelcorp.omicronai.assets.{AssetImpl, Asset}
 import be.angelcorp.omicronai.configuration.Configuration._
 import be.angelcorp.omicronai.world.World
-import be.angelcorp.omicronai.ai.{ActionExecutor, ActionExecutionException, AI}
-import be.angelcorp.omicronai.ai.actions.Action
+import be.angelcorp.omicronai.ai.actions.{ActionExecutionException, ActionExecutor, Action}
+import be.angelcorp.omicronai.bridge._
+import be.angelcorp.omicronai.bridge.NewTurn
+import be.angelcorp.omicronai.bridge.PlayerGainedObject
+import be.angelcorp.omicronai.bridge.PlayerLostObject
+import be.angelcorp.omicronai.ai.AI
 
 class Admiral(protected val ai: AI) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -22,7 +23,6 @@ class Admiral(protected val ai: AI) extends Agent {
   // Joint Chiefs of Staff
   protected[pike] lazy val world             = context.actorOf(World(ai, ai.getController.getGameController.getGame.getLevelSize), name = "World" )
   protected[pike] lazy val tacticalGeneral   = context.actorOf(Props(classOf[PikeTactical], ai, aiExec), name = "TacticalGeneral"   )
-  protected[pike] lazy val gameMessageBridge = context.actorOf(Props[GameListenerBridge], name = "GameListenerBridge")
 
   protected[pike] lazy val aiExec: ActionExecutor =
     TypedActor(context).typedActorOf(TypedProps(classOf[ActionExecutor], new ActionExecutor {
@@ -33,9 +33,6 @@ class Admiral(protected val ai: AI) extends Agent {
   private lazy val aiExecActor = TypedActor(context).getActorRefFor(aiExec)
 
   private val readyUnits = mutable.Set[ActorRef]()
-
-  def messageListener =
-    Await.result(gameMessageBridge ? Self(), timeout.duration).asInstanceOf[GameListenerBridge]
 
   override def preStart() {
     val events = List( classOf[PlayerGainedObject], classOf[PlayerLostObject], classOf[NewTurn] )
@@ -62,7 +59,6 @@ class Admiral(protected val ai: AI) extends Agent {
       logger.info(s"Ai ${ai.getName} is starting turn ${currentTurn.getNumber}")
       readyUnits.clear()
       readyUnits += world
-      readyUnits += gameMessageBridge
       readyUnits += aiExecActor
 
     case Ready() =>

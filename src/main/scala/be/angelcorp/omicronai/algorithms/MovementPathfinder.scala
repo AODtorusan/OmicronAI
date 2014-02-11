@@ -1,21 +1,17 @@
 package be.angelcorp.omicronai.algorithms
 
-import scala.languageFeature.implicitConversions
-import akka.actor.ActorRef
-import akka.pattern.ask
-import com.lyndir.omicron.api.model.{LevelType, Tile}
-import com.lyndir.omicron.api.util.Maybe.Presence
-import be.angelcorp.omicronai.{Direction, Location}
-import be.angelcorp.omicronai.configuration.Configuration.config
-import be.angelcorp.omicronai.assets.Asset
-import be.angelcorp.omicronai.world._
+import scala.Some
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.languageFeature.implicitConversions
 import java.util.concurrent.TimeUnit
-import be.angelcorp.omicronai.world.KnownState
-import be.angelcorp.omicronai.world.LocationState
-import scala.Some
+import akka.actor.ActorRef
+import akka.pattern.ask
 import akka.util.Timeout
+import be.angelcorp.omicronai.{Direction, Location}
+import be.angelcorp.omicronai.bridge.Asset
+import be.angelcorp.omicronai.configuration.Configuration.config
+import be.angelcorp.omicronai.world._
 
 class MovementPathfinder( destination: Location, asset: Asset, world: ActorRef ) extends AStar {
 
@@ -40,9 +36,9 @@ class MovementPathfinder( destination: Location, asset: Asset, world: ActorRef )
           if (isBlocked) {
             None
           } else if ( d.dh == 0 ) {
-            Some( m.costForMovingInLevel( level )   + config.pathfinder.layerPenalty( l.h ) )
+            Some( asset.costForMovingInLevel( l.h )   + config.pathfinder.layerPenalty( l.h ) )
           } else {
-            Some( m.costForLevelingToLevel( level ) + config.pathfinder.layerChangePenalty + config.pathfinder.layerPenalty( target.h ) )
+            Some( asset.costForLevelingToLevel( l.h ) + config.pathfinder.layerChangePenalty + config.pathfinder.layerPenalty( target.h ) )
           }
         case _ => None
       }

@@ -1,12 +1,10 @@
 package be.angelcorp.omicronai.ai.actions
 
-import be.angelcorp.omicronai.ai.{TimedOut, ActionExecutionException, ActionExecutor}
-import be.angelcorp.omicronai.gui.layerRender.{MultiplexRenderer, LayerRenderer}
 import scala.concurrent.{Future, Await, ExecutionContext}
 import scala.concurrent.duration.Duration
 import java.util.concurrent.{TimeoutException, TimeUnit}
 import akka.util.Timeout
-import scala.util.Failure
+import be.angelcorp.omicronai.gui.layerRender.{MultiplexRenderer, LayerRenderer}
 
 case class SequencedAction( actions: Seq[Action] ) extends Action {
   implicit val timeout: Timeout = Duration(1, TimeUnit.MINUTES)

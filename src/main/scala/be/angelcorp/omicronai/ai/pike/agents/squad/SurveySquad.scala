@@ -3,6 +3,7 @@ package be.angelcorp.omicronai.ai.pike.agents.squad
 import scala.collection.mutable
 import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
+import scala.util.Success
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor.{ActorRef, Props}
@@ -12,15 +13,14 @@ import org.newdawn.slick.Color
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.IGameObject
 import be.angelcorp.omicronai.{Location, RegionOfInterest, Namer}
+import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.ai.pike.agents._
-import be.angelcorp.omicronai.ai.{ActionExecutor, AI}
-import be.angelcorp.omicronai.ai.actions.{SequencedAction, MoveAction, Action}
-import be.angelcorp.omicronai.assets.Asset
+import be.angelcorp.omicronai.ai.actions.{ActionExecutor, SequencedAction, MoveAction}
+import be.angelcorp.omicronai.bridge.{Asset, NewTurn}
 import be.angelcorp.omicronai.configuration.Configuration.config
 import be.angelcorp.omicronai.gui.layerRender.{LayerRenderer, RegionRenderer}
 import be.angelcorp.omicronai.metadata.MetaData
 import be.angelcorp.omicronai.world.{GhostState, KnownState, LocationStates, WorldState}
-import scala.util.Success
 
 class SurveySquad(val ai: AI, val aiExec: ActionExecutor ) extends Squad {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )

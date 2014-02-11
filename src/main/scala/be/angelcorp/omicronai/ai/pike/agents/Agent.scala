@@ -1,13 +1,13 @@
 package be.angelcorp.omicronai.ai.pike.agents
 
 import akka.actor.{ActorRef, Actor}
-import be.angelcorp.omicronai.{UnSupervisedMessage, SupervisorMessage, AiSupervisor}
-import be.angelcorp.omicronai.configuration.Configuration
-import Configuration._
-import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import be.angelcorp.omicronai.ai.{AI, ActionExecutor}
+import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.Game
+import be.angelcorp.omicronai.{UnSupervisedMessage, SupervisorMessage, AiSupervisor}
+import be.angelcorp.omicronai.ai.AI
+import be.angelcorp.omicronai.configuration.Configuration._
+import be.angelcorp.omicronai.ai.actions.ActionExecutor
 
 trait Agent extends Actor {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )

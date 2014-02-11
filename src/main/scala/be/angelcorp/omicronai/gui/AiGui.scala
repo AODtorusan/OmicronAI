@@ -45,10 +45,15 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
       builder.addPlayer(ai)
       logger.info("AI build!")
 
-      splash.progress(0.4f, "Starting game ...")
+      splash.progress(0.3f, "Starting game ...")
       logger.info("Starting game")
       val game = builder.build
       logger.info("Game started!")
+
+      splash.progress(0.4f, "Starting AI ...")
+      logger.info("Starting AI")
+      ai.prepare()
+      logger.info("AI started!")
 
       splash.progress(0.6f, "Loading unit/texture configuration ...")
       logger.info("Building ...")

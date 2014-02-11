@@ -1,26 +1,25 @@
 package be.angelcorp.omicronai.ai.noai
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import java.util.concurrent.TimeUnit
+import akka.actor.{ActorRef, Props, ActorSystem}
 import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.Nifty
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.Color.Template._
 import com.lyndir.omicron.api.GameListener
-import be.angelcorp.omicronai.configuration.Configuration
-import Configuration._
-import be.angelcorp.omicronai.ai.{ActionExecutor, AI}
+import be.angelcorp.omicronai.configuration.Configuration._
+import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.Location
-import be.angelcorp.omicronai.assets.{AssetImpl, Asset}
-import be.angelcorp.omicronai.ai.actions.Action
-import be.angelcorp.omicronai.world.{WorldUpdater, WorldSize, World, WorldInterface}
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import java.util.concurrent.TimeUnit
-import akka.actor.ActorSystem
+import be.angelcorp.omicronai.ai.actions.{ActionExecutor, Action}
+import be.angelcorp.omicronai.world.{WorldSize, World}
+import be.angelcorp.omicronai.bridge.{GameListenerBridge, PlayerGainedObject, Asset, AssetImpl}
 
 class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -48,14 +47,18 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
     }
   }
 
-  val actorSystem = ActorSystem("WorldActorSystem")
-  lazy val world = actorSystem.actorOf( World(this, gameSize) )
+  val actorSystem     = ActorSystem()
+  var world: ActorRef = null
 
-  override def start(): Unit = {
-    getController.listObjects().asScala.foreach( obj => units_ += new AssetImpl(this, obj) )
+  override def prepare() {
+    world = actorSystem.actorOf( World(this, gameSize) )
+    actorSystem.actorOf(Props(classOf[GameListenerBridge], gameController), name = "GameListenerBridge")
     gameController.addGameListener( assetListUpdater )
-    gameController.addGameListener( new WorldUpdater(world) )
-    super.start()
+    Thread.sleep(100) // Wait for the actors be become live
+    getController.listObjects().asScala.foreach( obj => {
+      units_ += new AssetImpl(this, obj)
+      actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
+    })
   }
 
   def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = {

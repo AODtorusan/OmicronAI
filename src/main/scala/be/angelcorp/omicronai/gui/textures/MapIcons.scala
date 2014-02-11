@@ -1,9 +1,9 @@
 package be.angelcorp.omicronai.gui.textures
 
 import scala.collection.mutable
-import be.angelcorp.omicronai.assets.Asset
-import com.lyndir.omicron.api.model.{IUnitType, IGameObject}
 import org.newdawn.slick.Image
+import com.lyndir.omicron.api.model.{IUnitType, IGameObject}
+import be.angelcorp.omicronai.bridge.Asset
 
 object MapIcons {
 

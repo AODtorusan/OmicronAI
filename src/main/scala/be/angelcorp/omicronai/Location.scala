@@ -173,6 +173,9 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
     new Location(u, v - size.vSize, h, size)
   )
 
+  /** All the tiles with the same u,v coordinates as this tile, but all possible different heights. */
+  lazy val stack = for (h <- 0 until size.hSize) yield new Location(u, v, h, size)
+
   /**
    * Returns the right rotation (counterclockwise, 60 deg) of this tile around a specified center tile.
    *

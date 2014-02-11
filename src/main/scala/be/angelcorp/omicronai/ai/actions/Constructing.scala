@@ -1,31 +1,24 @@
 package be.angelcorp.omicronai.ai.actions
 
+import scala.Some
+import scala.util.Failure
+import scala.concurrent._
+import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
+import akka.util.Timeout
+import akka.actor.ActorRef
 import akka.pattern.ask
 import org.slf4j.LoggerFactory
 import org.newdawn.slick.{Color, Graphics}
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.{PublicModuleType, UnitTypes, UnitType}
-import com.lyndir.omicron.api.model.IConstructorModule.{OutOfRangeException, IncompatibleLevelException, InaccessibleException}
+import com.lyndir.omicron.api.model.{UnitTypes, UnitType}
 import be.angelcorp.omicronai.gui.layerRender.{PolyLineRenderer, LayerRenderer}
-import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.{HexTile, Location}
 import be.angelcorp.omicronai.gui.{Canvas, ViewPort}
 import be.angelcorp.omicronai.gui.textures.MapIcons
 import be.angelcorp.omicronai.gui.slick.DrawStyle
-import be.angelcorp.omicronai.ai._
-import scala.util.{Failure, Success}
 import be.angelcorp.omicronai.world.{KnownState, WorldState, LocationState}
-import scala.concurrent._
-import scala.concurrent.duration.Duration
-import java.util.concurrent.TimeUnit
-import be.angelcorp.omicronai.ai.TimedOut
-import scala.util.Failure
-import scala.Some
-import be.angelcorp.omicronai.world.KnownState
-import be.angelcorp.omicronai.ai.InFogOfWar
-import be.angelcorp.omicronai.world.LocationState
-import akka.util.Timeout
-import akka.actor.ActorRef
+import be.angelcorp.omicronai.bridge._
 
 case class ConstructionStartAction( builder: Asset, destination: Location, constructedType: UnitType, world: ActorRef ) extends Action {
   lazy val logger = Logger( LoggerFactory.getLogger( getClass ) )

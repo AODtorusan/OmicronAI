@@ -8,13 +8,12 @@ import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.controls.{ButtonClickedEvent, Button}
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber}
-import be.angelcorp.omicronai.configuration.Configuration
-import Configuration._
-import be.angelcorp.omicronai.assets.Asset
+import be.angelcorp.omicronai.configuration.Configuration._
 import be.angelcorp.omicronai.gui.GuiController
 import be.angelcorp.omicronai.ai.pike.PikeInterface
 import be.angelcorp.omicronai.ai.pike.agents.GetAsset
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
+import be.angelcorp.omicronai.bridge.Asset
 
 class UserInterfaceController(val pikeInt: PikeInterface, unitController: UnitTreeController) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )

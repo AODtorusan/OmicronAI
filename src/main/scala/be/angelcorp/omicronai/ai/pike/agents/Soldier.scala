@@ -1,14 +1,15 @@
 package be.angelcorp.omicronai.ai.pike.agents
 
+import scala.Some
+import scala.concurrent.Future
 import akka.actor.{TypedProps, TypedActor}
 import akka.pattern.pipe
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.IGameObject
-import be.angelcorp.omicronai.assets.{AssetImpl, Asset}
-import be.angelcorp.omicronai.ai.{Now, NextTurn, ActionExecutor, AI}
-import be.angelcorp.omicronai.ai.actions.Action
-import scala.concurrent.Future
+import be.angelcorp.omicronai.ai.AI
+import be.angelcorp.omicronai.ai.actions.{NextTurn, Now, ActionExecutor, Action}
+import be.angelcorp.omicronai.bridge._
 
 class Soldier( val ai: AI, val aiExec: ActionExecutor, obj: IGameObject ) extends Agent {
   implicit val exec = context.dispatcher

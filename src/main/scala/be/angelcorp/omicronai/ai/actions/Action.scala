@@ -1,9 +1,8 @@
 package be.angelcorp.omicronai.ai.actions
 
-import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
-import be.angelcorp.omicronai.ai.{Never, ActionExecutionException, ActionExecutor}
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.{ExecutionContext, Promise, Future}
+import scala.concurrent.{ExecutionContext, Future}
+import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
 
 trait Action {
 

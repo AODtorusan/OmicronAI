@@ -1,19 +1,19 @@
-package be.angelcorp.omicronai.ai
+package be.angelcorp.omicronai.ai.actions
 
-import java.util.concurrent.TimeUnit
-import scala.{concurrent, Some}
-import scala.concurrent.{ExecutionContext, Future, Await}
+import scala.Some
 import scala.concurrent.duration.Duration
-import scala.util.{Try, Failure,  Success}
+import scala.concurrent.{Future, Await, ExecutionContext}
+import scala.util.{Try, Failure, Success}
+import java.util.concurrent.TimeUnit
 import akka.actor.ActorRef
-import akka.pattern.ask
 import akka.util.Timeout
+import akka.pattern.ask
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.IConstructorModule.IConstructionSite
-import be.angelcorp.omicronai.{Direction, Present, Location}
-import be.angelcorp.omicronai.assets.Asset
+import be.angelcorp.omicronai.{Present, Direction, Location}
+import be.angelcorp.omicronai.world._
 import be.angelcorp.omicronai.Conversions._
-import be.angelcorp.omicronai.world.{KnownState, WorldState, LocationState, ReloadReady}
+import be.angelcorp.omicronai.bridge.Asset
 
 trait ActionExecutor {
   implicit val timeout: Timeout = Duration(1, TimeUnit.MINUTES)
@@ -33,7 +33,7 @@ trait ActionExecutor {
     Await.result( ask(world, ReloadReady()).mapTo[Boolean], timeout.duration)
   }
 
-  protected[ai] def attack( asset: Asset, weaponModule: WeaponModule, target: Location): Future[Try[Unit]] =
+  def attack( asset: Asset, weaponModule: WeaponModule, target: Location): Future[Try[Unit]] =
     haltTheWorld ( Future.successful {
       asset.weapons.find( _ == weaponModule ) match {
         case Some(module) =>
@@ -46,7 +46,7 @@ trait ActionExecutor {
       }
     } )
 
-  protected[ai] def move( asset: Asset, path: Seq[Location]): Future[Try[Unit]] = haltTheWorld {
+  def move( asset: Asset, path: Seq[Location]): Future[Try[Unit]] = haltTheWorld {
     if (path.length == 0)
       Future.successful( Success() )
     else if (asset.location != path.head)
@@ -60,7 +60,6 @@ trait ActionExecutor {
               if (action.isPossible) {
                 waitForWorld()
                 action.execute()
-                waitForWorld()
                 Future.successful( Success() )
               } else {
                 (world ? LocationState(target)).mapTo[WorldState].map( {
@@ -88,7 +87,7 @@ trait ActionExecutor {
     }
   }
 
-  protected[ai] def move( asset: Asset, direction: Direction): Future[Try[Unit]] = haltTheWorld ( Future.successful {
+  def move( asset: Asset, direction: Direction): Future[Try[Unit]] = haltTheWorld ( Future.successful {
     asset.mobility match {
       case Some(module) =>
         asset.location neighbour direction match {
@@ -108,7 +107,7 @@ trait ActionExecutor {
     }
   } )
 
-  protected[ai] def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[IConstructionSite]] = haltTheWorld ( Future.successful{
+  def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[IConstructionSite]] = haltTheWorld ( Future.successful{
     if (builder.location adjacentTo destination )
       builder.constructors.headOption match {
         case Some(module) =>
@@ -122,7 +121,7 @@ trait ActionExecutor {
     else Failure( TooFar(builder, destination, 1) )
   })
 
-  protected[ai] def constructionAssist( builder: Asset, site: IGameObject ): Future[Try[Unit]] = haltTheWorld ( Future.successful{
+  def constructionAssist( builder: Asset, site: IGameObject ): Future[Try[Unit]] = haltTheWorld ( Future.successful{
     if (builder.constructors.isEmpty)
       Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
     else {

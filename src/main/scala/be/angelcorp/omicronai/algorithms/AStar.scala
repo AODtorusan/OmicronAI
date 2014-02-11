@@ -1,14 +1,10 @@
 package be.angelcorp.omicronai.algorithms
 
 import java.util
-import java.util.Comparator
 import collection.JavaConverters._
-import com.typesafe.scalalogging.slf4j.Logger
-import org.slf4j.LoggerFactory
-import be.angelcorp.omicronai.{Direction, Location}
+import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.metadata.{PathfinderMetadata, MetaData}
 import be.angelcorp.omicronai.world.WorldGraph
-import be.angelcorp.omicronai.assets.Asset
 
 abstract class AStar {
 

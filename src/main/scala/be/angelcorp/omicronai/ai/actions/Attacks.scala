@@ -1,13 +1,12 @@
 package be.angelcorp.omicronai.ai.actions
 
+import scala.concurrent.ExecutionContext
 import org.newdawn.slick.{Color, Graphics}
 import com.lyndir.omicron.api.model.WeaponModule
 import be.angelcorp.omicronai.{HexTile, Location}
-import be.angelcorp.omicronai.ai.{ActionExecutionException, ActionExecutor}
-import be.angelcorp.omicronai.assets.Asset
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
 import be.angelcorp.omicronai.gui.{Canvas, ViewPort}
-import scala.concurrent.ExecutionContext
+import be.angelcorp.omicronai.bridge.Asset
 
 case class AttackAction( asset: Asset, module: WeaponModule, destination: Location ) extends Action {
 

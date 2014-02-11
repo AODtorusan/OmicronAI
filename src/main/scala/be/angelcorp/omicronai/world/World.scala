@@ -11,10 +11,7 @@ import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.util.Maybe.Presence
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.algorithms.Field
-import be.angelcorp.omicronai.ai.pike.agents._
-import be.angelcorp.omicronai.ai.pike.agents.TileContentsChanged
-import be.angelcorp.omicronai.ai.pike.agents.TileResourcesChanged
-import be.angelcorp.omicronai.ai.pike.agents.UnitMoved
+import be.angelcorp.omicronai.bridge._
 
 class World(player: Player, sz: WorldSize) extends Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -53,18 +50,20 @@ class World(player: Player, sz: WorldSize) extends Actor {
     }
   }
 
-  private def updateLocation(l: Location) {
+  private def updateLocation(baseLocation: Location) {
     //logger.trace(s"Updating world state on $l")
-    realState(l) match {
-      // If we can see the tile, update the map state
-      case newState: KnownState =>
-        gameState(l) = newState
-      // If we could see the tile, but not anymore, make it a ghost tile
-      case UnknownState => gameState(l) match {
-        case current: KnownState => gameState(l) = current.toGhost
-        case _ => // Do nothing, already ghost or unknown
+    for (l <- baseLocation.stack) {
+      realState(l) match {
+        // If we can see the tile, update the map state
+        case newState: KnownState =>
+          gameState(l) = newState
+        // If we could see the tile, but not anymore, make it a ghost tile
+        case UnknownState => gameState(l) match {
+          case current: KnownState => gameState(l) = current.toGhost
+          case _ => // Do nothing, already ghost or unknown
+        }
+        case _ => throw new UnsupportedOperationException // Ghost state is never returned
       }
-      case _ => throw new UnsupportedOperationException // Ghost state is never returned
     }
   }
 
@@ -120,12 +119,6 @@ object World {
 
   def apply( player: Player, size: WorldSize ) =
     Props(classOf[World], player, size).withDispatcher("akka.world-dispatcher")
-
-  def withInterface(player: Player, size: WorldSize) = {
-    val system = ActorSystem("WorldActorSystem")
-    val world = system.actorOf( World(player, size) )
-    new WorldInterface(world)
-  }
 
 }
 

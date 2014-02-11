@@ -1,17 +1,15 @@
 package be.angelcorp.omicronai.ai.actions
 
+import scala.concurrent.ExecutionContext
+import akka.actor.ActorRef
 import org.newdawn.slick.Color
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicronai.{Direction, Location}
-import be.angelcorp.omicronai.ai.{ActionExecutionException, ActionExecutor}
-import be.angelcorp.omicronai.algorithms.{AStarSolution, MovementPathfinder}
-import be.angelcorp.omicronai.assets.Asset
+import be.angelcorp.omicronai.algorithms.MovementPathfinder
+import be.angelcorp.omicronai.bridge.Asset
 import be.angelcorp.omicronai.gui.layerRender.{LayerRenderer, PolyLineRenderer}
 import be.angelcorp.omicronai.gui.slick.DrawStyle
-import be.angelcorp.omicronai.metadata.MetaData
-import scala.concurrent.ExecutionContext
-import akka.actor.ActorRef
 
 case class MoveAction( asset: Asset, destination: Location, world: ActorRef ) extends Action {
   lazy val solution = new MovementPathfinder(destination, asset, world).findPath(asset.location)

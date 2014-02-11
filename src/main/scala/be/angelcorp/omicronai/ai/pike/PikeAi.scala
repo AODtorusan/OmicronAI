@@ -3,26 +3,25 @@ package be.angelcorp.omicronai.ai.pike
 import scala.Some
 import scala.collection.mutable
 import scala.collection.JavaConverters._
-import scala.concurrent.duration._
 import scala.concurrent.Await
-import akka.pattern.ask
-import akka.util.Timeout
+import scala.concurrent.duration._
 import akka.actor.{Props, ActorRef, ActorSystem}
+import akka.event.Logging
+import akka.util.Timeout
+import akka.pattern.ask
 import de.lessvoid.nifty.{NiftyEventAnnotationProcessor, Nifty}
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.Color.Template._
+import be.angelcorp.omicronai.AiSupervisor
 import be.angelcorp.omicronai.ai.AI
+import be.angelcorp.omicronai.ai.pike.agents.{Admiral, Self}
 import be.angelcorp.omicronai.configuration.Configuration.config
 import be.angelcorp.omicronai.gui._
-import be.angelcorp.omicronai.ai.pike.agents.{ListMembers, PlayerGainedObject, Admiral, Self}
-import be.angelcorp.omicronai.{Location, AiSupervisor}
 import be.angelcorp.omicronai.gui.screens.ui.pike._
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
-import be.angelcorp.omicronai.world.{ReloadLocation, WorldUpdater}
-import com.lyndir.omicron.api.util.Maybe.Presence
-import akka.event.Logging
+import be.angelcorp.omicronai.bridge.{GameListenerBridge, PlayerGainedObject}
 
 
 class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
@@ -45,7 +44,9 @@ class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: 
   }
   def world = admiral.world
 
-  val supervisorRef = actorSystem.actorOf( Props( new GuiSupervisor(admiralRef, this) ), name="AiSupervisor" )
+  val supervisorRef =
+    actorSystem.actorOf( Props( new GuiSupervisor(admiralRef, this) ), name="AiSupervisor" )
+
   var supervisor = {
     implicit val timeout: Timeout = 5 seconds;
     Await.result( supervisorRef ? Self(), timeout.duration ).asInstanceOf[GuiSupervisor]
@@ -57,15 +58,15 @@ class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: 
     new PikeInterface(this, gui, nifty)
   }
 
-  override def start() {
+  override def prepare() {
     Security.authenticate(this, key)
-    getController.getGameController.addGameListener( admiral.messageListener )
+    actorSystem.actorOf(Props(classOf[GameListenerBridge], getController.getGameController), name = "GameListenerBridge")
     actorSystem.eventStream.setLogLevel(Logging.DebugLevel)
     getController.listObjects().asScala.foreach( obj => {
       actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
     })
-    getController.getGameController.setReady()
   }
+
 }
 
 class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
