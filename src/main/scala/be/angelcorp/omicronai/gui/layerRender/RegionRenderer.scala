@@ -10,6 +10,7 @@ import be.angelcorp.omicronai.{HexTileEdge, HexTile, RegionOfInterest}
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import be.angelcorp.omicronai.gui.slick.DrawStyle
+import be.angelcorp.omicronai.world.SubWorld
 
 class RegionRenderer(val roi:    RegionOfInterest,
                      val border: DrawStyle = new DrawStyle(Color.red, 3.0f),
@@ -74,7 +75,9 @@ class RegionRenderer(val roi:    RegionOfInterest,
     shapes.toList
   }
 
-  def render(g: Graphics, view: ViewPort) {
+  override def prepareRender(subWorld: SubWorld, layer: Int) {}
+
+  override def render(g: Graphics) {
     // Draw the border if required
     if (border.color != Color.transparent) {
       border.applyOnto(g)

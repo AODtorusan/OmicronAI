@@ -6,8 +6,8 @@ import be.angelcorp.omicronai.world.{FieldWorldGraph, WorldGraph}
 object FloodFill {
 
   def fill( destination: Location ): Field[Double] = {
-    val tiles = Field.fill(destination.size)(Double.PositiveInfinity)
-    val cost  = Field.fill(destination.size)(1.0)
+    val tiles = Field.fill(destination.bounds)(Double.PositiveInfinity)
+    val cost  = Field.fill(destination.bounds)(1.0)
     fill(destination, new FieldWorldGraph(tiles, cost, cost, cost, cost))
   }
 

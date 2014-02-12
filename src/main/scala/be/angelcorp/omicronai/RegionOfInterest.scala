@@ -35,7 +35,7 @@ class SquareArea(val lowerBound: Location, val upperBound: Location) extends Reg
   val radius =
     (for (u <- Seq(lowerBound.u, upperBound.u);
           v <- Seq(lowerBound.v, upperBound.v);
-          h <- Seq(lowerBound.h, upperBound.h)) yield center δ new Location( u, v, h, center.size ) ).max
+          h <- Seq(lowerBound.h, upperBound.h)) yield center δ new Location( u, v, h, center.bounds ) ).max
 
   lazy val tiles: Seq[Location] =
     for (du <- 0 to (lowerBound δu upperBound);
@@ -65,7 +65,7 @@ class TileCollection(locations: Set[Location]) extends RegionOfInterest {
     } )
     val N    = locations.size
     val mean = ( (sum._1 / N).toInt, (sum._2 / N).toInt, (sum._3 / N).toInt )
-    new Location( mean._1, mean._2, mean._3, locations.head.size )
+    new Location( mean._1, mean._2, mean._3, locations.head.bounds )
   }
 
   lazy val radius = tiles.map( _ δ center ).max

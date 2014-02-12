@@ -7,6 +7,7 @@ import org.newdawn.slick.geom.{ShapeRenderer, Polygon}
 import be.angelcorp.omicronai.ai.pike.PikeAi
 import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.gui.slick.DrawStyle
+import be.angelcorp.omicronai.world.SubWorld
 
 class GridRenderer(player: AI, border: DrawStyle = new Color(255, 255, 255, 128)) extends LayerRenderer {
 
@@ -38,7 +39,9 @@ class GridRenderer(player: AI, border: DrawStyle = new Color(255, 255, 255, 128)
     poly
   }
 
-  def render(g: Graphics, view: ViewPort) {
+  override def prepareRender(subWorld: SubWorld, layer: Int) {}
+
+  override def render(g: Graphics) {
     border.applyOnto(g)
 
     horizontal.foreach( g.draw )

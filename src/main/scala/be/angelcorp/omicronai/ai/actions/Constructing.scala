@@ -17,7 +17,7 @@ import be.angelcorp.omicronai.{HexTile, Location}
 import be.angelcorp.omicronai.gui.{Canvas, ViewPort}
 import be.angelcorp.omicronai.gui.textures.MapIcons
 import be.angelcorp.omicronai.gui.slick.DrawStyle
-import be.angelcorp.omicronai.world.{KnownState, WorldState, LocationState}
+import be.angelcorp.omicronai.world.{SubWorld, KnownState, WorldState, LocationState}
 import be.angelcorp.omicronai.bridge._
 
 case class ConstructionStartAction( builder: Asset, destination: Location, constructedType: UnitType, world: ActorRef ) extends Action {
@@ -26,7 +26,8 @@ case class ConstructionStartAction( builder: Asset, destination: Location, const
   lazy val preview = new LayerRenderer {
     var t = System.currentTimeMillis()
     var isFlashing = true
-    override def render(g: Graphics, view: ViewPort) {
+    override def prepareRender(subWorld: SubWorld, layer: Int) {}
+    override def render(g: Graphics) {
       if (System.currentTimeMillis() - t > 500) {
         t = System.currentTimeMillis()
         isFlashing = !isFlashing

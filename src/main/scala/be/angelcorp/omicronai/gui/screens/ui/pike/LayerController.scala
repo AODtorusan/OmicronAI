@@ -1,6 +1,5 @@
 package be.angelcorp.omicronai.gui.screens.ui.pike
 
-import scala.Some
 import scala.collection.JavaConverters._
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber}
 import de.lessvoid.nifty.controls._
@@ -10,10 +9,10 @@ import org.newdawn.slick.{Graphics, Color}
 import com.lyndir.omicron.api.model.LevelType
 import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicronai.ai.pike.PikeInterface
-import be.angelcorp.omicronai.gui.{ViewPort, GuiController}
+import be.angelcorp.omicronai.gui.GuiController
 import be.angelcorp.omicronai.gui.layerRender._
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
-import be.angelcorp.omicronai.SupervisorMessage
+import be.angelcorp.omicronai.world.SubWorld
 
 class LayerController(val pikeInt: PikeInterface) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -48,7 +47,7 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
         if (!pikeInt.activeLayers.contains(renderer)) {
           logger.info("Enabling extra layer info: " + renderer.toString )
           pikeInt.activeLayers.append( renderer )
-          renderer.update( pikeInt.gui.view )
+          renderer.viewChanged( pikeInt.gui.view )
         }
       } else {
         if (pikeInt.activeLayers.contains(renderer)) {
@@ -78,7 +77,8 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
 //          case _ => None
 //        } )
       }
-      def render(g: Graphics, view: ViewPort) {
+      override def prepareRender(subWorld: SubWorld, layer: Int) {}
+      override def render(g: Graphics) {
 //        selected match {
 //          case Some(a) =>
 //            logger.warn("No way to retrieve metadata")

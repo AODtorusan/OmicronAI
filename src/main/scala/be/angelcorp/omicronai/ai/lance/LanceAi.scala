@@ -16,6 +16,8 @@ import be.angelcorp.omicronai.gui.input._
 import be.angelcorp.omicronai.HexTile
 import scala.Some
 import scala.collection.mutable
+import be.angelcorp.omicronai.world.SubWorld
+import akka.actor.{ActorSystem, Props}
 
 class LanceAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -24,10 +26,9 @@ class LanceAi( playerId: Int, key: PlayerKey, name: String, color: Color ) exten
   def this( builder: Game.Builder) =
     this( builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
 
-
-  def gameListener: GameListener = new GameListener {
-    
-  }
+  val actorSystem = ActorSystem()
+  implicit val context = actorSystem.dispatcher
+  val world = actorSystem.actorOf(Props.empty)
 
   def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty): GuiInterface = new GuiInterface {
     nifty.addScreen( screens.Introduction.name, screens.Introduction.screen(nifty, gui) )
@@ -57,7 +58,8 @@ class LanceAi( playerId: Int, key: PlayerKey, name: String, color: Color ) exten
     activeLayers += new GridRenderer(LanceAi.this)
     activeLayers += new LayerRenderer {
       val  sz = gui.game.getLevelSize
-      def render(g: Graphics, view: ViewPort) {
+      override def prepareRender(subWorld: SubWorld, layer: Int) {}
+      override def render(g: Graphics) {
         for (from <- fromTile; to <- toTile) {
           g.setColor( org.newdawn.slick.Color.magenta )
           g.drawLine( from.centerXY._1* Canvas.scale, from.centerXY._2* Canvas.scale, to.centerXY._1* Canvas.scale, to.centerXY._2 * Canvas.scale)

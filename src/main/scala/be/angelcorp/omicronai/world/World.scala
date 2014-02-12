@@ -13,7 +13,7 @@ import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.algorithms.Field
 import be.angelcorp.omicronai.bridge._
 
-class World(player: Player, sz: WorldSize) extends Actor {
+class World(player: Player, sz: WorldBounds) extends Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   private implicit val game = player.getController.getGameController.getGame
@@ -75,6 +75,14 @@ class World(player: Player, sz: WorldSize) extends Actor {
     case LocationState(l)  => sender ! getState(l)
     case LocationStates(l) => sender ! l.map( loc => getState(loc) )
 
+    case GetSubWorld(bounds) =>
+      val states: Array[Array[(Location, WorldState)]] =
+        (for (h <- bounds.h0 until (bounds.h0 + bounds.hSize) ) yield
+          (for (u <- bounds.u0 until (bounds.u0 + bounds.uSize);
+                v <- bounds.v0 until (bounds.v0 + bounds.vSize);
+                l = new Location(u, v, h, sz)) yield l -> getState(l)).toArray ).toArray
+      sender ! SubWorld(bounds, states)
+
     case m: GameListenerMessage => processEvent(m)
   }
 
@@ -117,17 +125,18 @@ class World(player: Player, sz: WorldSize) extends Actor {
 
 object World {
 
-  def apply( player: Player, size: WorldSize ) =
+  def apply( player: Player, size: WorldBounds ) =
     Props(classOf[World], player, size).withDispatcher("akka.world-dispatcher")
 
 }
 
 sealed abstract class WorldActorMsg
-private case class GetWorldListener()               extends WorldActorMsg
-private case class ReloadLocation(l: Location)      extends WorldActorMsg
-case class ReloadReady()                            extends WorldActorMsg
-case class LocationState (l: Location)              extends WorldActorMsg
-case class LocationStates(l: Seq[Location])         extends WorldActorMsg
+private case class GetWorldListener()           extends WorldActorMsg
+private case class ReloadLocation(l: Location)  extends WorldActorMsg
+case class ReloadReady()                        extends WorldActorMsg
+case class LocationState (l: Location)          extends WorldActorMsg
+case class LocationStates(l: Seq[Location])     extends WorldActorMsg
+case class GetSubWorld(bounds: WorldBounds)     extends WorldActorMsg
 
 class PrioritizedMailbox(settings: ActorSystem.Settings, cfg: Config) extends UnboundedPriorityMailbox ( new Comparator[Envelope] {
 

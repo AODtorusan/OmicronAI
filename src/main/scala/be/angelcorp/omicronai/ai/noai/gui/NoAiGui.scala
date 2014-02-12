@@ -11,6 +11,7 @@ import be.angelcorp.omicronai.bridge.Asset
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.layerRender._
 import be.angelcorp.omicronai.gui.slick.DrawStyle
+import be.angelcorp.omicronai.world.SubWorld
 
 class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
   val listener = new NoAiGameListener( this )
@@ -39,7 +40,8 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
   staticLayers += new ObjectLayer( noai.world, o => o.getOwner.isPresent && o.getOwner.get() != noai, "Enemy units",    Color.red,   new Color(0.5f, 0f, 0f) )
   staticLayers += new LayerRenderer {
     // Renders the currently selected unit
-    def render(g: Graphics, view: ViewPort) {
+    override def prepareRender(subWorld: SubWorld, layer: Int) {}
+    override def render(g: Graphics) {
       noai.selected match {
         case Some( unit ) => new Canvas(unit.location) {
           override def borderStyle: DrawStyle = new DrawStyle(Color.orange, 3.0f)

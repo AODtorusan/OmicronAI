@@ -1,10 +1,7 @@
 package be.angelcorp.omicronai.ai.noai
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-import java.util.concurrent.TimeUnit
 import akka.actor.{ActorRef, Props, ActorSystem}
 import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.Nifty
@@ -18,7 +15,7 @@ import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.ai.actions.{ActionExecutor, Action}
-import be.angelcorp.omicronai.world.{WorldSize, World}
+import be.angelcorp.omicronai.world.{WorldBounds, World}
 import be.angelcorp.omicronai.bridge.{GameListenerBridge, PlayerGainedObject, Asset, AssetImpl}
 
 class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
@@ -54,7 +51,7 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
     world = actorSystem.actorOf( World(this, gameSize) )
     actorSystem.actorOf(Props(classOf[GameListenerBridge], gameController), name = "GameListenerBridge")
     gameController.addGameListener( assetListUpdater )
-    Thread.sleep(100) // Wait for the actors be become live
+    Thread.sleep(200) // Wait for the actors be become live
     getController.listObjects().asScala.foreach( obj => {
       units_ += new AssetImpl(this, obj)
       actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
@@ -69,7 +66,7 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
   private def gameController = getController.getGameController
 
   implicit lazy val game = getController.getGameController.getGame
-  protected[noai] lazy val gameSize: WorldSize = game.getLevelSize
+  protected[noai] lazy val gameSize: WorldBounds = game.getLevelSize
 
   private val units_ = ListBuffer[Asset]()
 
@@ -94,20 +91,18 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
     units_.result()
 
   protected[noai] def updateOrConfirmAction( action: Action) =
-    _plannedAction = plannedAction match {
+    plannedAction match {
       // Execute the plan (the same plan was passed in)
       case Some(plan) if plan == action =>
-        Await.result(
-          for( result <- plan.execute(this) ) yield result match {
-            case Some( err ) =>
-              logger.info(s"Could not finish action $plan successfully: ${err.getMessage}")
-              plan.recover( err )
-            case None => None
-          }, Duration(1, TimeUnit.MINUTES)
-        )
+        for( result <- plan.execute(this) ) result match {
+          case Some( err ) =>
+            logger.info(s"Could not finish action $plan successfully: ${err.getMessage}")
+            _plannedAction = plan.recover( err )
+          case None =>
+        }
       // Update the plan
       case _ =>
-        Some(action)
+        _plannedAction = Some(action)
     }
 
 }

@@ -1,11 +1,12 @@
 package be.angelcorp.omicronai.gui
 
-import collection.JavaConverters._
+import scala.collection.JavaConverters._
+import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.slf4j.Logger
+import com.lyndir.omicron.api.model.LevelType
 import be.angelcorp.omicronai.{HexTile, Location}
 import be.angelcorp.omicronai.Location._
-import com.lyndir.omicron.api.model.LevelType
-import com.typesafe.scalalogging.slf4j.Logger
-import org.slf4j.LoggerFactory
+import be.angelcorp.omicronai.world.WorldBounds
 
 class ViewPort(gui: AiGuiOverlay,
                private var _activeLayer: Int       = LevelType.GROUND,
@@ -23,6 +24,8 @@ class ViewPort(gui: AiGuiOverlay,
   var screenBounds = (0.0f, 0.0f, 0.0f, 0.0f)
   /** List of all the tiles that can be viewed though the viewport */
   var tilesInView: Iterable[Location] = Nil
+  /** World bounds of the current view */
+  var viewBounds = WorldBounds(0,0,0,0,0,0)
 
   updateScreen
 
@@ -48,6 +51,20 @@ class ViewPort(gui: AiGuiOverlay,
       val loc: Location = tile
       if ( inView(loc) ) Some(loc) else None
     } ).flatten
+
+    var minU = Int.MaxValue
+    var maxU = Int.MinValue
+    var minV = Int.MaxValue
+    var maxV = Int.MinValue
+    for (tile <- tilesInView) {
+      if (tile.u < minU) minU = tile.u
+      if (tile.u > maxU) maxU = tile.u
+      if (tile.v < minV) minV = tile.v
+      if (tile.v > maxV) maxV = tile.v
+    }
+    if (minU > maxU) {minU = 0; maxU = 0} // World out of view!
+    if (minV > maxV) {minV = 0; maxV = 0} // World out of view!
+    viewBounds = WorldBounds(maxU - minU + 1, maxV - minV + 1, u0 = minU, v0 = minV )
 
     _changed = true
 

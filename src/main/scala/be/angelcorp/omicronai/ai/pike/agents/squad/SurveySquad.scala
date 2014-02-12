@@ -125,7 +125,7 @@ class SurveySquad(val ai: AI, val aiExec: ActionExecutor ) extends Squad {
         centerU = centerU + point.u
         centerV = centerV + point.v
       }
-      val center = Location( centerU / points.size.toDouble, centerV / points.size.toDouble, first.h, first.size )
+      val center = Location( centerU / points.size.toDouble, centerV / points.size.toDouble, first.h, first.bounds )
 
       var radius = -1
       for (point <- points)

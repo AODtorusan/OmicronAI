@@ -19,6 +19,7 @@ import be.angelcorp.omicronai.metadata.MetaData
 import be.angelcorp.omicronai.ai.pike.PikeInterface
 import be.angelcorp.omicronai.ai.pike.agents.ListMetadata
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
+import be.angelcorp.omicronai.world.SubWorld
 
 class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeController) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -41,7 +42,7 @@ class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeCon
     selectedProbe match {
       case Some(probe) =>
         pikeInt.activeLayers.append( probe )
-        probe.update( pikeInt.gui.view )
+        probe.viewChanged( pikeInt.gui.view )
       case None =>
     }
   }
@@ -50,8 +51,9 @@ class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeCon
 
   class WrappedLayer(l: LayerRenderer, s: String) extends LayerRenderer {
     override def toString = s
-    override def update(view: ViewPort) = l.update(view)
-    def render(g: Graphics, view: ViewPort) = l.render(g, view)
+    override def viewChanged(view: ViewPort) = l.viewChanged(view)
+    override def render(g: Graphics) = l.render(g)
+    override def prepareRender(subWorld: SubWorld, layer: Int) = l.prepareRender(subWorld, layer)
   }
 
   def probesFor( unit: ActorRef ): TreeItem[LayerRenderer] = {
@@ -62,7 +64,8 @@ class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeCon
       case metadatas =>
         for (metadata <- metadatas) {
           val metadataNode = new TreeItem[LayerRenderer]( new LayerRenderer {
-            def render(g: Graphics, view: ViewPort) {}
+            override def prepareRender(subWorld: SubWorld, layer: Int) {}
+            override def render(g: Graphics) {}
             override def toString: String = metadata.title
           } )
           root.addTreeItem(metadataNode)

@@ -3,7 +3,7 @@ package be.angelcorp.omicronai
 import scala.math._
 import com.lyndir.omicron.api.model._
 import scala.collection.mutable.ListBuffer
-import be.angelcorp.omicronai.world.WorldSize
+import be.angelcorp.omicronai.world.WorldBounds
 
 /**
  * A location of a specific tile on the u-v-h game map.
@@ -32,9 +32,9 @@ import be.angelcorp.omicronai.world.WorldSize
  * @param u U-axis coordinate
  * @param v V-axis coordinate
  * @param h Height-axis coordinate
- * @param size Size of the in-plane map (u-v plane)
+ * @param bounds Bounds of the map
  */
-case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
+case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
 
   // Cube coordinate x
   val x = u
@@ -49,7 +49,7 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
   }
 
   /** Indicates if this location is on the top layer */
-  def atTop = h == size.hSize - 1
+  def atTop = h == bounds.hSize - 1
   /** Indicates if this location is on the bottom layer */
   def atBottom = h == 0
 
@@ -57,10 +57,10 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
   def δu(l: Location) = {
     val du = l.u - u
 
-    if (du > size.uSize / 2)
-      du - size.uSize
-    else if (du < -size.uSize / 2)
-      du + size.uSize
+    if (du > bounds.uSize / 2)
+      du - bounds.uSize
+    else if (du < -bounds.uSize / 2)
+      du + bounds.uSize
     else
       du
   }
@@ -72,10 +72,10 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
   def δv(l: Location) = {
     val dv = l.v - v
 
-    if (dv > size.vSize / 2)
-      dv - size.vSize
-    else if (dv < -size.vSize / 2)
-      dv + size.vSize
+    if (dv > bounds.vSize / 2)
+      dv - bounds.vSize
+    else if (dv < -bounds.vSize / 2)
+      dv + bounds.vSize
     else
       dv
   }
@@ -108,9 +108,9 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
 
   /** Get the location given by its distance along the u, v, and h axis from this location */
   def Δ(δu: Int, δv: Int, δh: Int): Location = new Location(
-    (size.uSize + u + δu) % size.uSize,
-    (size.vSize + v + δv) % size.vSize,
-    h + δh, size
+    (bounds.uSize + u + δu) % bounds.uSize,
+    (bounds.vSize + v + δv) % bounds.vSize,
+    h + δh, bounds
   )
 
   /** Get the location given by its direction and distance from this location */
@@ -122,9 +122,9 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
 
   /** Get the in-layer location given by its distance along the u and v axis from this location */
   def Δ2(δu: Int, δv: Int): Location = new Location(
-    (size.uSize + u + δu) % size.uSize,
-    (size.vSize + v + δv) % size.vSize,
-    h, size
+    (bounds.uSize + u + δu) % bounds.uSize,
+    (bounds.vSize + v + δv) % bounds.vSize,
+    h, bounds
   )
 
   /** Returns a list containing all the locations that neighbour this tile (including up/down if available) */
@@ -149,7 +149,7 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
    */
   def neighbour( direction: Direction ): Option[Location] = {
     val tile = this Δ (direction.du, direction.dv, direction.dh)
-    if (size.inBounds(tile)) Some(tile) else None
+    if (bounds.inBounds(tile)) Some(tile) else None
   }
 
   /** Location laying to the North-East of this location */
@@ -167,14 +167,14 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
 
   /** List of its four mirror locations outside of the map (which is a parallelogram) */
   lazy val mirrors = List(
-    new Location(u + size.uSize, v, h, size),
-    new Location(u - size.uSize, v, h, size),
-    new Location(u, v + size.vSize, h, size),
-    new Location(u, v - size.vSize, h, size)
+    new Location(u + bounds.uSize, v, h, bounds),
+    new Location(u - bounds.uSize, v, h, bounds),
+    new Location(u, v + bounds.vSize, h, bounds),
+    new Location(u, v - bounds.vSize, h, bounds)
   )
 
   /** All the tiles with the same u,v coordinates as this tile, but all possible different heights. */
-  lazy val stack = for (h <- 0 until size.hSize) yield new Location(u, v, h, size)
+  lazy val stack = for (h <- 0 until bounds.hSize) yield new Location(u, v, h, bounds)
 
   /**
    * Returns the right rotation (counterclockwise, 60 deg) of this tile around a specified center tile.
@@ -186,7 +186,7 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
   def rotateRightAround( l: Location ) = {
     val du = δu(l)
     val dv = δv(l)
-    Location( u-dv, v+du+dv, h, size )
+    Location( u-dv, v+du+dv, h, bounds )
   }
 
   /**
@@ -199,7 +199,7 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
   def rotateLeftAround(  l: Location ) = {
     val du = δu(l)
     val dv = δv(l)
-    Location( u+du+dv, v-du, h, size )
+    Location( u+du+dv, v-du, h, bounds )
   }
 
   /**
@@ -212,8 +212,8 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
   def rotationsFor(l: Location) = {
     val (du, dv)  = ( δu(l), δv(l) )
     val (x, y, z) = (du, -du-dv, dv)
-    List( Location( u-y, v-x, h, size ), Location( u+z, v+y, h, size ), Location( u-x, v-z, h, size ),
-          Location( u+y, v+x, h, size ), Location( u-z, v-y, h, size ), l )
+    List( Location( u-y, v-x, h, bounds ), Location( u+z, v+y, h, bounds ), Location( u-x, v-z, h, bounds ),
+          Location( u+y, v+x, h, bounds ), Location( u-z, v-y, h, bounds ), l )
   }
 
   /**
@@ -296,13 +296,13 @@ case class Location( u: Int, v: Int, h: Int, size: WorldSize ) {
         prev = p
         Some( prev )
       } else None
-    }).flatten.map( e => Location(e._1, e._3, h, size) )
+    }).flatten.map( e => Location(e._1, e._3, h, bounds) )
   }
 
   def adjacentTo(l: Location) = δ(l) == 1
 
   /** Return a location that is ensured to be within the map constraints (and not one of its mirrors)  */
-  def reduce: Location = new Location(u % size.uSize, v % size.vSize, h, size)
+  def reduce: Location = new Location(u % bounds.uSize, v % bounds.vSize, h, bounds)
 
   override def toString: String = s"Location($u, $v, $h)"
 
@@ -335,23 +335,23 @@ object Location {
   }
 
   /** Construct a location based on its approximate axial coordinates */
-  def apply( u: Double, v: Double, h: Int, size: WorldSize ): Location = {
+  def apply( u: Double, v: Double, h: Int, size: WorldBounds ): Location = {
     val (u2, v2) = roundHexAxial(u, v)
     new Location( u2, v2, h, size )
   }
 
   /** Construct a location based on its cube coordinates (instead of axial coordinates u|v ) */
-  def apply( x: Int, y: Int, z: Int, h: Int, size: WorldSize ): Location = {
+  def apply( x: Int, y: Int, z: Int, h: Int, size: WorldBounds ): Location = {
     new Location( x, z, h, size )
   }
 
   /** Construct a location based on its approximate cube coordinates */
-  def apply( x: Double, y: Double, z: Double, h: Int, size: WorldSize ): Location = {
+  def apply( x: Double, y: Double, z: Double, h: Int, size: WorldBounds ): Location = {
     val (x2, y2, z2) = roundHexCube(x,y,z)
     new Location( x2, z2, h, size )
   }
 
-  def apply(tile: HexTile, h: Int, size: WorldSize): Location =
+  def apply(tile: HexTile, h: Int, size: WorldBounds): Location =
     new Location(tile.u, tile.v, h, size)
 
   implicit def levelType2int(level: LevelType): Int = level.ordinal()
@@ -366,7 +366,7 @@ object Location {
     game.getLevel(l.h).getTile( l: Coordinate ).get()
 
   implicit def location2coordinate( l: Location ): Coordinate =
-    new Coordinate( l.u, l.v, l.size )
+    new Coordinate( l.u, l.v, l.bounds )
 
 }
 

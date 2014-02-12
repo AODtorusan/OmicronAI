@@ -17,7 +17,7 @@ class DirectionMap(destination: Location) {
 
   val flowField = {
     val floodcost = FloodFill.fill( destination )
-    Field.tabulate(destination.size)( location => {
+    Field.tabulate(destination.bounds)( location => {
       val bestNeighbour = location.neighbours.minBy( entry => floodcost(entry._2) )
 
       val dir = bestNeighbour._1

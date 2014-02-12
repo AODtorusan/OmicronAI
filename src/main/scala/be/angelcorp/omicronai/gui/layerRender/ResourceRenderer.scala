@@ -1,44 +1,40 @@
 package be.angelcorp.omicronai.gui.layerRender
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.Some
 import scala.collection.mutable
 import akka.actor.ActorRef
-import akka.pattern._
-import akka.util.Timeout
 import org.newdawn.slick.{Color, Graphics}
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.ResourceType
 import com.lyndir.omicron.api.model.ResourceType._
 import be.angelcorp.omicronai.HexTile
-import be.angelcorp.omicronai.gui.{Canvas, ViewPort}
-import be.angelcorp.omicronai.configuration.Configuration._
-import be.angelcorp.omicronai.world.{GhostState, KnownState, WorldState, LocationStates}
+import be.angelcorp.omicronai.gui.Canvas
+import be.angelcorp.omicronai.world._
 
 class ResourceRenderer(val world: ActorRef) extends LayerRenderer {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit val timeout: Timeout = config.ai.messageTimeout seconds;
 
-  def render(g: Graphics, view: ViewPort) {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    val futureResources = (world ? LocationStates(view.tilesInView.toSeq)).mapTo[Seq[WorldState]]
-    val allResources = Await.result( futureResources, timeout.duration).zip(view.tilesInView)
+  val filledTiles = mutable.Map[ResourceType, mutable.ListBuffer[HexTile]]()
+  var tiles = Array.ofDim[(HexTile, Option[Map[ResourceType, Int]])](0)
 
-    val filledTiles = mutable.Map[ResourceType, mutable.ListBuffer[HexTile]]()
-    val tiles = allResources.map( {
-      case (KnownState(_,_,res), loc) =>
-        for ((typ, count)<-res)
+  override def prepareRender(subWorld: SubWorld, layer: Int) {
+    filledTiles.clear()
+    tiles = subWorld.states(layer) map {
+      case (loc, KnownState(_, _, res)) =>
+        for ((typ, count) <- res)
           if (count > 0) filledTiles.getOrElseUpdate(typ, mutable.ListBuffer()) += loc
-        HexTile(loc) -> Some( res )
-      case (GhostState(_,_,res), loc) =>
-        for ((typ, count)<-res)
+        HexTile(loc) -> Some(res)
+      case (loc, GhostState(_, _, res)) =>
+        for ((typ, count) <- res)
           if (count > 0) filledTiles.getOrElseUpdate(typ, mutable.ListBuffer()) += loc
-        HexTile(loc) -> Some( res )
-      case (_, loc)                   =>
+        HexTile(loc) -> Some(res)
+      case (loc, _) =>
         HexTile(loc) -> None
-    } )
+    }
+  }
 
+  override def render(g: Graphics) {
     for ((typ, tiles) <- filledTiles) typ match {
       case FUEL          => Canvas.render(g, tiles, Color.transparent, new Color(  0, 255,   0, 128))
       case SILICON       => Canvas.render(g, tiles, Color.transparent, new Color(255, 255,   0, 128))

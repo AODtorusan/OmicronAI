@@ -34,7 +34,7 @@ trait ActionExecutor {
   }
 
   def attack( asset: Asset, weaponModule: WeaponModule, target: Location): Future[Try[Unit]] =
-    haltTheWorld ( Future.successful {
+    Future { haltTheWorld (
       asset.weapons.find( _ == weaponModule ) match {
         case Some(module) =>
           if (module.fireAt( target ))
@@ -44,7 +44,7 @@ trait ActionExecutor {
         case None =>
           Failure( MissingModule( asset, weaponModule.getType ) )
       }
-    } )
+    ) }
 
   def move( asset: Asset, path: Seq[Location]): Future[Try[Unit]] = haltTheWorld {
     if (path.length == 0)
@@ -87,7 +87,7 @@ trait ActionExecutor {
     }
   }
 
-  def move( asset: Asset, direction: Direction): Future[Try[Unit]] = haltTheWorld ( Future.successful {
+  def move( asset: Asset, direction: Direction): Future[Try[Unit]] = Future { haltTheWorld (
     asset.mobility match {
       case Some(module) =>
         asset.location neighbour direction match {
@@ -105,9 +105,9 @@ trait ActionExecutor {
       case None =>
         Failure( MissingModule(asset, PublicModuleType.MOBILITY) )
     }
-  } )
+  ) }
 
-  def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[IConstructionSite]] = haltTheWorld ( Future.successful{
+  def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[IConstructionSite]] = Future { haltTheWorld (
     if (builder.location adjacentTo destination )
       builder.constructors.headOption match {
         case Some(module) =>
@@ -119,9 +119,9 @@ trait ActionExecutor {
           Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
       }
     else Failure( TooFar(builder, destination, 1) )
-  })
+  ) }
 
-  def constructionAssist( builder: Asset, site: IGameObject ): Future[Try[Unit]] = haltTheWorld ( Future.successful{
+  def constructionAssist( builder: Asset, site: IGameObject ): Future[Try[Unit]] = Future { haltTheWorld (
     if (builder.constructors.isEmpty)
       Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
     else {
@@ -137,7 +137,7 @@ trait ActionExecutor {
           Failure( InFogOfWar(s"Cannot get the location of the target work site of $site") )
       }
     }
-  })
+  ) }
 
 }
 

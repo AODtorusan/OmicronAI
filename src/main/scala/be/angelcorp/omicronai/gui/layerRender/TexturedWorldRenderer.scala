@@ -13,31 +13,35 @@ import org.slf4j.LoggerFactory
 import org.newdawn.slick.Graphics
 import be.angelcorp.omicronai.gui.{Canvas, ViewPort}
 import be.angelcorp.omicronai.gui.textures.Textures
-import be.angelcorp.omicronai.world.{WorldState, LocationStates, KnownState, GhostState}
+import be.angelcorp.omicronai.world._
+import be.angelcorp.omicronai.world.KnownState
+import be.angelcorp.omicronai.world.GhostState
+import scala.Some
+import be.angelcorp.omicronai.world.LocationStates
+import be.angelcorp.omicronai.Location
 
 class TexturedWorldRenderer( world: ActorRef ) extends LayerRenderer {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  implicit def timeout: Timeout = 50 milliseconds;
 
-  override def render(g: Graphics, view: ViewPort) = {
+  var locations = Array.ofDim[Location](0)
+
+  override def prepareRender(subWorld: SubWorld, layer: Int) {
+    locations = subWorld.states(layer).map {
+      case (_, KnownState(loc, _, _)) => Some(loc)
+      case (_, GhostState(loc, _, _)) => Some(loc)
+      case _ => None
+    }.flatten
+  }
+
+  override def render(g: Graphics) = {
     Textures.get("terrain.grass") foreach {
       img =>
-        val futureStates = ask(world, LocationStates(view.tilesInView.toList)).mapTo[Seq[WorldState]]
-        try {
-          val locations = Await.result( futureStates, Duration(50, TimeUnit.MILLISECONDS) ).map {
-            case KnownState(loc, _, _) => Some(loc)
-            case GhostState(loc, _, _) => Some(loc)
-            case _ => None
-          }
-          img.startUse()
-          for (optionalLocation <- locations; loc <- optionalLocation) {
-            val (x, y) = Canvas.center(loc)
-            img.drawEmbedded(x - img.getWidth/2, y - img.getHeight/2)
-          }
-          img.endUse()
-        } catch {
-          case e: TimeoutException => logger.warn(s"World layer could not get the state of all the tiles in view within 50ms.")
+        img.startUse()
+        for (loc <- locations) {
+          val (x, y) = Canvas.center(loc)
+          img.drawEmbedded(x - img.getWidth/2, y - img.getHeight/2)
         }
+        img.endUse()
     }
   }
 

@@ -42,7 +42,8 @@ class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: 
   lazy val admiral = {
     Await.result( admiralRef ? Self(), timeout.duration ).asInstanceOf[Admiral]
   }
-  def world = admiral.world
+  def world =
+    Await.result(actorSystem.actorSelection( admiralRef.path / "World" ).resolveOne(timeout.duration), timeout.duration)
 
   val supervisorRef =
     actorSystem.actorOf( Props( new GuiSupervisor(admiralRef, this) ), name="AiSupervisor" )

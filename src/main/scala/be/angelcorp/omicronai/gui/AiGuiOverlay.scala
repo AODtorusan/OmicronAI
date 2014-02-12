@@ -1,5 +1,10 @@
 package be.angelcorp.omicronai.gui
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import java.util.concurrent.{TimeoutException, TimeUnit}
+import akka.pattern.ask
+import akka.util.Timeout
 import com.lyndir.omicron.api.model.Game
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -12,9 +17,11 @@ import be.angelcorp.omicronai.{Location, HexTile}
 import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.gui.input.{AiGuiInput, InputSystem, GameOverlay}
 import be.angelcorp.omicronai.gui.slick.DrawStyle
+import be.angelcorp.omicronai.world.{SubWorld, GetSubWorld}
 
 class AiGuiOverlay(val game: Game, val ai: AI) extends GameOverlay {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
+  implicit val timeout: Timeout = Duration(100, TimeUnit.MILLISECONDS)
 
   val getTitle = "PikeAi gui"
   val id       = 1
@@ -42,24 +49,38 @@ class AiGuiOverlay(val game: Game, val ai: AI) extends GameOverlay {
     guiInterface = ai.buildGuiInterface(this, nifty)
   }
 
-  override def updateGame(container: GameContainer, game: StateBasedGame, delta: Int) {}
-
   var container: GameContainer = null
   lazy val view = new ViewPort(this)
   var hoverTile: Option[HexTile] = None
   def hoverLocation: Option[Location] = hoverTile.map( t => Location(t, view.activeLayer, game.getController.getGame.getLevelSize) )
+
+  override def updateGame(container: GameContainer, game: StateBasedGame, delta: Int) {}
 
   override def renderGame(container: GameContainer, game: StateBasedGame, g: Graphics) {
     g.clear()
     g.scale( view.scale, view.scale)
     g.translate( view.offset._1, view.offset._2)
 
+    val layers = guiInterface.activeLayers
+
+    // Inform the layers if the viewport changed
     if (view.changed) {
-      guiInterface.activeLayers.par.foreach( _.update(view) )
+      layers.par.foreach( _.viewChanged(view) )
       view.unsetChanged()
     }
 
-    guiInterface.activeLayers.foreach( _.render(g, view) )
+    // Prepare all the layers for rendering with the latest world data
+    try {
+      val subworld = Await.result( (ai.world ? GetSubWorld(view.viewBounds)).mapTo[SubWorld], timeout.duration )
+      layers.par.foreach( _.prepareRender(subworld, view.activeLayer) )
+    } catch {
+      case e: TimeoutException =>
+        logger.warn("Could not update viewport, world data not received within 100ms.")
+    }
+
+    // Render all the layers to the screen
+    layers.foreach( _.render(g) )
+
 
     hoverTile match {
       case Some(loc) =>

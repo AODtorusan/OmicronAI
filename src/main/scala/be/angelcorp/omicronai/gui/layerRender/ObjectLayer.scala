@@ -10,10 +10,14 @@ import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.IGameObject
 import be.angelcorp.omicronai.gui.{ViewPort, Canvas}
-import be.angelcorp.omicronai.HexTile
+import be.angelcorp.omicronai.{Location, HexTile}
 import be.angelcorp.omicronai.gui.textures.MapIcons
-import be.angelcorp.omicronai.world.{WorldState, LocationStates, GhostState, KnownState}
+import be.angelcorp.omicronai.world._
 import be.angelcorp.omicronai.gui.slick.DrawStyle
+import be.angelcorp.omicronai.world.KnownState
+import be.angelcorp.omicronai.world.GhostState
+import scala.Some
+import be.angelcorp.omicronai.world.LocationStates
 
 class ObjectLayer(world:  ActorRef,
                   filter: IGameObject => Boolean,
@@ -26,35 +30,33 @@ class ObjectLayer(world:  ActorRef,
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def render(g: Graphics, view: ViewPort) {
-    val viewLocations = view.tilesInView.toSeq
-    // { object, location, isGhost }
-    val futureObjects = for ( states <- ask(world, LocationStates(viewLocations)).mapTo[Seq[WorldState]] ) yield
-      states.map( {
-        case KnownState(loc, optionContent, _) => optionContent match {
+  // { object, location, isGhost }
+  var objects = Array.ofDim[(IGameObject, Location, Boolean)](0)
+
+  override def prepareRender(subWorld: SubWorld, layer: Int) {
+    objects = subWorld.states(layer).map( {
+        case (loc, KnownState(_, optionContent, _)) => optionContent match {
           case Some(obj) if filter(obj) => Some((obj, loc, false))
           case _ => None
         }
-        case GhostState(loc, optionContent, _) => optionContent match {
+        case (loc, GhostState(_, optionContent, _)) => optionContent match {
           case Some(obj) if filter(obj) => Some((obj, loc, true))
           case _ => None
         }
         case _          => None
       } ).flatten
-    try {
-      val objects = Await.result( futureObjects, timeout.duration )
-      objects.foreach( entry => {
-        val tile: HexTile = entry._2
-        new Canvas( tile ) {
-          override def borderStyle: DrawStyle = border
-          override def fillColor: Color       = if (entry._3) ghostFill else knownFill
-        }.render(g)
-        val (centerX, centerY) = Canvas.center( tile )
-        MapIcons.getIcon( entry._1 ).drawCentered( centerX, centerY )
-      } )
-    } catch {
-      case e: TimeoutException => logger.warn(s"Object layer ($name) could not get the state of all the tiles in view within 50ms.")
-    }
+  }
+
+  override def render(g: Graphics) {
+    objects.foreach( entry => {
+      val tile: HexTile = entry._2
+      new Canvas( tile ) {
+        override def borderStyle: DrawStyle = border
+        override def fillColor: Color       = if (entry._3) ghostFill else knownFill
+      }.render(g)
+      val (centerX, centerY) = Canvas.center( tile )
+      MapIcons.getIcon( entry._1 ).drawCentered( centerX, centerY )
+    } )
   }
 
   override def toString = name

@@ -14,7 +14,7 @@ import be.angelcorp.omicronai.gui.slick.DrawStyle
 case class MoveAction( asset: Asset, destination: Location, world: ActorRef ) extends Action {
   lazy val solution = new MovementPathfinder(destination, asset, world).findPath(asset.location)
 
-  lazy val preview  = solution._2.layers.get("Solution path").get
+  def preview  = new PolyLineRenderer( solution._1.path.reverse.dropWhile( _ != asset.location ), DrawStyle(Color.yellow, 3.0f) )
 
   override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) =
     wasSuccess( ai.move(asset, solution._1.path.reverse) )

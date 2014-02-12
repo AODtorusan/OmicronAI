@@ -6,6 +6,7 @@ import org.newdawn.slick.{Color, Graphics}
 import org.newdawn.slick.geom.Polygon
 import scala.collection.mutable.ListBuffer
 import be.angelcorp.omicronai.gui.slick.DrawStyle
+import be.angelcorp.omicronai.world.SubWorld
 
 class PolyLineRenderer(path: Seq[Location], style: DrawStyle, description: String = "PolyLine") extends LayerRenderer {
 
@@ -19,7 +20,7 @@ class PolyLineRenderer(path: Seq[Location], style: DrawStyle, description: Strin
     var last: Option[Location] = None
     for ( loc <- path ) {
       // Avoid a line crossing the map when wrapping
-      if (last.isDefined && (loc.size.getWidth / 2 < math.abs(last.get.δuUnwrap(loc)) || loc.size.getWidth / 2 < math.abs(last.get.δvUnwrap(loc)) ) ) {
+      if (last.isDefined && (loc.bounds.getWidth / 2 < math.abs(last.get.δuUnwrap(loc)) || loc.bounds.getWidth / 2 < math.abs(last.get.δvUnwrap(loc)) ) ) {
         // Add the next line segment (from onto the map to out-of-map)
         val virtualNext = loc.mirrors.minBy( mirror => mirror δunwrap last.get )
         val centerNext  = Canvas.center(virtualNext)
@@ -45,10 +46,13 @@ class PolyLineRenderer(path: Seq[Location], style: DrawStyle, description: Strin
     polyLines
   }
 
-  def render(g: Graphics, view: ViewPort) {
+  override def prepareRender(subWorld: SubWorld, layer: Int) {}
+
+  override def render(g: Graphics) {
     style.applyOnto(g)
     polyLines.foreach( g.draw )
   }
 
   override def toString = description
+
 }

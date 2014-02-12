@@ -1,21 +1,12 @@
 package be.angelcorp.omicronai.gui.screens.ui.lance
 
-import scala.collection.mutable
-import scala.util.{Failure, Success}
-import scala.concurrent.duration._
-import akka.util.Timeout
-import akka.pattern.ask
-import akka.actor.ActorRef
 import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
 import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicronai.gui.screens.GuiScreen
-import be.angelcorp.omicronai.gui.{AiGuiOverlay, AiGui}
-import be.angelcorp.omicronai.gui.nifty.{NiftyConstants, TreeBoxViewController}
-import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
-import NiftyConstants._
-import be.angelcorp.omicronai.ai.pike.agents.Name
+import be.angelcorp.omicronai.gui.AiGuiOverlay
+import be.angelcorp.omicronai.gui.nifty.NiftyConstants._
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
 object LanceUserInterface extends GuiScreen {
