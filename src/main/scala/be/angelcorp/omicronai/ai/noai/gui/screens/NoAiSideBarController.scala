@@ -4,7 +4,6 @@ import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.controls._
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber}
-import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
 import be.angelcorp.omicronai.gui.GuiController
 import be.angelcorp.omicronai.gui.screens.ui.UserInterface
 
@@ -27,13 +26,13 @@ class NoAiSideBarController(ui: NoAiUserInterfaceController) extends GuiControll
 
   @NiftyEventSubscriber(id = "layerUpButton")
   def layerUpButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.moveUp()
+    case e: ButtonClickedEvent => ui.gui.moveUp()
     case _ =>
   }
 
   @NiftyEventSubscriber(id = "layerDownButton")
   def layerDownButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.moveDown()
+    case e: ButtonClickedEvent => ui.gui.moveDown()
     case _ =>
   }
 

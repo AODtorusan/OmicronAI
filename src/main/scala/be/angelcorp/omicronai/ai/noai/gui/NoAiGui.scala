@@ -6,13 +6,14 @@ import de.lessvoid.nifty.Nifty
 import org.newdawn.slick.{Graphics, Color}
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.ai.noai.{NoAiGameListener, NoAi}
-import be.angelcorp.omicronai.ai.noai.gui.screens.NoAiConstructionScreenController
+import be.angelcorp.omicronai.ai.noai.gui.screens.{NoAiUserInterfaceController, NoAiConstructionScreenController}
 import be.angelcorp.omicronai.bridge.Asset
 import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.layerRender._
 import be.angelcorp.omicronai.gui.slick.DrawStyle
 import be.angelcorp.omicronai.world.SubWorld
 import akka.actor.Props
+import com.lyndir.omicron.api.model.LevelType
 
 class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
   val listener = new NoAiGameListener( this )
@@ -88,5 +89,21 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
     if (resourcesOn)                  layers += resourceRenderer
     layers
   }
+
+  def moveTo(asset: Asset) {
+    val loc = asset.location
+    moveTo( loc.h )
+    frame.view.centerOn( loc )
+  }
+
+  def moveTo(h: Int) {
+    frame.view.activeLayer = h
+    uiScreen.getScreenController.asInstanceOf[NoAiUserInterfaceController].sidebarController.layerLabel.setText(
+      LevelType.values()(h).getName
+    )
+  }
+
+  def moveUp()   = moveTo( math.min( frame.view.activeLayer + 1, noai.gameSize.hSize - 1) )
+  def moveDown() = moveTo( math.max( frame.view.activeLayer - 1, 0 ) )
 
 }

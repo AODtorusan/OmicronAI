@@ -27,14 +27,4 @@ class NoAiUserInterfaceController(val gui: NoAiGui) extends ScreenController {
     popupController.populate()
   }
 
-  def moveUp() {
-    gui.frame.view.activeLayer = math.min( gui.frame.view.activeLayer + 1, gui.noai.gameSize.hSize - 1)
-    sidebarController.layerLabel.setText( LevelType.values()(gui.frame.view.activeLayer).getName )
-  }
-
-  def moveDown() {
-    gui.frame.view.activeLayer = math.max( gui.frame.view.activeLayer - 1, 0 )
-    sidebarController.layerLabel.setText( LevelType.values()(gui.frame.view.activeLayer).getName )
-  }
-
 }

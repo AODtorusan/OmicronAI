@@ -30,8 +30,13 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
     case m: GuiInputEvent if config.noai.endTurn(m) =>
       noai.endTurn()
 
-    case m: GuiInputEvent if config.noai.nextUnit(m) =>      // TODO
-    case m: GuiInputEvent if config.noai.previousUnit(m) =>  // TODO
+    case m: GuiInputEvent if config.noai.nextUnit(m) =>
+      noai.selectNext()
+      noai.selected.map( gui.moveTo )
+
+    case m: GuiInputEvent if config.noai.previousUnit(m) =>
+      noai.selectPrevious()
+      noai.selected.map( gui.moveTo )
 
     case m: GuiInputEvent if config.noai.centerView(m) =>
       noai.withSecurity(noai.getKey) {
