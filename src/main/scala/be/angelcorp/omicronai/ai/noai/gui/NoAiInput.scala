@@ -1,14 +1,11 @@
 package be.angelcorp.omicronai.ai.noai.gui
 
 import scala.collection.JavaConverters._
-import org.newdawn.slick.Input._
-import be.angelcorp.omicronai.gui.input._
-import be.angelcorp.omicronai.ai.noai.NoAi
-import be.angelcorp.omicronai.gui.input.KeyReleased
-import be.angelcorp.omicronai.gui.input.MouseClicked
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.ai.actions.MoveAction
-import akka.actor.Actor
+import be.angelcorp.omicronai.ai.noai.NoAi
+import be.angelcorp.omicronai.configuration.Configuration.config
+import be.angelcorp.omicronai.gui.input._
 
 class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
 
@@ -27,18 +24,26 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
           }
       }
 
-    case KeyReleased(KEY_ENTER, _, _, false, false) =>
+    case m: GuiInputEvent if config.noai.updateOrConfirmAction(m) =>
       noai.plannedAction.map( a => noai.updateOrConfirmAction( a ) )
 
-    case KeyReleased(KEY_DELETE, _, _, _, _) =>
-      val objs = noai.getController.listObjects()
-      val sum = objs.asScala.foldLeft( (0.0,0.0) )( (loc, unit) => {
-        val l = unit.checkLocation().get().getPosition
-        (loc._1 + l.getU, loc._2 + l.getV)
-      } )
-      val u = sum._1 / objs.size()
-      val v = sum._2 / objs.size()
-      gui.frame.view.centerOn( u.toInt, v.toInt )
+    case m: GuiInputEvent if config.noai.endTurn(m) =>
+      noai.endTurn()
+
+    case m: GuiInputEvent if config.noai.nextUnit(m) =>      // TODO
+    case m: GuiInputEvent if config.noai.previousUnit(m) =>  // TODO
+
+    case m: GuiInputEvent if config.noai.centerView(m) =>
+      noai.withSecurity(noai.getKey) {
+        val objs = noai.getController.listObjects()
+        val sum = objs.asScala.foldLeft( (0.0,0.0) )( (loc, unit) => {
+          val l = unit.checkLocation().get().getPosition
+          (loc._1 + l.getU, loc._2 + l.getV)
+        } )
+        val u = sum._1 / objs.size()
+        val v = sum._2 / objs.size()
+        gui.frame.view.centerOn( u.toInt, v.toInt )
+      }
   }
 
 }

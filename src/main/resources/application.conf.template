@@ -1,4 +1,4 @@
-ai.engine = "PikeAI"
+ai.engine = "NoAI"
 ai.name   = "Flubber Master 3000"
 ai.messageTimeout = 300 # seconds
 ai.supervisor {
@@ -8,11 +8,40 @@ ai.supervisor {
     supervisedMessages = [
     ]
 }
-gui.messageTimeout = 10 # seconds
+
 pathfinder.layerChangePenalty = 0
 pathfinder.groundPenalty      = 0
 pathfinder.skyPenalty         = 0
 pathfinder.spacePenalty       = 0
+
+noai {
+    keybindings = {
+        endTurn               = "RETURN" # = enter
+        updateOrConfirmAction = "SPACE"
+        centerView            = "BACK"
+        nextUnit              = "TAB"
+        previousUnit          = {key = "TAB", shiftDown = true }
+    }
+}
+
+gui {
+    messageTimeout = 10 # seconds
+    keybindings = {
+        cameraNorth     = {key = "UP",       trigger = "KeyPressed" }
+        cameraSouth     = {key = "DOWN",     trigger = "KeyPressed" }
+        cameraEast      = {key = "RIGHT",    trigger = "KeyPressed" }
+        cameraWest      = {key = "LEFT",     trigger = "KeyPressed" }
+        cameraNorthFast = {key = "UP",       trigger = "KeyPressed", shiftDown = true }
+        cameraSouthFast = {key = "DOWN",     trigger = "KeyPressed", shiftDown = true }
+        cameraEastFast  = {key = "RIGHT",    trigger = "KeyPressed", shiftDown = true }
+        cameraWestFast  = {key = "LEFT",     trigger = "KeyPressed", shiftDown = true }
+        cameraIn        = {key = "ADD",      trigger = "KeyPressed" }
+        cameraOut       = {key = "SUBTRACT", trigger = "KeyPressed" }
+        cameraInFast    = "NONE"
+        cameraOutFast   = "NONE"
+        cameraReset     = "DELETE"
+    }
+}
 
 graphics {
     width           = 1000

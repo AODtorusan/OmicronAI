@@ -11,9 +11,9 @@ import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.Game
 import de.lessvoid.nifty.slick2d.{NiftyOverlayBasicGameState, NiftyStateBasedGame, NiftyOverlayGameState}
 import be.angelcorp.omicronai._
+import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.ai.pike.PikeAi
 import be.angelcorp.omicronai.ai.lance.LanceAi
-import be.angelcorp.omicronai.ai.AI
 import be.angelcorp.omicronai.ai.noai.NoAi
 import be.angelcorp.omicronai.configuration.Configuration.config
 import be.angelcorp.omicronai.gui.textures.Textures

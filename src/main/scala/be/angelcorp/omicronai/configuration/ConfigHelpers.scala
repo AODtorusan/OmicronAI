@@ -5,7 +5,14 @@ import com.typesafe.config.{ConfigException, Config}
 object ConfigHelpers {
 
   implicit class RichConfig(val underlying: Config) extends AnyVal {
-    private def getOption[T]( f: => T ) = try { Some(f) } catch { case e: ConfigException.Missing => None }
+    private def getOption[T]( f: => T ) =
+      try {
+        Some(f)
+      } catch {
+        case e: ConfigException.Missing   => None
+        case e: ConfigException.WrongType => None
+      }
+
     def getOptionalBoolean(path: String)    = getOption(underlying.getBoolean(path))
     def getOptionalNumber(path: String)     = getOption(underlying.getNumber(path))
     def getOptionalInt(path: String)        = getOption(underlying.getInt(path))

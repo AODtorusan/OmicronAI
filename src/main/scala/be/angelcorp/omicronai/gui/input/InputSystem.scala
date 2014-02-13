@@ -1,10 +1,13 @@
 package be.angelcorp.omicronai.gui.input
 
+import akka.event.EventStream
 import de.lessvoid.nifty.slick2d.input.AbstractSlickInputSystem
 import de.lessvoid.nifty.slick2d.input.events._
-import akka.event.EventStream
+import org.lwjgl.input.Keyboard._
 
 class InputSystem(val eventStream: EventStream) extends AbstractSlickInputSystem {
+
+  def isAltDown = isKeyDown( KEY_LMENU ) || isKeyDown( KEY_RMENU )
 
   /**
    * Publish the input event on the EventStream
@@ -12,8 +15,8 @@ class InputSystem(val eventStream: EventStream) extends AbstractSlickInputSystem
   def handleInputEvent(niftyEvent: InputEvent) {
     eventStream.publish(
       niftyEvent match {
-        case e: KeyboardEventReleased => KeyReleased(e.getKey, e.getCharacter, e.isKeyDown, e.isShiftDown, e.isControlDown)
-        case e: KeyboardEventPressed  => KeyPressed(e.getKey, e.getCharacter, e.isKeyDown, e.isShiftDown, e.isControlDown)
+        case e: KeyboardEventReleased => KeyReleased(e.getKey, e.isShiftDown, e.isControlDown, isAltDown)
+        case e: KeyboardEventPressed  => KeyPressed(e.getKey, e.isShiftDown, e.isControlDown, isAltDown)
         case e: MouseEventWheelMoved  => MouseWheelMoved(e.getX, e.getY, e.getDelta)
         case e: MouseEventPressed     => MousePressed( e.getX, e.getY, e.getButton)
         case e: MouseEventDragged     => MouseDragged( e.getX, e.getY, e.getTargetX, e.getTargetY, e.getButton)
@@ -27,8 +30,8 @@ class InputSystem(val eventStream: EventStream) extends AbstractSlickInputSystem
 }
 
 sealed abstract class GuiInputEvent
-case class KeyReleased(keyId: Int, keyChar: Char, keyDown: Boolean, shiftDown: Boolean, controlDown: Boolean) extends  GuiInputEvent
-case class KeyPressed(keyId: Int, keyChar: Char, keyDown: Boolean, shiftDown: Boolean, controlDown: Boolean) extends  GuiInputEvent
+case class KeyReleased(keyId: Int, shiftDown: Boolean, controlDown: Boolean, altDown: Boolean) extends  GuiInputEvent
+case class KeyPressed( keyId: Int, shiftDown: Boolean, controlDown: Boolean, altDown: Boolean) extends  GuiInputEvent
 case class MouseWheelMoved(mouseX: Int, mouseY: Int, delta: Int) extends  GuiInputEvent
 case class MousePressed(x: Int, y: Int, mouseButton: Int) extends  GuiInputEvent
 case class MouseDragged(startX: Int, startY: Int, endX: Int, endY: Int, mouseButton: Int) extends  GuiInputEvent
