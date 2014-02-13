@@ -7,6 +7,9 @@ import be.angelcorp.omicronai.gui.{AiGuiOverlay, GuiInterface}
 
 abstract class AI( playerId: Int, key: PlayerKey, name: String, primaryColor: Color, secondaryColor: Color  ) extends Player( playerId, key, name, primaryColor, secondaryColor) {
 
+  // TODO: Remove, only required to circumvent a bug in the api
+  Security.authenticate(this, key)
+
   def world: ActorRef
 
   def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty): GuiInterface
@@ -15,9 +18,20 @@ abstract class AI( playerId: Int, key: PlayerKey, name: String, primaryColor: Co
   def prepare() {}
 
   /** Start playing the game (game and possible gui have been build) */
-  def start() {
-    Security.authenticate(this, key)
+  def start() = withSecurity(key) {
     getController.getGameController.setReady()
   }
+
+  def withSecurity[T](key: PlayerKey)( body: => T ) =
+    if (Security.isAuthenticatedAs(this)) {
+      body
+    } else {
+      Security.authenticate(this, key)
+      val result = body
+      Security.invalidate()
+      result
+    }
+
+  protected[ai] def getKey = key
 
 }

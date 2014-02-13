@@ -13,7 +13,7 @@ class NoAiUserInterfaceController(val gui: NoAiGui) extends ScreenController {
   var nifty: Nifty = null
   val sidebarController = new NoAiSideBarController(this)
   val popupController   = new NoAiPopupController(this)
-  gui.frame.input.inputHandlers.prepend( popupController )
+  gui.noai.actorSystem.actorOf( popupController.inputHandler )
 
   override def onStartScreen() {}
   override def onEndScreen() {}

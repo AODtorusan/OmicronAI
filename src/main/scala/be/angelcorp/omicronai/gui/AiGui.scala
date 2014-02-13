@@ -3,7 +3,7 @@ package be.angelcorp.omicronai.gui
 import java.util.concurrent.LinkedBlockingDeque
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
-import akka.actor.Props
+import akka.actor.ActorSystem
 import org.slf4j.LoggerFactory
 import org.newdawn.slick._
 import org.newdawn.slick.state.GameState
@@ -14,7 +14,6 @@ import be.angelcorp.omicronai._
 import be.angelcorp.omicronai.ai.pike.PikeAi
 import be.angelcorp.omicronai.ai.lance.LanceAi
 import be.angelcorp.omicronai.ai.AI
-import be.angelcorp.omicronai.ai.pike.agents.Admiral
 import be.angelcorp.omicronai.ai.noai.NoAi
 import be.angelcorp.omicronai.configuration.Configuration.config
 import be.angelcorp.omicronai.gui.textures.Textures
@@ -29,6 +28,11 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
     override def run() {
       implicit val openglContext: ExecutionContext = AiGui.this
 
+      splash.progress(0.1f, "Building actor system ...")
+      logger.info("Building actor system")
+      val actorSystem = ActorSystem()
+      logger.info("Actor system build!")
+
       splash.progress(0.1f, "Building game ...")
       logger.info("Building game framework")
       val builder = Game.builder
@@ -38,9 +42,9 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
       splash.progress(0.2f, "Building AI ...")
       logger.info("Building new ai")
       val ai: AI = config.ai.engine match {
-        case "PikeAI"  => new PikeAi( (player, system) => system.actorOf(Props(new Admiral(player)), name = "AdmiralPike"), builder )
-        case "LanceAI" => new LanceAi( builder )
-        case _ => new NoAi( builder )
+        case "PikeAI"  => new PikeAi( actorSystem, builder )
+        case "LanceAI" => new LanceAi( actorSystem, builder )
+        case _ => new NoAi( actorSystem, builder )
       }
       builder.addPlayer(ai)
       logger.info("AI build!")
@@ -62,7 +66,7 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
 
       splash.progress(0.8f, "Finalizing GUI ...")
       logger.info("Building AI gui")
-      val aiGui = new AiGuiOverlay(game, ai)
+      val aiGui = new AiGuiOverlay(AiGui.this, game, actorSystem, ai)
       Await.result( Future{ add(aiGui) }, 1 minute )
       logger.info("AI gui build!")
 

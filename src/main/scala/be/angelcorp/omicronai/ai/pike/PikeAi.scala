@@ -22,47 +22,42 @@ import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.screens.ui.pike._
 import be.angelcorp.omicronai.gui.layerRender.LayerRenderer
 import be.angelcorp.omicronai.bridge.{GameListenerBridge, PlayerGainedObject}
+import be.angelcorp.omicronai.world.World
 
 
-class PikeAi( aiBuilder: (PikeAi, ActorSystem) => ActorRef, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
+class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit def timeout: Timeout = config.ai.messageTimeout seconds;
 
-  Security.authenticate(this, key)
-  val actorSystem = ActorSystem()
   implicit val context = actorSystem.dispatcher
 
-  def this( aiBuilder: (PikeAi, ActorSystem) => ActorRef, builder: Game.Builder) =
-    this( aiBuilder, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
+  def this( actorSystem: ActorSystem, builder: Game.Builder) =
+    this( actorSystem, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
 
-  lazy val admiralRef = {
-    logger.info(s"Building AI logic for AI player ${getName}")
-    aiBuilder(this, actorSystem)
-  }
-  lazy val admiral = {
-    Await.result( admiralRef ? Self(), timeout.duration ).asInstanceOf[Admiral]
-  }
-  def world =
-    Await.result(actorSystem.actorSelection( admiralRef.path / "World" ).resolveOne(timeout.duration), timeout.duration)
+  var admiralRef: ActorRef = null
 
-  val supervisorRef =
+  lazy val world =
+    Await.result( actorSystem.actorSelection(admiralRef.path / "World").resolveOne, timeout.duration )
+
+  lazy val supervisorRef =
     actorSystem.actorOf( Props( new GuiSupervisor(admiralRef, this) ), name="AiSupervisor" )
 
   var supervisor = {
     implicit val timeout: Timeout = 5 seconds;
     Await.result( supervisorRef ? Self(), timeout.duration ).asInstanceOf[GuiSupervisor]
   }
-  AiSupervisor.supervisor = Some(supervisorRef)
+  //AiSupervisor.supervisor = Some(supervisorRef)
 
   def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = {
-    Security.authenticate(this, key)
     new PikeInterface(this, gui, nifty)
   }
 
-  override def prepare() {
-    Security.authenticate(this, key)
-    actorSystem.actorOf(Props(classOf[GameListenerBridge], getController.getGameController), name = "GameListenerBridge")
+  override def prepare() = withSecurity(key) {
+    admiralRef = actorSystem.actorOf(Props(classOf[Admiral], this), name = "AdmiralPike")
+    actorSystem.actorOf(Props(classOf[GameListenerBridge], this -> getKey, getController.getGameController), name = "GameListenerBridge")
     actorSystem.eventStream.setLogLevel(Logging.DebugLevel)
+
+    Thread.sleep(200)
     getController.listObjects().asScala.foreach( obj => {
       actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
     })

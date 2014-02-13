@@ -18,7 +18,7 @@ class MovementPathfinder( destination: Location, asset: Asset, world: ActorRef )
   def heuristic(fromTile: Location) = fromTile δ destination
 
   val costGraph = new  WorldGraph[Null, Double] {
-    implicit val game = asset.owner.getController.getGameController.getGame
+    implicit val game = asset.player.getController.getGameController.getGame
     implicit val timeout: Timeout = Duration(1, TimeUnit.SECONDS)
     val inaccessible = Double.MaxValue
 

@@ -14,13 +14,20 @@ import be.angelcorp.omicronai.{Present, Direction, Location}
 import be.angelcorp.omicronai.world._
 import be.angelcorp.omicronai.Conversions._
 import be.angelcorp.omicronai.bridge.Asset
+import be.angelcorp.omicronai.ai.AI
 
 trait ActionExecutor {
   implicit val timeout: Timeout = Duration(1, TimeUnit.MINUTES)
+
+  protected def player:    AI
+  protected def playerKey: PlayerKey
+
   implicit def game: Game
   implicit def executionContext: ExecutionContext
 
   def world: ActorRef
+
+  private def withSecurity[T](body: => T) = player.withSecurity(playerKey)(body)
 
   private def haltTheWorld[T](f: => T ) = {
     waitForWorld()
@@ -55,7 +62,7 @@ trait ActionExecutor {
       asset.mobility match {
         case Some(module) =>
           path.drop(1).foldLeft(Future.successful(Success()): Future[Try[Unit]])( (success, target) => success.flatMap( {
-            case Success(_) =>
+            case Success(_) => withSecurity {
               val action = module.movement( target )
               if (action.isPossible) {
                 waitForWorld()
@@ -64,21 +71,20 @@ trait ActionExecutor {
               } else {
                 (world ? LocationState(target)).mapTo[WorldState].map( {
                   case KnownState(_, Some(obj), _) =>
-                    toOption( obj.getModule( PublicModuleType.MOBILITY, 0 ) ) match {
+                    toOption( withSecurity { obj.getModule( PublicModuleType.MOBILITY, 0 ) } ) match {
                       case Some( _ ) => Failure( BlockedLocation(target, NextTurn) )
                       case None      => Failure( BlockedLocation(target, Never   ) )
                     }
                   case _ =>
                     val origin = asset.location
-                    val cost = (math.abs(origin δu target) + math.abs(origin δv target)) * module.costForMovingInLevel( Location.int2level(origin.h).getType ) +
-                      (origin δh target) * module.costForLevelingToLevel( Location.int2level(target.h).getType )
-                    val available = module.getRemainingSpeed
+                    val cost = (math.abs(origin δu target) + math.abs(origin δv target)) * asset.costForMovingInLevel(origin.h) + (origin δh target) * asset.costForLevelingToLevel( target.h )
+                    val available = withSecurity { module.getRemainingSpeed }
                     if (available < cost)
                       Failure( OutOfMovementPoints(asset, target, cost, available) )
                     else
                       Failure(new ActionExecutionException(s"Cannot move asset $asset to $target", Never))
                 } )
-              }
+              } }
             case f => Future.successful( f )
           } ) )
         case None =>

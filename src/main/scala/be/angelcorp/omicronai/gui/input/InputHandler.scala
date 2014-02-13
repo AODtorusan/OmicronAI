@@ -1,12 +1,16 @@
 package be.angelcorp.omicronai.gui.input
 
-trait InputHandler {
+import akka.actor.Actor
+import org.lwjgl.input.Keyboard
+import org.lwjgl.input.Keyboard._
 
-  /**
-   * Process the given event.
-   * @param event the event to process.
-   * @return true, when the event has been processed and false, if not.
-   */
-  def handleInputEvent(event: GuiInputEvent): Boolean
+trait InputHandler extends Actor {
+
+  override def preStart() {
+    context.system.eventStream.subscribe(self, classOf[GuiInputEvent])
+  }
+
+  def isKeyDown( key: Int ) = Keyboard.isKeyDown( key )
+  def isAltDown = isKeyDown( KEY_LMENU ) || isKeyDown( KEY_RMENU )
 
 }

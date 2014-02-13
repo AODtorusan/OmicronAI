@@ -86,29 +86,30 @@ class SurveySquad(val ai: AI, val aiExec: ActionExecutor ) extends Squad {
 
     roi match {
       case Some(region) =>
-        val action = for ( asset <- (actor ? GetAsset()).mapTo[Asset]) yield {
+        val action = (actor ? GetAsset()).mapTo[Asset].flatMap( asset => {
           val scanRadius =  asset.base.getViewRange
 
           // The complete scan path
           val completeSpiralPath = region.center.spiral(region.radius, 2*scanRadius+1)
 
           // Remove tiles where enough information exists
-          val remainingSpiralPath = completeSpiralPath.filter( location => {
-            val tilesInView = location.range( scanRadius )
-            val futureConfidence =
-              for {states <- (aiExec.world ? LocationStates(tilesInView)).mapTo[ Seq[WorldState] ] } yield
-                for (state <- states) yield state match {
-                  case s: KnownState => 1.0
-                  case s: GhostState => 0.8
-                  case _             => 0.0
-                }
-            val confidence = Await.result(futureConfidence, timeout.duration).sum / tilesInView.size
-            confidence < 0.9
-          } )
 
-          val moveActions = for( target <- remainingSpiralPath ) yield MoveAction(asset, target, aiExec.world)
-          SequencedAction( moveActions )
-        }
+          val remainingSpiralPath = Future.traverse(completeSpiralPath)( location => {
+              val tilesInView = location.range( scanRadius )
+              val futureConfidence =
+                for {states <- (aiExec.world ? LocationStates(tilesInView)).mapTo[ Seq[WorldState] ] } yield
+                  for (state <- states) yield state match {
+                    case s: KnownState => 1.0
+                    case s: GhostState => 0.8
+                    case _             => 0.0
+                  }
+              futureConfidence.map( c => if (c.sum / tilesInView.size < 0.9) Some(location) else None )
+            } )
+
+          remainingSpiralPath.map( sp => SequencedAction(
+            sp.flatten.map(target => MoveAction(asset, target, aiExec.world) ) )
+          )
+        } )
         action.map( a => ActionUpdate(a) )
       case None => Future.successful( Sleep() )
     }

@@ -27,7 +27,8 @@ class PikeTactical(val ai: AI, val aiExec: ActionExecutor) extends Agent {
       val newName = namer.nameFor(classOf[SurveySquad])
       val squad = context.actorOf(Props(classOf[SurveySquad], ai, aiExec ), name = newName)
       squad ! AddMember( unit )
-      squad ! NewSurveyRoi( new HexArea(unit.checkLocation().get(), 20) )
+      //TODO: determine roi differently
+      squad ! NewSurveyRoi( withSecurity { new HexArea(unit.checkLocation().get(), 20) } )
 
     case NewTurn( turn ) =>
       logger.debug( s"$name is starting new turn actions" )

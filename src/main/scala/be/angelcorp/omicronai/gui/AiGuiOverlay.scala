@@ -3,6 +3,7 @@ package be.angelcorp.omicronai.gui
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import java.util.concurrent.{TimeoutException, TimeUnit}
+import akka.actor.{Props, ActorSystem}
 import akka.pattern.ask
 import akka.util.Timeout
 import com.lyndir.omicron.api.model.Game
@@ -19,7 +20,7 @@ import be.angelcorp.omicronai.gui.input.{AiGuiInput, InputSystem, GameOverlay}
 import be.angelcorp.omicronai.gui.slick.DrawStyle
 import be.angelcorp.omicronai.world.{SubWorld, GetSubWorld}
 
-class AiGuiOverlay(val game: Game, val ai: AI) extends GameOverlay {
+class AiGuiOverlay(val frame: AiGui, val game: Game, val system: ActorSystem, val ai: AI) extends GameOverlay {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit val timeout: Timeout = Duration(100, TimeUnit.MILLISECONDS)
 
@@ -27,8 +28,8 @@ class AiGuiOverlay(val game: Game, val ai: AI) extends GameOverlay {
   val id       = 1
 
   var guiInterface: GuiInterface = null
-  val input = new InputSystem()
-  input.inputHandlers += new AiGuiInput(this)
+  val input = new InputSystem( system.eventStream )
+  system.actorOf( Props(classOf[AiGuiInput], this), name = "GuiFrameInput" )
 
   def initGameAndGUI(container: GameContainer, game: StateBasedGame) {
     this.container = container

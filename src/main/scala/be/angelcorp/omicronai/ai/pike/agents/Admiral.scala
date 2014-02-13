@@ -20,17 +20,21 @@ class Admiral(protected val ai: AI) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit def timeout: Timeout = config.ai.messageTimeout seconds;
 
-  // Joint Chiefs of Staff
-  protected[pike] lazy val world             = context.actorOf(World(ai, ai.getController.getGameController.getGame.getLevelSize), name = "World" )
-  protected[pike] lazy val tacticalGeneral   = context.actorOf(Props(classOf[PikeTactical], ai, aiExec), name = "TacticalGeneral"   )
+  protected[pike] val world =
+    context.actorOf(World(ai, ai.getKey, ai.getController.getGameController.getGame.getLevelSize), name = "World" )
 
-  protected[pike] lazy val aiExec: ActionExecutor =
+  protected[pike] val aiExec: ActionExecutor =
     TypedActor(context).typedActorOf(TypedProps(classOf[ActionExecutor], new ActionExecutor {
       override implicit val game = ai.getController.getGameController.getGame
       override implicit def executionContext = context.dispatcher
-      override val world = Admiral.this.world
+      override val world     = Admiral.this.world
+      override val playerKey = ai.getKey
+      override val player    = ai
     } ), name="Ai_Execution_Context")
   private lazy val aiExecActor = TypedActor(context).getActorRefFor(aiExec)
+
+  protected[pike] val tacticalGeneral =
+    context.actorOf(Props(classOf[PikeTactical], ai, aiExec), name = "TacticalGeneral"   )
 
   private val readyUnits = mutable.Set[ActorRef]()
 
@@ -67,7 +71,7 @@ class Admiral(protected val ai: AI) extends Agent {
       if ( context.children.forall( readyUnits.contains ) ) {
         logger.info("All units have reported to be ready, done with this turn.")
         Thread.sleep(1000)
-        ai.getController.getGameController.setReady()
+        withSecurity { ai.getController.getGameController.setReady() }
       }
 
     case NotReady() =>

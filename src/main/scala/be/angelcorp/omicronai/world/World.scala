@@ -12,8 +12,9 @@ import com.lyndir.omicron.api.util.Maybe.Presence
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.algorithms.Field
 import be.angelcorp.omicronai.bridge._
+import be.angelcorp.omicronai.ai.AI
 
-class World(player: Player, sz: WorldBounds) extends Actor {
+class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   private implicit val game = player.getController.getGameController.getGame
@@ -70,7 +71,7 @@ class World(player: Player, sz: WorldBounds) extends Actor {
   def getState(l: Location): WorldState = gameState(l)
 
   def receive: Actor.Receive = {
-    case ReloadLocation(l) => updateLocation(l)
+    case ReloadLocation(l) => player.withSecurity(key) { updateLocation(l) }
     case ReloadReady()     => sender ! true // True due to priority handling of messages
     case LocationState(l)  => sender ! getState(l)
     case LocationStates(l) => sender ! l.map( loc => getState(loc) )
@@ -90,10 +91,10 @@ class World(player: Player, sz: WorldBounds) extends Actor {
     gameObject.getModule(PublicModuleType.BASE, 0).get().getViewRange
 
   def processEvent(m: GameListenerMessage) = m match {
-    case TileContentsChanged(l, _)      => updateLocation(l)
-    case TileResourcesChanged(l, _, _)  => updateLocation(l)
+    case TileContentsChanged(l, _)      => player.withSecurity(key) { updateLocation(l) }
+    case TileResourcesChanged(l, _, _)  => player.withSecurity(key) { updateLocation(l) }
 
-    case UnitMoved(gameObject, location) => {
+    case UnitMoved(gameObject, location) => player.withSecurity(key) {
       val vr = viewRange(gameObject)
 
       val couldSee = (location.getFrom: Location).range( vr )
@@ -104,19 +105,22 @@ class World(player: Player, sz: WorldBounds) extends Actor {
       invisibleToVisible.foreach( updateLocation )
     }
 
-    case PlayerGainedObject(_, obj) =>
+    case PlayerGainedObject(_, obj) => player.withSecurity(key) {
       val tile = obj.checkLocation()
       tile.presence() match {
         case Presence.PRESENT => (tile.get: Location).range( viewRange(obj) ).foreach( l => updateLocation(l) )
         case _ =>
       }
+    }
 
-    case PlayerLostObject(_, obj) =>
+    case PlayerLostObject(_, obj) => player.withSecurity(key) {
       val tile = obj.checkLocation()
       tile.presence() match {
         case Presence.PRESENT => (tile.get: Location).range( viewRange(obj) ).foreach( l => updateLocation(l) )
         case _ =>
       }
+    }
+
     case m =>
       logger.info(s"No world update action for $m")
   }
@@ -125,8 +129,8 @@ class World(player: Player, sz: WorldBounds) extends Actor {
 
 object World {
 
-  def apply( player: Player, size: WorldBounds ) =
-    Props(classOf[World], player, size).withDispatcher("akka.world-dispatcher")
+  def apply( player: Player, key: PlayerKey, size: WorldBounds ) =
+    Props(classOf[World], player, key, size).withDispatcher("akka.world-dispatcher")
 
 }
 

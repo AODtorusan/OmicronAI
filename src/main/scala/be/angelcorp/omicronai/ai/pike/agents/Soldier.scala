@@ -16,7 +16,7 @@ class Soldier( val ai: AI, val aiExec: ActionExecutor, obj: IGameObject ) extend
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   logger.debug(s"Promoted asset $name to a soldier")
 
-  val asset: Asset = TypedActor(context).typedActorOf(TypedProps(classOf[AssetImpl], new AssetImpl(ai, obj)), name="Asset")
+  val asset: Asset = TypedActor(context).typedActorOf(TypedProps(classOf[AssetImpl], new AssetImpl(ai, ai.getKey, obj)), name="Asset")
 
   var nextAction: Option[Action] = None
 
@@ -45,9 +45,6 @@ class Soldier( val ai: AI, val aiExec: ActionExecutor, obj: IGameObject ) extend
 
     case ListMetadata() =>
       sender ! Nil
-
-    case msg =>
-      logger.info( s"Asset received an unknown message: $msg" )
   }
 
   def doAction( action: Action ): Future[Any] = {

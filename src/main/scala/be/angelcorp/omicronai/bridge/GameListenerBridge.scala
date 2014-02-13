@@ -8,12 +8,15 @@ import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.IConstructorModule.IConstructionSite
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.ai.pike.agents.Self
+import be.angelcorp.omicronai.ai.AI
 
-class GameListenerBridge( gameController: GameController ) extends GameListener with Actor {
+class GameListenerBridge( key: (AI, PlayerKey), gameController: GameController ) extends GameListener with Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   override def preStart() {
-    gameController.addGameListener( this )
+    key._1.withSecurity(key._2) {
+      gameController.addGameListener( this )
+    }
   }
 
   def receive = {

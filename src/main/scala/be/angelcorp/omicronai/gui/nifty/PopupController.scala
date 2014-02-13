@@ -1,5 +1,7 @@
 package be.angelcorp.omicronai.gui.nifty
 
+import scala.concurrent.Future
+import akka.actor.Props
 import de.lessvoid.nifty.elements.Element
 import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.controls.{Menu, MenuItemActivatedEvent}
@@ -7,13 +9,13 @@ import de.lessvoid.nifty.tools.SizeValue
 import org.bushe.swing.event.EventTopicSubscriber
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
-import be.angelcorp.omicronai.gui.GuiController
-import be.angelcorp.omicronai.gui.input.{InputHandler, GuiInputEvent, MouseClicked}
-import scala.reflect.ClassTag
+import be.angelcorp.omicronai.gui.{AiGui, GuiController}
+import be.angelcorp.omicronai.gui.input.{InputHandler, MouseClicked}
 
-trait PopupController extends GuiController with InputHandler {
+trait PopupController extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
+  def gui: AiGui
   /** Nifty gui */
   def nifty: Nifty
   /** Generates the content for the default right-click popup menu  */
@@ -43,10 +45,14 @@ trait PopupController extends GuiController with InputHandler {
     nifty.showPopup( nifty.getCurrentScreen, popup.getId, null )
   }
 
-  def handleInputEvent(event: GuiInputEvent): Boolean = event match {
-    case MouseClicked(x, y, 1, 1) => showMenu( defaultMenu ); true
-    case _ => false
-  }
+  def inputHandler = Props( new InputHandler {
+    override def receive = {
+      case MouseClicked(x, y, 1, 1) =>
+        Future {
+          showMenu( defaultMenu )
+        }(gui /*exec in opengl*/)
+    }
+  } )
 
 }
 

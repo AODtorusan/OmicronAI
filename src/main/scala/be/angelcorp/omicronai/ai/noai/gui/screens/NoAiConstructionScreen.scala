@@ -6,7 +6,7 @@ import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber, Nifty}
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
 import de.lessvoid.nifty.controls.{ListBox, ButtonClickedEvent}
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.{ModuleType, UnitTypes, UnitType}
+import com.lyndir.omicron.api.model.{UnitTypes, UnitType}
 import be.angelcorp.omicronai.Location
 import be.angelcorp.omicronai.ai.actions.ConstructionStartAction
 import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
@@ -67,7 +67,7 @@ class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenControlle
         // TODO: Correct getting of all possible units
         val possibleUnits = UnitTypes.values()
 
-        val buildableModules = builder.gameObject.getModules(ModuleType.CONSTRUCTOR).asScala.map( _.getBuildsModule )
+        val buildableModules = builder.constructors.map( _.getBuildsModule ).toList
 
         val buildableUnits = possibleUnits.filter( u => {
           val modules = u.createModules().asScala.map( _.getType )

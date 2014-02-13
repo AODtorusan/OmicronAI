@@ -1,27 +1,18 @@
 package be.angelcorp.omicronai.ai.noai.gui.screens
 
 import scala.Some
-import scala.collection.JavaConverters._
-import org.slf4j.LoggerFactory
-import org.bushe.swing.event.EventTopicSubscriber
-import de.lessvoid.nifty.elements.Element
-import de.lessvoid.nifty.controls.{MenuItemActivatedEvent, Menu}
-import de.lessvoid.nifty.tools.SizeValue
-import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model._
-import be.angelcorp.omicronai.gui.GuiController
-import be.angelcorp.omicronai.gui.input.{GuiInputEvent, InputHandler}
-import be.angelcorp.omicronai.gui.input.MouseClicked
-import be.angelcorp.omicronai.ai.actions.{ConstructionAssistAction, AttackAction, MoveAction}
-import de.lessvoid.nifty.controls.menu.MenuControl
-import be.angelcorp.omicronai.{DOWN, Location, UP}
-import be.angelcorp.omicronai.gui.nifty.PopupController
 import de.lessvoid.nifty.Nifty
+import com.lyndir.omicron.api.model._
+import be.angelcorp.omicronai.ai.actions.{ConstructionAssistAction, AttackAction, MoveAction}
+import be.angelcorp.omicronai.{DOWN, UP}
+import be.angelcorp.omicronai.gui.nifty.PopupController
 
 class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupController {
 
   /** Nifty gui */
   override def nifty: Nifty = ui.nifty
+
+  override def gui = ui.gui.frame.frame
 
   /** Generates the content for the default right-click popup menu  */
   override def defaultMenu = {
@@ -30,7 +21,7 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
     ui.gui.noai.selected match {
       case Some(asset) =>
         // Module related actions
-        for (module <- asset.gameObject.listModules().asScala) {
+        for (module <- asset.modules) {
           module match {
             case base: BaseModule =>
             case constr: ConstructorModule if !entries.result().exists( _._1 == "Build") =>
@@ -48,7 +39,7 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
                   // Move up or down
                   implicit val game = ui.gui.frame.game
                   for (d <- Seq(UP(), DOWN()); loc <- l.neighbour(d)) {
-                    if (move.costForLevelingToLevel(Location.int2level(loc.h).getType) != Double.MaxValue)
+                    if (asset.costForLevelingToLevel(loc.h) != Double.MaxValue)
                       entries += (s"Move ${d.toString.toLowerCase}", () => ui.gui.noai.updateOrConfirmAction( MoveAction(asset, loc, ui.gui.noai.world) ))
                   }
                 case _ => logger.info(s"Cannot move $asset to that tile, not hovering over any tile!")

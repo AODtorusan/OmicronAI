@@ -19,14 +19,13 @@ import scala.collection.mutable
 import be.angelcorp.omicronai.world.SubWorld
 import akka.actor.{ActorSystem, Props}
 
-class LanceAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
+class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   Security.authenticate(this, key)
 
-  def this( builder: Game.Builder) =
-    this( builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
+  def this( actorSystem: ActorSystem, builder: Game.Builder) =
+    this( actorSystem, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
 
-  val actorSystem = ActorSystem()
   implicit val context = actorSystem.dispatcher
   val world = actorSystem.actorOf(Props.empty)
 
@@ -38,21 +37,6 @@ class LanceAi( playerId: Int, key: PlayerKey, name: String, color: Color ) exten
 
     var fromTile: Option[HexTile] = None
     var toTile: Option[HexTile] = None
-
-    gui.input.inputHandlers.prepend( new InputHandler {
-      var lastX: Int = -1
-      var lastY: Int = -1
-      def handleInputEvent(event: GuiInputEvent): Boolean = event match {
-        case MousePressed(x, y, 0)  => lastX = x; lastY = y; false
-        case MouseReleased(x, y, 0) if x == lastX && y == lastY =>
-          fromTile = toTile
-          val co = gui.view.pixelToOpengl(x, y)
-          toTile = Some( gui.view.openglToTile( co._1, co._2 ) )
-          logger.info( s"FromTile = $fromTile \t | toTile = $toTile" )
-          true
-        case _ => false
-      }
-    } )
 
     val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
     activeLayers += new GridRenderer(LanceAi.this)

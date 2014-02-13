@@ -12,11 +12,12 @@ import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.layerRender._
 import be.angelcorp.omicronai.gui.slick.DrawStyle
 import be.angelcorp.omicronai.world.SubWorld
+import akka.actor.Props
 
 class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
   val listener = new NoAiGameListener( this )
   frame.game.getController.addGameListener( listener )
-  frame.input.inputHandlers.prepend( new NoAiInput(noai, this) )
+  noai.actorSystem.actorOf( Props(classOf[NoAiInput], noai, this), name = "NoAI_input" )
 
   private val uiScreen = screens.NoAiUserInterface.screen(this)
   private val constructionScreen = screens.NoAiConstructionScreen.screen(this)

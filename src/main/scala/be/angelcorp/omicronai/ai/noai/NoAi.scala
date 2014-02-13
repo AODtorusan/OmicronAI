@@ -18,20 +18,22 @@ import be.angelcorp.omicronai.ai.actions.{ActionExecutor, Action}
 import be.angelcorp.omicronai.world.{WorldBounds, World}
 import be.angelcorp.omicronai.bridge.{GameListenerBridge, PlayerGainedObject, Asset, AssetImpl}
 
-class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
+class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  Security.authenticate(this, key)
+
+  protected val player    = this
+  protected val playerKey = key
 
   implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  def this( builder: Game.Builder) =
-    this( builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
+  def this( actorSystem: ActorSystem, builder: Game.Builder) =
+    this( actorSystem, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
 
   val assetListUpdater = new GameListener {
     override def onPlayerGainedObject(player: IPlayer, gameObject: IGameObject): Unit = {
       if (player == NoAi.this) {
         logger.debug(s"New unit: $gameObject")
-        units_ += new AssetImpl( NoAi.this, gameObject )
+        units_ += new AssetImpl( NoAi.this, NoAi.this.key, gameObject )
       }
     }
     override def onPlayerLostObject(player: IPlayer, gameObject: IGameObject): Unit = {
@@ -44,22 +46,20 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
     }
   }
 
-  val actorSystem     = ActorSystem()
   var world: ActorRef = null
 
-  override def prepare() {
-    world = actorSystem.actorOf( World(this, gameSize) )
-    actorSystem.actorOf(Props(classOf[GameListenerBridge], gameController), name = "GameListenerBridge")
+  override def prepare(): Unit = withSecurity(key) {
+    world = actorSystem.actorOf( World(this, key, gameSize) )
+    actorSystem.actorOf(Props(classOf[GameListenerBridge], this -> key, gameController), name = "GameListenerBridge")
     gameController.addGameListener( assetListUpdater )
     Thread.sleep(200) // Wait for the actors be become live
     getController.listObjects().asScala.foreach( obj => {
-      units_ += new AssetImpl(this, obj)
+      units_ += new AssetImpl(this, key, obj)
       actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
     })
   }
 
-  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = {
-    Security.authenticate(this, key)
+  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = withSecurity(key) {
     new NoAiGui(this, gui, nifty)
   }
 
@@ -77,7 +77,7 @@ class NoAi( playerId: Int, key: PlayerKey, name: String, color: Color ) extends 
   protected[noai] def selected = _selected
 
   protected[noai] def endTurn(): Unit =
-    gameController.setReady()
+    withSecurity(key) { gameController.setReady() }
 
   protected[noai] def select( asset: Asset): Unit = {
     _selected = Some(asset)
