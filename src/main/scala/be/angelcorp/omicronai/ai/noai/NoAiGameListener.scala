@@ -1,12 +1,11 @@
 package be.angelcorp.omicronai.ai.noai
 
 import com.lyndir.omicron.api._
-import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
 import com.lyndir.omicron.api.model._
-import be.angelcorp.omicronai._
 import com.lyndir.omicron.api.model.IConstructorModule.IConstructionSite
+import be.angelcorp.omicronai._
+import be.angelcorp.omicronai.ai.noai.gui.NoAiGui
 import be.angelcorp.omicronai.Conversions._
-import be.angelcorp.omicronai.Present
 
 class NoAiGameListener( gui: NoAiGui ) extends GameListener {
 
@@ -71,12 +70,7 @@ class NoAiGameListener( gui: NoAiGui ) extends GameListener {
   }
 
   override def onConstructorTargeted(constructorModule: IConstructorModule, target: Change[IGameObject]) {
-    try {
-      gui.message( s"${constructorModule.getGameObject.getType.getTypeName} is now building on ${target.getTo.getType.getTypeName}." )
-    } catch {
-      case e: Throwable =>
-        println("oops")
-    }
+    gui.message( s"${constructorModule.getGameObject.getType.getTypeName} is now building on ${target.getTo.getType.getTypeName}." )
   }
 
   override def onConstructionSiteWorked(constructionSite: IConstructionSite, moduleType: PublicModuleType[_], remainingWork: ChangeInt): Unit = {

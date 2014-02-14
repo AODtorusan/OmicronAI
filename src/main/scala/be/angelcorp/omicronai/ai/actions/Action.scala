@@ -15,7 +15,7 @@ trait Action {
   def wasSuccess[T]( t: Future[Try[T]] )(implicit context: ExecutionContext) = t.map {
     case Success(_) => None
     case Failure(f: ActionExecutionException) => Some(f)
-    case Failure(f) => Some(new ActionExecutionException(s"Unknown exception in the execution of ${getClass.getSimpleName}", Never))
+    case Failure(f) => Some(new ActionExecutionException(s"Unknown exception in the execution of ${getClass.getSimpleName}", Never, f))
   }
 
 }

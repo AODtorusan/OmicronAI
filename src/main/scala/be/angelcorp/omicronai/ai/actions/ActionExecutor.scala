@@ -29,7 +29,14 @@ trait ActionExecutor {
 
   private def withSecurity[T](body: => T) = player.withSecurity(playerKey)(body)
 
-  private def haltTheWorld[T](f: => T ) = {
+  private def haltTheWorld[T](f: => Try[T] ): Try[T] = {
+    waitForWorld()
+    val result = try { f } catch { case e: Throwable => Failure(e) }
+    waitForWorld()
+    result
+  }
+
+  private def haltTheWorld[T](f: => T ): T = {
     waitForWorld()
     val result = f
     waitForWorld()
@@ -93,57 +100,65 @@ trait ActionExecutor {
     }
   }
 
-  def move( asset: Asset, direction: Direction): Future[Try[Unit]] = Future { haltTheWorld (
-    asset.mobility match {
-      case Some(module) =>
-        asset.location neighbour direction match {
-          case Some(target) =>
-            waitForWorld()
-            val action = module.movement( target )
-            if (action.isPossible) {
-              action.execute()
-              Success()
-            } else {
-              Failure(new ActionExecutionException(s"Cannot move asset $asset to $target", Never))
-            }
-          case _ => Failure( OutOfMap( asset.location, direction ) )
-        }
-      case None =>
-        Failure( MissingModule(asset, PublicModuleType.MOBILITY) )
-    }
-  ) }
-
-  def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[IConstructionSite]] = Future { haltTheWorld (
-    if (builder.location adjacentTo destination )
-      builder.constructors.headOption match {
+  def move( asset: Asset, direction: Direction): Future[Try[Unit]] = Future {
+    haltTheWorld (
+      asset.mobility match {
         case Some(module) =>
-          val oldTarget = module.getTarget
-          val site      = module.schedule( constructionType, destination )
-          module.setTarget(oldTarget)
-          Success(site)
-        case _ =>
-          Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
+          asset.location neighbour direction match {
+            case Some(target) =>
+              waitForWorld()
+              val action = module.movement( target )
+              if (action.isPossible) {
+                action.execute()
+                Success()
+              } else {
+                Failure(new ActionExecutionException(s"Cannot move asset $asset to $target", Never))
+              }
+            case _ => Failure( OutOfMap( asset.location, direction ) )
+          }
+        case None =>
+          Failure( MissingModule(asset, PublicModuleType.MOBILITY) )
       }
-    else Failure( TooFar(builder, destination, 1) )
-  ) }
+    )
+  }
 
-  def constructionAssist( builder: Asset, site: IGameObject ): Future[Try[Unit]] = Future { haltTheWorld (
-    if (builder.constructors.isEmpty)
-      Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
-    else {
-      toMaybe(site.checkLocation()) match {
-        case Present(loc) =>
-          val siteLocation: Location = loc
-          if (siteLocation adjacentTo builder.location) {
-            builder.constructors.foreach( _.setTarget(site) )
-            Success()
-          } else
-            Failure( TooFar(builder, siteLocation, 1) )
-        case _ =>
-          Failure( InFogOfWar(s"Cannot get the location of the target work site of $site") )
+  def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[IConstructionSite]] = Future {
+    haltTheWorld (
+      if (builder.location adjacentTo destination )
+        builder.constructors.headOption match {
+          case Some(module) =>
+            withSecurity {
+              val oldTarget = module.getTarget
+              val site      = module.schedule( constructionType, destination )
+              if (oldTarget != null) module.setTarget(oldTarget)
+              Success(site)
+            }
+          case _ =>
+            Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
+        }
+      else Failure( TooFar(builder, destination, 1) )
+    )
+  }
+
+  def constructionAssist( builder: Asset, site: IGameObject ): Future[Try[Unit]] = Future {
+    haltTheWorld (
+      if (builder.constructors.isEmpty)
+        Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
+      else {
+        toMaybe(site.checkLocation()) match {
+          case Present(loc) =>
+            val siteLocation: Location = loc
+            if (siteLocation adjacentTo builder.location) {
+              builder.constructors.foreach( _.setTarget(site) )
+              Success()
+            } else
+              Failure( TooFar(builder, siteLocation, 1) )
+          case _ =>
+            Failure( InFogOfWar(s"Cannot get the location of the target work site of $site") )
+        }
       }
-    }
-  ) }
+    )
+  }
 
 }
 

@@ -114,9 +114,10 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
       case Some(plan) if plan == action =>
         for( result <- plan.execute(this) ) result match {
           case Some( err ) =>
-            logger.info(s"Could not finish action $plan successfully: ${err.getMessage}")
+            logger.info(s"Could not finish action $plan successfully: ${err.getMessage}", err)
             _plannedActions.update( selected.get, plan.recover( err ))
           case None =>
+            logger.info(s"Action $plan finished successfully")
             _plannedActions.update( selected.get, None )
         }
       // Update the plan
