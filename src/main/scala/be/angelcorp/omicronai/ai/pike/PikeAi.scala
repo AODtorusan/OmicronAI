@@ -31,9 +31,6 @@ class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name:
 
   implicit val context = actorSystem.dispatcher
 
-  def this( actorSystem: ActorSystem, builder: Game.Builder) =
-    this( actorSystem, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
-
   var admiralRef: ActorRef = null
 
   lazy val world =
@@ -62,6 +59,13 @@ class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name:
       actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
     })
   }
+
+}
+
+object PikeAi {
+
+  def apply( actorSystem: ActorSystem, key: PlayerKey, builder: Game.Builder) =
+    new PikeAi( actorSystem, builder.nextPlayerID, key, config.ai.name, RED.get )
 
 }
 

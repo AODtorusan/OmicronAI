@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 import org.newdawn.slick._
 import org.newdawn.slick.state.GameState
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.Game
+import com.lyndir.omicron.api.model.{PlayerKey, Game}
 import de.lessvoid.nifty.slick2d.{NiftyOverlayBasicGameState, NiftyStateBasedGame, NiftyOverlayGameState}
 import be.angelcorp.omicronai._
 import be.angelcorp.omicronai.ai.AI
@@ -36,16 +36,17 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
       splash.progress(0.1f, "Building game ...")
       logger.info("Building game framework")
       val builder = Game.builder
-      builder.addGameListener(new GameListenerLogger)
       logger.info("Game framework build!")
 
       splash.progress(0.2f, "Building AI ...")
       logger.info("Building new ai")
-      val ai: AI = config.ai.engine match {
-        case "PikeAI"  => new PikeAi( actorSystem, builder )
-        case "LanceAI" => new LanceAi( actorSystem, builder )
-        case _ => new NoAi( actorSystem, builder )
+      val key = new PlayerKey
+      val ai: AI = config.ai.engine.toLowerCase match {
+        case "pikeai"  => PikeAi(  actorSystem, key, builder )
+        case "lanceai" => LanceAi( actorSystem, key, builder )
+        case _         => NoAi(    actorSystem, key, builder )
       }
+      ai.withSecurity(key) { builder.addGameListener(new GameListenerLogger) }
       builder.addPlayer(ai)
       logger.info("AI build!")
 

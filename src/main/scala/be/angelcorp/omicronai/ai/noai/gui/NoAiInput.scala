@@ -43,7 +43,7 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
         val objs = noai.getController.listObjects()
         val sum = objs.asScala.foldLeft( (0.0,0.0) )( (loc, unit) => {
           val l = unit.checkLocation().get().getPosition
-          (loc._1 + l.getU, loc._2 + l.getV)
+          (loc._1 + l.getX, loc._2 + l.getY)
         } )
         val u = sum._1 / objs.size()
         val v = sum._2 / objs.size()

@@ -1,7 +1,7 @@
 package be.angelcorp.omicronai.world
 
 import be.angelcorp.omicronai.Location
-import com.lyndir.omicron.api.model.Size
+import com.lyndir.lhunath.opal.math.Size
 
 case class WorldBounds(uSize: Int, vSize: Int, hSize: Int = 3, u0: Int = 0, v0: Int = 0, h0: Int = 0) {
 

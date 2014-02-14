@@ -26,9 +26,6 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
 
   implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  def this( actorSystem: ActorSystem, builder: Game.Builder) =
-    this( actorSystem, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
-
   val assetListUpdater = new GameListener {
     override def onPlayerGainedObject(player: IPlayer, gameObject: IGameObject): Unit = {
       if (player == NoAi.this) {
@@ -114,7 +111,12 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
       case Some(plan) if plan == action =>
         for( result <- plan.execute(this) ) result match {
           case Some( err ) =>
-            logger.info(s"Could not finish action $plan successfully: ${err.getMessage}", err)
+            lazy val msg = s"Could not finish action $plan successfully: ${err.getMessage}"
+            if (err.getCause != null && err.getCause.isInstanceOf[RuntimeException] )
+              logger.warn(msg, err )
+            else
+              logger.info(msg)
+
             _plannedActions.update( selected.get, plan.recover( err ))
           case None =>
             logger.info(s"Action $plan finished successfully")
@@ -124,5 +126,12 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
       case _ =>
         _plannedActions.update( selected.get, Some(action))
     }
+
+}
+
+object NoAi {
+
+  def apply( actorSystem: ActorSystem, key: PlayerKey, builder: Game.Builder) =
+    new NoAi( actorSystem, builder.nextPlayerID, key, config.ai.name, RED.get )
 
 }

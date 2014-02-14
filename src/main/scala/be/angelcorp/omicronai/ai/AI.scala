@@ -7,9 +7,6 @@ import be.angelcorp.omicronai.gui.{AiGuiOverlay, GuiInterface}
 
 abstract class AI( playerId: Int, key: PlayerKey, name: String, primaryColor: Color, secondaryColor: Color  ) extends Player( playerId, key, name, primaryColor, secondaryColor) {
 
-  // TODO: Remove, only required to circumvent a bug in the api
-  Security.authenticate(this, key)
-
   def world: ActorRef
 
   def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty): GuiInterface

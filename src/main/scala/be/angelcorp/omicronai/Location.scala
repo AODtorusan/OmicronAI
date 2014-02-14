@@ -1,8 +1,9 @@
 package be.angelcorp.omicronai
 
 import scala.math._
-import com.lyndir.omicron.api.model._
 import scala.collection.mutable.ListBuffer
+import com.lyndir.omicron.api.model._
+import com.lyndir.lhunath.opal.math.Vec2Hex
 import be.angelcorp.omicronai.world.WorldBounds
 
 /**
@@ -361,12 +362,12 @@ object Location {
   implicit def int2level(level: Int)(implicit game: Game): Level = game.getLevel( level )
 
   implicit def tile2location( tile: ITile ) =
-    new Location( tile.getPosition.getU, tile.getPosition.getV, tile.getLevel, tile.getLevel.getSize )
+    new Location( tile.getPosition.getX, tile.getPosition.getY, tile.getLevel, tile.getLevel.getSize )
   implicit def location2tile( l: Location )(implicit game: Game) =
-    game.getLevel(l.h).getTile( l: Coordinate ).get()
+    game.getLevel(l.h).getTile( l: Vec2Hex ).get()
 
-  implicit def location2coordinate( l: Location ): Coordinate =
-    new Coordinate( l.u, l.v, l.bounds )
+  implicit def location2coordinate( l: Location ): Vec2Hex =
+    new Vec2Hex( l.u, l.v, l.bounds )
 
 }
 

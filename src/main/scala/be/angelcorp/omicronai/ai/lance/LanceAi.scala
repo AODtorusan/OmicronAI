@@ -23,9 +23,6 @@ class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   Security.authenticate(this, key)
 
-  def this( actorSystem: ActorSystem, builder: Game.Builder) =
-    this( actorSystem, builder.nextPlayerID, new PlayerKey, config.ai.name, RED.get )
-
   implicit val context = actorSystem.dispatcher
   val world = actorSystem.actorOf(Props.empty)
 
@@ -52,5 +49,12 @@ class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name
     }
 
   }
+
+}
+
+object LanceAi {
+
+  def apply( actorSystem: ActorSystem, key: PlayerKey, builder: Game.Builder) =
+    new LanceAi( actorSystem, builder.nextPlayerID, key, config.ai.name, RED.get )
 
 }
