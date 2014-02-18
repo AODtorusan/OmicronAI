@@ -4,7 +4,7 @@ import scala.Some
 import scala.collection.mutable
 import de.lessvoid.nifty.Nifty
 import org.newdawn.slick.{Graphics, Color}
-import be.angelcorp.omicronai.Location
+import be.angelcorp.omicronai.{HexTile, Location}
 import be.angelcorp.omicronai.ai.noai.{NoAiGameListener, NoAi}
 import be.angelcorp.omicronai.ai.noai.gui.screens.{NoAiUserInterfaceController, NoAiConstructionScreenController}
 import be.angelcorp.omicronai.bridge.Asset
@@ -14,6 +14,7 @@ import be.angelcorp.omicronai.gui.slick.DrawStyle
 import be.angelcorp.omicronai.world.SubWorld
 import akka.actor.Props
 import com.lyndir.omicron.api.model.LevelType
+import com.lyndir.lhunath.opal.math.Vec2Hex
 
 class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
   val listener = new NoAiGameListener( this )
@@ -45,9 +46,8 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
     override def prepareRender(subWorld: SubWorld, layer: Int) {}
     override def render(g: Graphics) {
       noai.selected match {
-        case Some( unit ) => new Canvas(unit.location) {
-          override def borderStyle: DrawStyle = new DrawStyle(Color.orange, 3.0f)
-        }.render(g)
+        case Some( unit ) =>
+          Canvas.render(g, unit.location, new DrawStyle(Color.orange, 3.0f), Color.transparent)
         case _ =>
       }
     }

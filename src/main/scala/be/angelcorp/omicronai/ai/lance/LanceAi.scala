@@ -13,11 +13,11 @@ import be.angelcorp.omicronai.gui._
 import be.angelcorp.omicronai.gui.layerRender.{LayerRenderer, GridRenderer}
 import org.newdawn.slick.Graphics
 import be.angelcorp.omicronai.gui.input._
-import be.angelcorp.omicronai.HexTile
+import be.angelcorp.omicronai.{Location, HexTile}
 import scala.Some
 import scala.collection.mutable
 import be.angelcorp.omicronai.world.SubWorld
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props}
 
 class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -34,6 +34,17 @@ class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name
 
     var fromTile: Option[HexTile] = None
     var toTile: Option[HexTile] = None
+
+    actorSystem.actorOf( Props(
+      new InputHandler {
+        override def receive = {
+          case MouseClicked(x, y, 0, 1) =>
+            val tile = gui.view.pixelToTile(x, y)
+            fromTile = toTile
+            toTile = Some(tile)
+        }
+      }
+    ) )
 
     val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
     activeLayers += new GridRenderer(LanceAi.this)

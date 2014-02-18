@@ -51,7 +51,7 @@ trait ActionExecutor {
     Future { haltTheWorld (
       asset.weapons.find( _ == weaponModule ) match {
         case Some(module) =>
-          if (module.fireAt( target ))
+          if ( withSecurity { module.fireAt( target ) } )
             Success()
           else
             Failure( new ActionExecutionException(s"Asset $asset could not successfully fire at $target with $module", Never) )

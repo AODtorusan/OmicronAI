@@ -35,7 +35,7 @@ import be.angelcorp.omicronai.world.WorldBounds
  * @param h Height-axis coordinate
  * @param bounds Bounds of the map
  */
-case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
+class Location( val u: Int, val v: Int, val h: Int, val bounds: WorldBounds ) {
 
   // Cube coordinate x
   val x = u
@@ -44,59 +44,42 @@ case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
   // Cube coordinate z
   val z = v
 
-  override def equals(o: Any) = o match {
+  override def equals(o: Any): Boolean = o match {
     case Location( u2, v2, h2, _ ) => u == u2 && v == v2 && h == h2
     case _ => false
   }
 
   /** Indicates if this location is on the top layer */
-  def atTop = h == bounds.hSize - 1
+  def atTop: Boolean = h == bounds.hSize - 1
+
   /** Indicates if this location is on the bottom layer */
-  def atBottom = h == 0
+  def atBottom: Boolean = h == 0
 
   /** Calculates the distance between two location in the u-axis only */
-  def δu(l: Location) = {
-    val du = l.u - u
-
-    if (du > bounds.uSize / 2)
-      du - bounds.uSize
-    else if (du < -bounds.uSize / 2)
-      du + bounds.uSize
-    else
-      du
-  }
+  def δu(l: Location): Int = δuUnwrap(l)
 
   /** Yields the distance between in the u-axis between two locations, without taking wrapping of tiles into account*/
-  def δuUnwrap(l: Location) = l.u - u
+  def δuUnwrap(l: Location): Int = l.u - u
 
   /** Calculates the distance between two location in the v-axis only */
-  def δv(l: Location) = {
-    val dv = l.v - v
-
-    if (dv > bounds.vSize / 2)
-      dv - bounds.vSize
-    else if (dv < -bounds.vSize / 2)
-      dv + bounds.vSize
-    else
-      dv
-  }
+  def δv(l: Location): Int = δvUnwrap(l)
 
   /** Yields the distance between in the v-axis between two locations, without taking wrapping of tiles into account*/
-  def δvUnwrap(l: Location) = l.v - v
+  def δvUnwrap(l: Location): Int = l.v - v
 
   /** Calculates the distance between two location in the height-axis only */
-  def δh(l: Location) = l.h - h
+  def δh(l: Location): Int = l.h - h
 
   /** Yields the distance between height between two locations, without taking wrapping of tiles into account*/
-  def δhUnwrap(l: Location) = δh(l)
+  def δhUnwrap(l: Location): Int = δh(l)
 
   /** Calculates the distance between this location and the location defined by the offsets from this location along u/v/h.*/
-  def δ(du: Int, dv: Int, dh: Int): Int = δ ( Δ (du, dv, dh) /*we do this δ(Δ) to protect against map wrapping*/ )
+  def δ(du: Int, dv: Int, dh: Int): Option[Int] = Δ (du, dv, dh).map( δ ) /*we do this δ(Δ) to protect against map wrapping*/
 
   /** Calculates the distance between this location and the specified location */
   def δ(l: Location): Int = {
-    val du = δu(l)
-    val dv = δv(l)
+    val du  = δu(l)
+    val dv  = δv(l)
     (abs(du) + abs(dv) + abs(du + dv)) / 2 + δh(l)
   }
 
@@ -108,37 +91,31 @@ case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
   }
 
   /** Get the location given by its distance along the u, v, and h axis from this location */
-  def Δ(δu: Int, δv: Int, δh: Int): Location = new Location(
-    (bounds.uSize + u + δu) % bounds.uSize,
-    (bounds.vSize + v + δv) % bounds.vSize,
-    h + δh, bounds
-  )
+  def Δ(δu: Int, δv: Int, δh: Int): Option[Location] =
+    new Location(u + δu, v + δv, h + δh, bounds).reduce
 
   /** Get the location given by its direction and distance from this location */
-  def Δ( direction: Direction, steps: Int = 1 ) =
+  def Δ( direction: Direction, steps: Int = 1 ): Option[Location] =
     (0 until steps).foldLeft(Some(this): Option[Location])( (lastLocation, stepNr) => lastLocation match {
       case Some(loc) => loc.neighbour(direction)
       case None      => None
     } )
 
   /** Get the in-layer location given by its distance along the u and v axis from this location */
-  def Δ2(δu: Int, δv: Int): Location = new Location(
-    (bounds.uSize + u + δu) % bounds.uSize,
-    (bounds.vSize + v + δv) % bounds.vSize,
-    h, bounds
-  )
+  def Δ2(δu: Int, δv: Int): Option[Location] =
+    new Location(u + δu, v + δv, h, bounds ).reduce
 
   /** Returns a list containing all the locations that neighbour this tile (including up/down if available) */
   lazy val neighbours = {
     val neighbours = Map.newBuilder[Direction, Location]
-    if (!atTop)    neighbours += UP()   -> Δ(0, 0,  1)
-    if (!atBottom) neighbours += DOWN() -> Δ(0, 0, -1)
-    neighbours += NE() -> toNE
-    neighbours += E()  -> toE
-    neighbours += SE() -> toSE
-    neighbours += SW() -> toSW
-    neighbours += W()  -> toW
-    neighbours += NW() -> toNW
+    Δ(0, 0,  1).foreach( target => neighbours += UP() -> target )
+    Δ(0, 0, -1).foreach( target => neighbours += DOWN() -> target)
+    toNE foreach( target => neighbours += NE() -> target )
+    toE  foreach( target => neighbours +=  E() -> target )
+    toSE foreach( target => neighbours += SE() -> target )
+    toSW foreach( target => neighbours += SW() -> target )
+    toW  foreach( target => neighbours +=  W() -> target )
+    toNW foreach( target => neighbours += NW() -> target )
     neighbours.result()
   }
 
@@ -148,10 +125,8 @@ case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
    * Note: All in-layer directions always return a tile. However when moving up and down, the map does not wrap around,
    * so no location in that direction may be present.
    */
-  def neighbour( direction: Direction ): Option[Location] = {
-    val tile = this Δ (direction.du, direction.dv, direction.dh)
-    if (bounds.inBounds(tile)) Some(tile) else None
-  }
+  def neighbour( direction: Direction ): Option[Location] =
+    Δ (direction.du, direction.dv, direction.dh)
 
   /** Location laying to the North-East of this location */
   def toNE = Δ2( 1, -1)
@@ -166,13 +141,11 @@ case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
   /** Location laying to the North-West of this location */
   def toNW = Δ2( 0, -1)
 
-  /** List of its four mirror locations outside of the map (which is a parallelogram) */
-  lazy val mirrors = List(
-    new Location(u + bounds.uSize, v, h, bounds),
-    new Location(u - bounds.uSize, v, h, bounds),
-    new Location(u, v + bounds.vSize, h, bounds),
-    new Location(u, v - bounds.vSize, h, bounds)
-  )
+  /** List of its eight mirror locations outside of the map. */
+  lazy val mirrors =
+    for (δu <- Seq(-bounds.uSize, 0, bounds.uSize);
+         δv <- Seq(-bounds.vSize, 0, bounds.vSize);
+         if !(δu == 0 && δv == 0)) yield new Location(u+δu-δv/2, v+δv, h, bounds)
 
   /** All the tiles with the same u,v coordinates as this tile, but all possible different heights. */
   lazy val stack = for (h <- 0 until bounds.hSize) yield new Location(u, v, h, bounds)
@@ -224,8 +197,9 @@ case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
    */
   def range( radius: Int ) = {
     for ( δx <- -radius to radius;
-          δy <- max(-radius, -δx - radius) to min(radius, -δx + radius) ) yield
-      Δ2( δx, -δx-δy )
+          δy <- max(-radius, -δx - radius) to min(radius, -δx + radius);
+          tile <- Δ2( δx, -δx-δy )
+    ) yield tile
   }
 
   /**
@@ -234,13 +208,10 @@ case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
    * @param radius Radius of the ring to create.
    */
   def ring( radius: Int ): Iterable[Location] = {
-    // Move onto ring
-    var last: Location = Δ( E(), radius ).get
-    for( dir  <- Seq[Direction]( SW(), W(), NW(), NE(), E(), SE() );
-         step <- 0 until radius ) yield {
-      last = last.neighbour(dir).get
-      last
-    }
+    if (radius <= 0)
+      Seq(this)
+    else
+      range(radius).diff( range(radius - 1) )
   }
 
   /**
@@ -303,9 +274,61 @@ case class Location( u: Int, v: Int, h: Int, bounds: WorldBounds ) {
   def adjacentTo(l: Location) = δ(l) == 1
 
   /** Return a location that is ensured to be within the map constraints (and not one of its mirrors)  */
-  def reduce: Location = new Location(u % bounds.uSize, v % bounds.vSize, h, bounds)
+  def reduce: Option[Location] =
+    if ( bounds.inBounds(this) ) Some(this) else None
+
+  def withWrapping: WrappingLocation = new WrappingLocation(u, v, h, bounds)
 
   override def toString: String = s"Location($u, $v, $h)"
+
+}
+
+case class WrappingLocation( _u: Int, _v: Int, _h: Int, _bounds: WorldBounds ) extends Location(_u, _v, _h, _bounds) {
+
+  /** Calculates the distance between two location in the u-axis only */
+  override def δu(l: Location) = {
+    val du  = l.u - u
+    val dv  = l.v - v
+
+    val posUWrap: Boolean = du > +bounds.uSize / 2
+    val negUWrap: Boolean = du < -bounds.uSize / 2
+    val VWrap: Boolean = Math.abs(dv) > bounds.vSize / 2
+
+    if (posUWrap)
+      if (VWrap)
+        du - bounds.uSize + bounds.vSize / 2
+      else
+        du - bounds.uSize
+    else if (negUWrap)
+      if (VWrap)
+        du + bounds.uSize - bounds.vSize / 2
+      else
+        du + bounds.uSize
+    else
+      if (VWrap)
+        du + (if (du < 0) bounds.vSize / 2 else -bounds.vSize / 2)
+      else
+        du
+  }
+
+  /** Calculates the distance between two location in the v-axis only */
+  override def δv(l: Location) = {
+    val dv = l.v - v
+
+    if (dv > bounds.vSize / 2)
+      dv - bounds.vSize
+    else if (dv < -bounds.vSize / 2)
+      dv + bounds.vSize
+    else
+      dv
+  }
+
+  /** Return a location that is ensured to be within the map constraints (and not one of its mirrors)  */
+  override def reduce: Option[Location] = {
+    val newU = (u + bounds.uSize + (v / bounds.vSize + (bounds.vSize - v - 1) / bounds.vSize) * (bounds.vSize / 2)) % bounds.uSize
+    val newV = (v + bounds.vSize) % bounds.vSize
+    Some(new Location(newU, newV, h, bounds))
+  }
 
 }
 
@@ -313,7 +336,7 @@ object Location {
 
   /** Round hex axial coordinates to the nearest tile */
   def roundHexAxial( u: Double, v: Double ) = {
-    val (x, y, z) = roundHexCube(u, -u-v, v)
+    val (x, _, z) = roundHexCube(u, -u-v, v)
     (x, z)
   }
 
@@ -335,6 +358,11 @@ object Location {
       (rx, ry, -rx-ry)
   }
 
+  /** Construct a location based on its exact axial coordinates */
+  def apply( u: Int, v: Int, h: Int, size: WorldBounds ): Location = {
+    new Location( u, v, h, size )
+  }
+
   /** Construct a location based on its approximate axial coordinates */
   def apply( u: Double, v: Double, h: Int, size: WorldBounds ): Location = {
     val (u2, v2) = roundHexAxial(u, v)
@@ -354,6 +382,8 @@ object Location {
 
   def apply(tile: HexTile, h: Int, size: WorldBounds): Location =
     new Location(tile.u, tile.v, h, size)
+
+  def unapply( l: Location ) = Some(l.u, l.v, l.h, l.bounds)
 
   implicit def levelType2int(level: LevelType): Int = level.ordinal()
   implicit def int2levelType(level: Int): LevelType = LevelType.values()(level)

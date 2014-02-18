@@ -22,7 +22,7 @@ class SquareArea(val lowerBound: Location, val upperBound: Location) extends Reg
   val sizeV = lowerBound δv upperBound
   val sizeH = lowerBound δh upperBound
 
-  val center = lowerBound Δ ( sizeU / 2, sizeV / 2, sizeH / 2 )
+  val center = (lowerBound Δ ( sizeU / 2, sizeV / 2, sizeH / 2 )).get
 
   def inArea(tile: Location) = {
     val du = lowerBound δu tile
@@ -40,7 +40,8 @@ class SquareArea(val lowerBound: Location, val upperBound: Location) extends Reg
   lazy val tiles: Seq[Location] =
     for (du <- 0 to (lowerBound δu upperBound);
          dv <- 0 to (lowerBound δv upperBound);
-         dh <- 0 to (lowerBound δh upperBound)) yield lowerBound Δ (du, dv, dh)
+         dh <- 0 to (lowerBound δh upperBound);
+         tile <- lowerBound Δ (du, dv, dh)) yield tile
 
 }
 

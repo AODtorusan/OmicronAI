@@ -21,13 +21,13 @@ class FieldWorldGraph[Tile, Edge](val tiles:   Field[Tile],
 
   def edgeAt( l: Location, d: Direction ) = d match {
     case UP()   => if (l.atTop)    None else Some(up_down(l))
-    case DOWN() => if (l.atBottom) None else Some(up_down(l Δ (0,0,-1)))
+    case DOWN() => if (l.atBottom) None else (l Δ (0,0,-1)).map( l2 => up_down(l2))
     case NE()   => Some( ne_sw(l) )
     case E()    => Some( e_w  (l) )
     case SE()   => Some( se_nw(l) )
-    case SW()   => Some( ne_sw(l.toSW) )
-    case W()    => Some( e_w  (l.toW ) )
-    case NW()   => Some( se_nw(l.toNW) )
+    case SW()   => l.toSW map( l2 => ne_sw(l2) )
+    case W()    => l.toW  map( l2 => e_w( l2 ) )
+    case NW()   => l.toNW map( l2 => se_nw(l2) )
   }
 
   def map[T: ClassTag, E: ClassTag]( tileTransform: Tile => T, edgeTransform: Edge => E ) =

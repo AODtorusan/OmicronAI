@@ -11,18 +11,21 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
 
   override def receive = {
     case MouseClicked(x, y, 0, 1) =>
-      val selectedLocation = Location(gui.frame.view.pixelToTile(x, y), gui.frame.view.activeLayer, noai.gameSize).reduce
-      noai.unitOn( selectedLocation ) match {
-        case Some( asset ) => noai.select( asset )
-        case None =>
-          noai.plannedAction match {
-            case Some(mv: MoveAction) if mv.destination == selectedLocation => noai.updateOrConfirmAction(mv)
-            case _ => noai.selected match {
-              case Some(asset) => noai.updateOrConfirmAction( new MoveAction(asset, selectedLocation, noai.world) )
-              case _ =>
-            }
+      Location(gui.frame.view.pixelToTile(x, y), gui.frame.view.activeLayer, noai.gameSize).reduce.map {
+        case selectedLocation =>
+          noai.unitOn( selectedLocation ) match {
+            case Some( asset ) => noai.select( asset )
+            case None =>
+              noai.plannedAction match {
+                case Some(mv: MoveAction) if mv.destination == selectedLocation => noai.updateOrConfirmAction(mv)
+                case _ => noai.selected match {
+                  case Some(asset) => noai.updateOrConfirmAction( new MoveAction(asset, selectedLocation, noai.world) )
+                  case _ =>
+                }
+              }
           }
       }
+
 
     case m: GuiInputEvent if config.noai.updateOrConfirmAction(m) =>
       noai.plannedAction.map( a => noai.updateOrConfirmAction( a ) )
