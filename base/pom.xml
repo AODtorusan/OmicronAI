@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>be.angelcorp.omnicron</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>base</artifactId>
+    <description>The base libraries for the AI and GUI</description>
+
+    <licenses>
+        <license>
+            <name>The Non-Profit Open Software License version 3.0 (NPOSL-3.0)</name>
+            <url>http://www.opensource.org/licenses/NOSL3.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>simon</id>
+            <name>Simon Billemont</name>
+            <url>http://angelcorp.be</url>
+        </developer>
+    </developers>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.lyndir.lhunath.omicron</groupId>
+            <artifactId>omicron-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor_${scala.bin.version}</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-slf4j_${scala.bin.version}</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>scalalogging-slf4j_${scala.bin.version}</artifactId>
+        </dependency>
+        <dependency>
+            <artifactId>logback-classic</artifactId>
+            <groupId>ch.qos.logback</groupId>
+        </dependency>
+
+        <!--<dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-imaging</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>-->
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.9-RC1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!--<dependency>
+            <artifactId>slick2d-core</artifactId>
+            <groupId>org.slick2d</groupId>
+            <version>2013.04-SNAPSHOT</version>
+        </dependency>-->
+        <dependency>
+            <groupId>lessvoid</groupId>
+            <artifactId>nifty-slick-renderer</artifactId>
+            <version>${nifty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>lessvoid</groupId>
+            <artifactId>nifty-default-controls</artifactId>
+            <version>${nifty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>lessvoid</groupId>
+            <artifactId>nifty-style-black</artifactId>
+            <version>${nifty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
+            <version>${scala.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/main/scala</sourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.scala-tools</groupId>
+                <artifactId>maven-scala-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

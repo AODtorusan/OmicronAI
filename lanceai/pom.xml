@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>be.angelcorp.omnicron</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>lanceai</artifactId>
+    <description>An alternative omicron AI</description>
+
+    <licenses>
+        <license>
+            <name>The Non-Profit Open Software License version 3.0 (NPOSL-3.0)</name>
+            <url>http://www.opensource.org/licenses/NOSL3.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>simon</id>
+            <name>Simon Billemont</name>
+            <url>http://angelcorp.be</url>
+        </developer>
+    </developers>
+
+    <dependencies>
+        <dependency>
+            <groupId>be.angelcorp.omnicron</groupId>
+            <artifactId>base</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/main/scala</sourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.scala-tools</groupId>
+                <artifactId>maven-scala-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

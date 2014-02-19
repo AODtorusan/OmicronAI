@@ -3,10 +3,20 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>be.angelcorp</groupId>
-    <artifactId>omnicronAI</artifactId>
+    <groupId>be.angelcorp.omnicron</groupId>
+    <artifactId>parent</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <description>Celest library and related tools</description>
+    <description>Omicron game gui and ai</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>base</module>
+        <module>gui</module>
+
+        <module>lanceai</module>
+        <module>noai</module>
+        <module>pikeai</module>
+    </modules>
 
     <scm>
         <connection>git@github.com:AODtorusan/OmicronAI.git</connection>
@@ -39,147 +49,87 @@
         </developer>
     </developers>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.lyndir.lhunath.omicron</groupId>
-            <artifactId>omicron-core</artifactId>
-            <version>GIT-SNAPSHOT</version>
-        </dependency>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.lyndir.lhunath.omicron</groupId>
+                <artifactId>omicron-core</artifactId>
+                <version>GIT-SNAPSHOT</version>
+            </dependency>
 
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_${scala.bin.version}</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-slf4j_${scala.bin.version}</artifactId>
-            <version>${akka.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>scalalogging-slf4j_${scala.bin.version}</artifactId>
-            <version>1.0.1</version>
-        </dependency>
+            <dependency>
+                <groupId>com.typesafe</groupId>
+                <artifactId>scalalogging-slf4j_${scala.bin.version}</artifactId>
+                <version>1.0.1</version>
+            </dependency>
+            <dependency>
+                <artifactId>logback-classic</artifactId>
+                <groupId>ch.qos.logback</groupId>
+                <version>1.0.13</version>
+            </dependency>
 
-        <!--<dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-imaging</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>-->
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.9.9-RC1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!--<dependency>
-            <artifactId>slick2d-core</artifactId>
-            <groupId>org.slick2d</groupId>
-            <version>2013.04-SNAPSHOT</version>
-        </dependency>-->
-        <dependency>
-            <groupId>lessvoid</groupId>
-            <artifactId>nifty-slick-renderer</artifactId>
-            <version>${nifty.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>lessvoid</groupId>
-            <artifactId>nifty-default-controls</artifactId>
-            <version>${nifty.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>lessvoid</groupId>
-            <artifactId>nifty-style-black</artifactId>
-            <version>${nifty.version}</version>
-        </dependency>
-
-        <dependency>
-            <artifactId>logback-classic</artifactId>
-            <groupId>ch.qos.logback</groupId>
-            <version>1.0.13</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-            <version>${scala.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-compiler</artifactId>
-            <version>${scala.version}</version>
-            <scope>compile</scope>
-        </dependency>
-    </dependencies>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-compiler</artifactId>
+                <version>${scala.version}</version>
+                <scope>compile</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
-        <sourceDirectory>src/main/scala</sourceDirectory>
-        <plugins>
-            <plugin>
-                <!-- mvn clean compile assembly:single -->
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>be.angelcorp.omicronai.gui.AiGui</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <inherited>true</inherited>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <source>1.7</source>
+                        <target>1.7</target>
 
-                    <encoding>UTF-8</encoding>
-                    <optimize>true</optimize>
-                    <showWarnings>true</showWarnings>
-                    <showDeprecation>true</showDeprecation>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.scala-tools</groupId>
-                <artifactId>maven-scala-plugin</artifactId>
-                <configuration>
-                    <scalaVersion>${scala.version}</scalaVersion>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <phase>compile</phase>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                        <phase>test-compile</phase>
-                    </execution>
-                    <execution>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+                        <encoding>UTF-8</encoding>
+                        <optimize>true</optimize>
+                        <showWarnings>true</showWarnings>
+                        <showDeprecation>true</showDeprecation>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.scala-tools</groupId>
+                    <artifactId>maven-scala-plugin</artifactId>
+                    <configuration>
+                        <scalaVersion>${scala.version}</scalaVersion>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>compile</id>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
+                            <phase>compile</phase>
+                        </execution>
+                        <execution>
+                            <id>test-compile</id>
+                            <goals>
+                                <goal>testCompile</goal>
+                            </goals>
+                            <phase>test-compile</phase>
+                        </execution>
+                        <execution>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
     <distributionManagement>

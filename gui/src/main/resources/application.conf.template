@@ -1,0 +1,83 @@
+ai.engine = "be.angelcorp.omicron.lanceai.LanceAi"
+#ai.engine = "be.angelcorp.omicron.noai.NoAi"
+#ai.engine = "be.angelcorp.omicron.pike.PikeAi"
+ai.name   = "Flubber Master 3000"
+ai.messageTimeout = 300 # seconds
+ai.supervisor {
+    pausedActors = [
+        "AdmiralPike"
+    ]
+    supervisedMessages = [
+    ]
+}
+
+pathfinder.layerChangePenalty = 0
+pathfinder.groundPenalty      = 0
+pathfinder.skyPenalty         = 0
+pathfinder.spacePenalty       = 0
+
+noai {
+    keybindings = {
+        endTurn               = "RETURN" # = enter
+        updateOrConfirmAction = "SPACE"
+        centerView            = "BACK"
+        nextUnit              = "TAB"
+        previousUnit          = {key = "TAB", shiftDown = true }
+    }
+}
+
+gui {
+    messageTimeout = 10 # seconds
+    keybindings = {
+        cameraNorth     = {key = "UP",       trigger = "KeyPressed" }
+        cameraSouth     = {key = "DOWN",     trigger = "KeyPressed" }
+        cameraEast      = {key = "RIGHT",    trigger = "KeyPressed" }
+        cameraWest      = {key = "LEFT",     trigger = "KeyPressed" }
+        cameraNorthFast = {key = "UP",       trigger = "KeyPressed", shiftDown = true }
+        cameraSouthFast = {key = "DOWN",     trigger = "KeyPressed", shiftDown = true }
+        cameraEastFast  = {key = "RIGHT",    trigger = "KeyPressed", shiftDown = true }
+        cameraWestFast  = {key = "LEFT",     trigger = "KeyPressed", shiftDown = true }
+        cameraIn        = {key = "ADD",      trigger = "KeyPressed" }
+        cameraOut       = {key = "SUBTRACT", trigger = "KeyPressed" }
+        cameraInFast    = "NONE"
+        cameraOutFast   = "NONE"
+        cameraReset     = "DELETE"
+    }
+}
+
+graphics {
+    width           = 1000
+    height          = 550
+    fullscreen      = false
+
+    alwaysRender    = true
+    multisampling   = 0         // 0 | 2 | 4 | 8
+    showFPS         = false
+    targetFrameRate = 24
+    vSync           = false
+}
+
+akka {
+    loggers = ["akka.event.slf4j.Slf4jLogger"]
+    loglevel = "DEBUG"
+    remote {
+        # If this is "on", Akka will log all outbound messages at DEBUG level, if off then they are not logged
+        log-sent-messages = on
+    }
+    actor {
+        debug {
+            # enable function of LoggingReceive, which is to log any received message at DEBUG level
+            receive = on
+            # enable DEBUG logging of all AutoReceiveMessages (Kill, PoisonPill et.c.)
+            autoreceive = on
+            # enable DEBUG logging of actor lifecycle changes
+            lifecycle = on
+            # enable DEBUG logging of subscription changes on the eventStream
+            event-stream = on
+        }
+    }
+    world-dispatcher {
+        type = "Dispatcher"
+        mailbox-type = "be.angelcorp.omicron.base.world.PrioritizedMailbox"
+    }
+}
