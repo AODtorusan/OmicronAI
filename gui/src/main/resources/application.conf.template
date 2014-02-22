@@ -1,5 +1,5 @@
-ai.engine = "be.angelcorp.omicron.lanceai.LanceAi"
-#ai.engine = "be.angelcorp.omicron.noai.NoAi"
+#ai.engine = "be.angelcorp.omicron.lanceai.LanceAi"
+ai.engine = "be.angelcorp.omicron.noai.NoAi"
 #ai.engine = "be.angelcorp.omicron.pike.PikeAi"
 ai.name   = "Flubber Master 3000"
 ai.messageTimeout = 300 # seconds
@@ -16,6 +16,8 @@ pathfinder.groundPenalty      = 0
 pathfinder.skyPenalty         = 0
 pathfinder.spacePenalty       = 0
 
+cachePath = "cache"
+
 noai {
     keybindings = {
         endTurn               = "RETURN" # = enter
@@ -27,6 +29,9 @@ noai {
 }
 
 gui {
+    terrainSet  = "be.angelcorp.omicron.base.sprites.spriteSet.DefaultTerrainSet"
+    //vehicleSet  = vehicle.set
+    vehicleSet  = "be.angelcorp.omicron.maxgraphics.MaxUnitSet"
     messageTimeout = 10 # seconds
     keybindings = {
         cameraNorth     = {key = "UP",       trigger = "KeyPressed" }

@@ -14,10 +14,10 @@ import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.{UnitTypes, UnitType}
 import be.angelcorp.omicron.base.{HexTile, Location}
 import be.angelcorp.omicron.base.bridge._
+import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.base.gui.Canvas
 import be.angelcorp.omicron.base.gui.layerRender.{PolyLineRenderer, LayerRenderer}
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
-import be.angelcorp.omicron.base.gui.textures.MapIcons
 import be.angelcorp.omicron.base.world.{KnownState, WorldState, LocationState, SubWorld}
 
 case class ConstructionStartAction( builder: Asset, destination: Location, constructedType: UnitType, world: ActorRef ) extends Action {
@@ -32,7 +32,7 @@ case class ConstructionStartAction( builder: Asset, destination: Location, const
         t = System.currentTimeMillis()
         isFlashing = !isFlashing
       }
-      val img  = MapIcons.getIcon( UnitTypes.CONSTRUCTION )
+      val img  = config.gui.unitSet.spriteFor( UnitTypes.CONSTRUCTION ).image
       val tile = HexTile(destination)
       val center = Canvas.center(tile)
       if (isFlashing)

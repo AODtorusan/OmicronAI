@@ -1,5 +1,6 @@
 package be.angelcorp.omicron.base.configuration
 
+import java.nio.file.Paths
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 import scala.util.matching.Regex
@@ -10,6 +11,7 @@ import com.typesafe.config.{ConfigException, Config, ConfigFactory}
 import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicron.base.configuration.ConfigHelpers._
 import be.angelcorp.omicron.base.gui.input.{KeyReleased, GuiInputEvent, KeyPressed}
+import be.angelcorp.omicron.base.sprites.spriteSet.{DefaultUnitSet, UnitSet, TerrainSet, DefaultTerrainSet}
 
 class Configuration( config: Config ) {
   val ai = new AISettings( config.getConfig("ai") )
@@ -19,6 +21,8 @@ class Configuration( config: Config ) {
 
   val gui = new GuiSettings( config.getConfig("gui") )
   val graphics = GraphicsSettings( config.getConfig("graphics") )
+
+  val cachePath = Paths.get( config.getOptionalString("cachePath").getOrElse("cache") )
 }
 
 object Configuration {
@@ -55,7 +59,20 @@ class NoAISettings(config: Config) {
 }
 
 class GuiSettings(config: Config) {
-  val messageTimeout = config.getDouble("messageTimeout")
+  val messageTimeout  = config.getDouble("messageTimeout")
+
+  lazy val terrainSet: TerrainSet = {
+    config.getOptionalString("terrainSet") match {
+      case Some(set) => Class.forName(set).newInstance().asInstanceOf[TerrainSet]
+      case None      => new DefaultTerrainSet
+    }
+  }
+  lazy val unitSet: UnitSet = {
+    config.getOptionalString("vehicleSet") match {
+      case Some(set) => Class.forName(set).newInstance().asInstanceOf[UnitSet]
+      case None      => new DefaultUnitSet
+    }
+  }
 
   val cameraNorth     = InputSettings(config, "keybindings.cameraNorth")
   val cameraSouth     = InputSettings(config, "keybindings.cameraSouth")

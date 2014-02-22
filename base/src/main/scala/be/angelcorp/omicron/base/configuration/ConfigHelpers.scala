@@ -1,6 +1,6 @@
 package be.angelcorp.omicron.base.configuration
 
-import com.typesafe.config.{ConfigException, Config}
+import com.typesafe.config.{ConfigFactory, ConfigException, Config}
 
 object ConfigHelpers {
 
@@ -40,5 +40,14 @@ object ConfigHelpers {
     def getOptionalMillisecondsList(path: String) = getOption(underlying.getMillisecondsList(path))
     def getOptionalNanosecondsList(path: String) = getOption(underlying.getNanosecondsList(path))
   }
+
+  def mkConfig[K <: AnyRef](p: Iterable[(String, K)]): Config = {
+    val properties = new java.util.HashMap[String, K]()
+    p.foreach( e => properties.put(e._1, e._2) )
+    properties.put("type", getClass.getSimpleName.asInstanceOf[K])
+    ConfigFactory.parseMap( properties )
+  }
+
+  def mkConfig[K <: AnyRef](param: (String, K)*): Config = mkConfig(param)
 
 }

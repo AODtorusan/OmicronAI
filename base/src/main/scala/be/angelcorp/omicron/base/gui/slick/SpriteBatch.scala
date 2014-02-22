@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.gui.slick
+package be.angelcorp.omicron.base.gui.slick
 
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
@@ -36,8 +36,8 @@ class SpriteBatch(maxVerts: Int = 1000) {
 
   if (maxVerts<=0) throw new IllegalArgumentException("batch size must be larger than 0")
   val len = maxVerts * 8
-  val vertices = BufferUtils.createFloatBuffer(len)
-  val colors = BufferUtils.createFloatBuffer(len)
+  val vertices  = BufferUtils.createFloatBuffer(len)
+  val colors    = BufferUtils.createFloatBuffer(len)
   val texcoords = BufferUtils.createFloatBuffer(len)
   GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY)
   GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY)
@@ -74,71 +74,17 @@ class SpriteBatch(maxVerts: Int = 1000) {
     texcoords.clear()
     idx = 0
   }
-  //
-  //	public void drawText(SpriteFont defaultFont, StyledText text, float x, float y) {
-  //		SpriteFont.Glyph lastDef = null;
-  //		SpriteFont lastFont = null;
-  //		Color old = currentColor;
-  //
-  //		float maxLineHeight = defaultFont.getLineHeight();
-  //		float minY = text.getGroupCount()>0 ? Integer.MAX_VALUE : 0;
-  //		float maxBaseline = 0;
-  //		for (int gc=0; gc<text.getGroupCount(); gc++) {
-  //			StyledText.Group g = text.getGroup(gc);
-  //			if (g.getFont()!=null) {
-  //				maxLineHeight = Math.max(maxLineHeight, g.getFont().getLineHeight());
-  //				minY = Math.min(minY, g.getYOffset());
-  //				maxBaseline = Math.max(maxBaseline, g.getFont().getAscent());
-  //			} else {
-  //				minY = Math.min(minY, defaultFont.getYOffset(g.getText()));
-  //				maxBaseline = Math.max(maxBaseline, defaultFont.getAscent());
-  //			}
-  //
-  //		}
-  //
-  //		for (int gc=0; gc<text.getGroupCount(); gc++) {
-  //			StyledText.Group g = text.getGroup(gc);
-  //			SpriteFont newFont = g.getFont()!=null ? g.getFont() : defaultFont;
-  //			Color newColor = g.getColor()!=null ? g.getColor() : old;
-  //			CharSequence newStr = g.getText();
-  //			//TODO: clean up this method
-  //			float minYOff = g.getFont()==null ? defaultFont.getYOffset(newStr) : g.getYOffset();
-  //			float height = g.getFont()==null ? defaultFont.getHeight(newStr) : g.getHeight();
-  //			float baseline = g.getFont()==null ? defaultFont.getAscent() : g.getFont().getAscent();
-  //			float descent = g.getFont()==null ? defaultFont.getDescent() : g.getFont().getDescent();
-  //			float yoff = maxBaseline - baseline;
-  //
-  //			if (newFont!=lastFont) { //reset the last glyph
-  //				lastDef = null;
-  //			}
-  //
-  //			for (int i=0; i<newStr.length(); i++) {
-  //				char c = newStr.charAt(i);
-  //				SpriteFont.Glyph def = newFont.getGlyph(c);
-  //				if (def==null)
-  //					continue;
-  //				if (lastDef!=null)
-  //					x += lastDef.getKerning(c);
-  //				lastDef = def;
-  //				setColor(newColor);
-  //				drawImage(def.image, x + def.xoffset, y + def.yoffset + yoff - minY);
-  //				x += def.xadvance;
-  //			}
-  //		}
-  //		setColor(old);
-  //	}
 
   def drawTextImpl(font: SpriteFont, text: CharSequence, x0: Float, y0: Float, startIndex: Int, endIndex: Int, multiLine: Boolean) {
     var lastDef: Glyph = null
 
-    var startX = x0
     var x = x0
     var y = y0
     for (i <- startIndex until endIndex) {
       val c = text.charAt(i)
       if (multiLine && c=='\n') {
         y += font.lineHeight
-        x = startX
+        x = x0
       }
       font.getGlyph(c) match {
         case null =>
@@ -245,10 +191,6 @@ class SpriteBatch(maxVerts: Int = 1000) {
     val tw = image.getTextureWidth
     val th = image.getTextureHeight
     drawImage(image, x, y, w, h, tx, ty, tw, th, corners)
-    //		drawQuadElement(x, y, tx, ty, corners!=null ? corners[0] : null,
-    //				 		x+w, y, tx+tw, ty, corners!=null ? corners[1] : null,
-    //				 		x+w, y+h, tx+tw, ty+th, corners!=null ? corners[2] : null,
-    //				 		x, y+h, tx, ty+th, corners!=null ? corners[3] : null);
   }
 
   def drawSubImage(image: Image, srcx: Float, srcy: Float, srcwidth: Float, srcheight: Float, x: Float, y: Float) {

@@ -1,4 +1,4 @@
-package be.angelcorp.omicronai.gui.slick
+package be.angelcorp.omicron.base.gui.slick
 
 import scala.collection.mutable
 
@@ -9,7 +9,6 @@ import java.util.StringTokenizer
 
 import org.newdawn.slick.Image
 import org.newdawn.slick.SlickException
-import org.newdawn.slick.util.ResourceLoader
 
 /**
  * A font implementation that will parse BMFont format font files. The font

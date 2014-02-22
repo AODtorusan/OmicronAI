@@ -12,7 +12,7 @@ import org.newdawn.slick.util.ResourceLoader
 import com.typesafe.config.ConfigFactory
 import be.angelcorp.omicron.base.HexTile
 import be.angelcorp.omicron.base.gui.Canvas
-import be.angelcorp.omicron.base.gui.textures.TextureConfig
+import be.angelcorp.omicron.base.sprites.Sprites
 
 class SplashOverlay extends BasicGameState {
 
@@ -124,7 +124,7 @@ class SplashOverlay extends BasicGameState {
     val cfg = ConfigFactory.parseURL( ResourceLoader.getResource("splash.cfg") )
 
     val textureConfigs = for( entry <- cfg.getConfigList("textures").asScala ) yield
-      (entry.getInt("layer"), entry.getDouble("probability"), TextureConfig.parse(entry.getConfig("texture")).get.head.image)
+      (entry.getInt("layer"), entry.getDouble("probability"), Sprites.loader.loadSprite(Sprites, entry.getConfig("texture")).get.image)
     textures = textureConfigs.groupBy(  _._1 )
   }
 

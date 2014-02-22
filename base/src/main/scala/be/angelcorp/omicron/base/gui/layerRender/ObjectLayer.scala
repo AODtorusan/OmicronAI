@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.IGameObject
 import be.angelcorp.omicron.base.{HexTile, Location}
+import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.base.gui.Canvas
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
-import be.angelcorp.omicron.base.gui.textures.MapIcons
 import be.angelcorp.omicron.base.world.{SubWorld, GhostState, KnownState}
 
 class ObjectLayer(world:  ActorRef,
@@ -50,7 +50,7 @@ class ObjectLayer(world:  ActorRef,
         override def fillColor: Color       = if (entry._3) ghostFill else knownFill
       }.render(g)
       val (centerX, centerY) = Canvas.center( tile )
-      MapIcons.getIcon( entry._1 ).drawCentered( centerX, centerY )
+      config.gui.unitSet.spriteFor( entry._1 ).image.drawCentered( centerX, centerY )
     } )
   }
 

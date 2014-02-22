@@ -49,6 +49,9 @@ class Location( val u: Int, val v: Int, val h: Int, val bounds: WorldBounds ) {
     case _ => false
   }
 
+  override def hashCode(): Int =
+    (u << 16) ^ (v << 8) ^ h
+
   /** Indicates if this location is on the top layer */
   def atTop: Boolean = h == bounds.hSize - 1
 

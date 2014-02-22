@@ -14,7 +14,8 @@ import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.base.GameListenerLogger
 import be.angelcorp.omicron.base.gui.AiGuiOverlay
-import be.angelcorp.omicron.base.gui.textures.Textures
+import be.angelcorp.omicron.base.sprites.Sprites
+import org.lwjgl.opengl.GL11
 
 class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -66,10 +67,17 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
       ai.prepare()
       logger.info("AI started!")
 
-      splash.progress(0.6f, "Loading unit/texture configuration ...")
+      splash.progress(0.6f, "Loading unit/texture sprites ...")
       logger.info("Building ...")
-      Textures.load()
-      logger.info("Unit/texture configurations build!")
+      logger.debug("Loading textures configurations and sprites ...")
+      Sprites.load()
+      logger.debug("Loading terrain set ...")
+      Await.result( Future{
+        config.gui.terrainSet
+      }, 1 minute )
+      logger.debug("Loading unit set ...")
+      Await.result( Future{config.gui.unitSet    }, 1 minute )
+      logger.info("Unit/texture configurations and sprites build!")
 
       splash.progress(0.8f, "Finalizing GUI ...")
       logger.info("Building AI gui")
