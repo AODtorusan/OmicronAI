@@ -2,7 +2,7 @@ package be.angelcorp.omicron.base
 
 import scala.math._
 import com.lyndir.omicron.api.model.ITile
-import com.lyndir.lhunath.opal.math.Vec2Hex
+import com.lyndir.lhunath.opal.math.Vec2
 
 case class HexTile(u: Int, v: Int) {
 
@@ -108,7 +108,7 @@ object HexTile {
   implicit def location2hexTile(l: Location) =
     new HexTile(l.u, l.v)
 
-  implicit def coordinate2hexTile(c: Vec2Hex) =
+  implicit def coordinate2hexTile(c: Vec2) =
     new HexTile(c.getX, c.getY)
 
   implicit def tile2hexTile(t: ITile) =

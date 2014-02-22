@@ -11,7 +11,9 @@
 
     <modules>
         <module>base</module>
+
         <module>gui</module>
+        <module>maxgraphics</module>
 
         <module>lanceai</module>
         <module>noai</module>
