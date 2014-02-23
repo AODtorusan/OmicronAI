@@ -3,6 +3,9 @@ package be.angelcorp.omicron.base.sprites.spriteSheet
 import scala.collection.mutable.ListBuffer
 import be.angelcorp.omicron.base.sprites.BufferedSprite
 
+/**
+ * Algorithm based on code at: https://github.com/juj/RectangleBinPack
+ */
 class MaxRectsBinPack(val binWidth: Int = 0, val binHeight: Int = 0) {
   import MaxRectsBinPack._
   
@@ -86,6 +89,7 @@ class MaxRectsBinPack(val binWidth: Int = 0, val binHeight: Int = 0) {
       case RectBestLongSideFit =>
         val (_newNode, _score2, _score1) = FindPositionForNewNodeBestLongSideFit(width, height)
         (_newNode, _score1, _score2)
+
       case RectBestAreaFit =>
         val (_newNode, _score1, _score2) = FindPositionForNewNodeBestAreaFit(width, height)
         (_newNode, _score1, _score2)

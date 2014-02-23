@@ -16,6 +16,7 @@ import be.angelcorp.omicron.base.gui.AiGuiOverlay
 import be.angelcorp.omicron.base.world.{WorldBounds, World}
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.noai.gui.NoAiGui
+import scala.concurrent.Await
 
 class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -46,9 +47,13 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
 
   override def prepare(): Unit = withSecurity(key) {
     world = actorSystem.actorOf( World(this, key, gameSize) )
-    actorSystem.actorOf(Props(classOf[GameListenerBridge], this -> key, gameController), name = "GameListenerBridge")
+    val bridge = actorSystem.actorOf(Props(classOf[GameListenerBridge], this -> key, gameController), name = "GameListenerBridge")
     gameController.addGameListener( assetListUpdater )
-    Thread.sleep(200) // Wait for the actors be become live
+
+    // Wait for the actors be become live
+    Await.result(actorSystem.actorSelection(bridge.path).resolveOne(), timeout.duration)
+    Await.result(actorSystem.actorSelection(world.path ).resolveOne(), timeout.duration)
+
     getController.listObjects().asScala.foreach( obj => {
       units_ += new AssetImpl(this, key, obj)
       actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )

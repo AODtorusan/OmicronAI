@@ -49,10 +49,13 @@ class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name:
 
   override def prepare() = withSecurity(key) {
     admiralRef = actorSystem.actorOf(Props(classOf[Admiral], this, key), name = "AdmiralPike")
-    actorSystem.actorOf(Props(classOf[GameListenerBridge], this -> key, getController.getGameController), name = "GameListenerBridge")
+    val bridge = actorSystem.actorOf(Props(classOf[GameListenerBridge], this -> key, getController.getGameController), name = "GameListenerBridge")
     actorSystem.eventStream.setLogLevel(Logging.DebugLevel)
 
-    Thread.sleep(200)
+    // Wait for the actors to become live
+    Await.result(actorSystem.actorSelection(bridge.path).resolveOne(), timeout.duration)
+    Await.result(actorSystem.actorSelection(world.path ).resolveOne(), timeout.duration)
+
     getController.listObjects().asScala.foreach( obj => {
       actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
     })
