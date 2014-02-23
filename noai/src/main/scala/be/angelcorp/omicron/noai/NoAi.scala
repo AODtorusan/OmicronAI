@@ -133,4 +133,7 @@ object NoAi extends AIBuilder {
   def apply( actorSystem: ActorSystem, key: PlayerKey, builder: Game.Builder) =
     new NoAi( actorSystem, builder.nextPlayerID, key, config.ai.name, Color.Template.RED.get )
 
+  def apply( actorSystem: ActorSystem, key: PlayerKey, name: String, color: Color, builder: Game.Builder) =
+    new NoAi( actorSystem, builder.nextPlayerID, key, name, color )
+
 }

@@ -3,14 +3,13 @@ package be.angelcorp.omicron.base.sprites.spriteSheet
 import java.awt.image.BufferedImage
 import java.awt.{Color, Graphics2D, Rectangle}
 import java.awt.geom.AffineTransform
-import com.typesafe.scalalogging.slf4j.Logger
-import org.slf4j.LoggerFactory
-import be.angelcorp.omicron.base.sprites.{BufferedSprite, SpriteUtils, Sprite}
-import be.angelcorp.omicron.base.configuration.ConfigHelpers._
 import scala.collection.JavaConverters._
+import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.slf4j.Logger
 import com.typesafe.config.ConfigFactory
+import be.angelcorp.omicron.base.sprites.{BufferedSprite, Sprite}
 
-class SpriteSheetSource( val width: Int, val height: Int, val mapping: Map[BufferedSprite, Rectangle] ) {
+class SpriteSheetSource( val width: Int, val height: Int, val mapping: Map[BufferedSprite, Rectangle], val drawBorder: Boolean = false) {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   lazy val image = {
@@ -24,12 +23,16 @@ class SpriteSheetSource( val width: Int, val height: Int, val mapping: Map[Buffe
         transform.rotate(math.Pi / 2)
         transform.translate(place.x, place.y)
         g.drawImage(img, transform, null)
-        g.setColor( new Color(0,0,255) )
-        g.drawRect(place.x, place.y, place.width, place.height)
+        if (drawBorder) {
+          g.setColor( new Color(0,0,255) )
+          g.drawRect(place.x, place.y, place.width, place.height)
+        }
       } else {
         g.drawImage(img, place.x, place.y, null)
-        g.setColor( new Color(255,0,0) )
-        g.drawRect(place.x, place.y, place.width, place.height)
+        if (drawBorder) {
+          g.setColor( new Color(255,0,0) )
+          g.drawRect(place.x, place.y, place.width, place.height)
+        }
       }
     }
     result

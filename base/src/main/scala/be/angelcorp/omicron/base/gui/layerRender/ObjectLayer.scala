@@ -50,7 +50,7 @@ class ObjectLayer(world:  ActorRef,
         override def fillColor: Color       = if (entry._3) ghostFill else knownFill
       }.render(g)
       val (centerX, centerY) = Canvas.center( tile )
-      config.gui.unitSet.spriteFor( entry._1.getType ).image.drawCentered( centerX, centerY )
+      config.gui.unitSet.spriteFor( entry._1.getType ).unit.image.drawCentered( centerX, centerY )
     } )
   }
 

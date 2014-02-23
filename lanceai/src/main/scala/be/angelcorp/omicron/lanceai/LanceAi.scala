@@ -66,4 +66,7 @@ object LanceAi extends AIBuilder {
   def apply( actorSystem: ActorSystem, key: PlayerKey, builder: Game.Builder) =
     new LanceAi( actorSystem, builder.nextPlayerID, key, config.ai.name, RED.get )
 
+  def apply( actorSystem: ActorSystem, key: PlayerKey, name: String, color: Color, builder: Game.Builder) =
+    new LanceAi( actorSystem, builder.nextPlayerID, key, name, color )
+
 }

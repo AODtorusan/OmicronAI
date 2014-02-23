@@ -15,8 +15,12 @@ import be.angelcorp.omicron.base.gui.Canvas
 class SpriteLoader {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
+  object SpriteType extends Enumeration {
+    val STATIC, EMBEDDED, ANIMATED, Other = Value
+  }
+
   def loadStaticSprite( context: SpriteContext, key: String, source: URI, c: Config ): Sprite = {
-    val image = context.findImage(source).getOrElse( throw new MissingSpriteException(source) )
+    var image = context.findImage(source).getOrElse( throw new MissingSpriteException(source) )
     val processors = mutable.ListBuffer[Image => Image]()
 
     if (c.hasPath("x") || c.hasPath("y") || c.hasPath("width") || c.hasPath("height")) {
@@ -39,7 +43,9 @@ class SpriteLoader {
       logger.debug(s"Resizing texture $key by $scale")
       processors += (_.getScaledCopy( scale.toFloat ))
     } )
-    new StaticSprite( key, processors.foldLeft( image )((image, processor) => processor(image)) )
+    for (processor <- processors)
+      image = processor(image)
+    new StaticSprite( key, image )
   }
 
   def loadAnimatedSprite( context: SpriteContext, key: String, frameSources: Seq[URI], c: Config ): Sprite = {
@@ -70,12 +76,12 @@ class SpriteLoader {
 }
 
 abstract class SpriteContext {
-  protected def logger: Logger
   import SpriteContext._
 
   private val cache   = mutable.Map[String, Sprite]()
-
   val loader = new SpriteLoader
+
+  protected def logger: Logger
 
   def addSprite( sprite: Sprite ): Unit =
     addSprite(sprite.key, sprite)

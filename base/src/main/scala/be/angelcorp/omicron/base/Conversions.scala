@@ -2,6 +2,7 @@ package be.angelcorp.omicron.base
 
 import com.google.common.base.Optional
 import com.lyndir.omicron.api.util.Maybe.Presence._
+import org.newdawn.slick.Color
 
 object Conversions {
 
@@ -12,6 +13,9 @@ object Conversions {
     case UNKNOWN => Unknown
     case PRESENT => Present(o.get())
   }
+
+  // TODO: Use int constructor
+  implicit def color2slickColor( c: com.lyndir.omicron.api.model.Color ) = new Color( 0xff << 24 | c.getRed.toInt << 16 | c.getGreen << 8 | c.getBlue.toInt )
 
 }
 

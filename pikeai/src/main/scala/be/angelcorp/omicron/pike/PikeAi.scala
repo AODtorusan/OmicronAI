@@ -65,6 +65,9 @@ object PikeAi extends AIBuilder {
   def apply( actorSystem: ActorSystem, key: PlayerKey, builder: Game.Builder) =
     new PikeAi( actorSystem, builder.nextPlayerID, key, config.ai.name, RED.get )
 
+  def apply( actorSystem: ActorSystem, key: PlayerKey, name: String, color: Color, builder: Game.Builder) =
+    new PikeAi( actorSystem, builder.nextPlayerID, key, name, color )
+
 }
 
 class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {

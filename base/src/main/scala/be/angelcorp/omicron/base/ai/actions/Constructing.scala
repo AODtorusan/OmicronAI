@@ -32,7 +32,7 @@ case class ConstructionStartAction( builder: Asset, destination: Location, const
         t = System.currentTimeMillis()
         isFlashing = !isFlashing
       }
-      val img  = config.gui.unitSet.spriteFor( UnitTypes.CONSTRUCTION ).image
+      val img  = config.gui.unitSet.spriteFor( UnitTypes.CONSTRUCTION ).unit.image
       val tile = HexTile(destination)
       val center = Canvas.center(tile)
       if (isFlashing)

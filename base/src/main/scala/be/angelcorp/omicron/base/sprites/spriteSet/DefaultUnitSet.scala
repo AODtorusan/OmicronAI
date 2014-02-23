@@ -23,6 +23,6 @@ class DefaultUnitSet extends UnitSet {
     new StaticSprite( unitType.toString, img.getScaledCopy(0.5f) )
   }
 
-  override def spriteFor(typ: IUnitType): Sprite = unitSprites.get( typ ).get
+  override def spriteFor(typ: IUnitType) = UnitGraphics( unitSprites.get( typ ).get )
 
 }

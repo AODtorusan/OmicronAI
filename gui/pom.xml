@@ -68,7 +68,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>be.angelcorp.omicron.pike.supervisor.gui.AiGui</mainClass>
+                            <mainClass>be.angelcorp.omicron.gui.Main</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

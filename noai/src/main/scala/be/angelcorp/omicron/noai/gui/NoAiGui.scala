@@ -2,18 +2,20 @@ package be.angelcorp.omicron.noai.gui
 
 import scala.Some
 import scala.collection.mutable
+import akka.actor.Props
 import de.lessvoid.nifty.Nifty
 import org.newdawn.slick.{Graphics, Color}
-import akka.actor.Props
 import com.lyndir.omicron.api.model.LevelType
-import be.angelcorp.omicron.base.Location
+import be.angelcorp.omicron.base.{HexTile, Location}
 import be.angelcorp.omicron.base.bridge.Asset
 import be.angelcorp.omicron.base.gui.{Canvas, GuiInterface, AiGuiOverlay}
 import be.angelcorp.omicron.base.gui.layerRender._
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
-import be.angelcorp.omicron.base.world.SubWorld
+import be.angelcorp.omicron.base.world.{GhostState, KnownState, SubWorld}
+import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.noai.{NoAiGameListener, NoAi}
 import be.angelcorp.omicron.noai.gui.screens.{NoAiUserInterfaceController, NoAiConstructionScreenController}
+import be.angelcorp.omicron.base.gui.layerRender.renderEngine.RenderEngine
 
 class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
   val listener = new NoAiGameListener( this )
@@ -37,9 +39,25 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
   protected[gui] var resourcesOn  = false
 
   private val staticLayers = mutable.ListBuffer[ LayerRenderer ]()
-  staticLayers += new TexturedWorldRenderer( noai.world )
-  staticLayers += new ObjectLayer( noai.world, o => o.getOwner.isPresent && o.getOwner.get() == noai, "Friendly units", Color.green, Color.green )
-  staticLayers += new ObjectLayer( noai.world, o => o.getOwner.isPresent && o.getOwner.get() != noai, "Enemy units",    Color.red,   new Color(0.5f, 0f, 0f) )
+  staticLayers += new RenderEngine()
+  staticLayers += new LayerRenderer {
+    val unknown = new DrawStyle(Color.white, 3.0f)
+    var tiles: Map[DrawStyle, Iterable[HexTile]] = Map.empty
+    override def prepareRender(subWorld: SubWorld, layer: Int) = {
+      tiles = subWorld.states.flatten.flatMap {
+        case (loc, KnownState(_,Some(obj),_)) => Some(HexTile(loc) -> (if (obj.getOwner.isPresent )
+          DrawStyle(obj.getOwner.get.getPrimaryColor, 3.0f)
+        else unknown))
+        case (loc, GhostState(_,Some(obj),_)) => Some(HexTile(loc) -> (if (obj.getOwner.isPresent ) DrawStyle(obj.getOwner.get.getPrimaryColor, 3.0f) else unknown))
+        case _ => None
+      }.toList.groupBy( _._2 ).mapValues( _.map( _._1 ) )
+    }
+    override def render(g: Graphics) = {
+      for ((color, locations) <- tiles)
+        Canvas.render(g, locations, color)
+
+    }
+  }
   staticLayers += new LayerRenderer {
     // Renders the currently selected unit
     override def prepareRender(subWorld: SubWorld, layer: Int) {}
@@ -83,9 +101,9 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
 
   def activeLayers: Seq[LayerRenderer] = if (hideGame) Nil else {
     val layers = mutable.ListBuffer[LayerRenderer]( staticLayers: _* )
-    if (gridOn)                       layers += gridRenderer
-    if (noai.plannedAction.isDefined) layers += noai.plannedAction.get.preview
-    if (resourcesOn)                  layers += resourceRenderer
+    if (gridOn) layers += gridRenderer
+    noai.plannedAction.foreach( plan => layers += plan.preview )
+    if (resourcesOn) layers += resourceRenderer
     layers
   }
 

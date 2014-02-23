@@ -6,7 +6,11 @@ import be.angelcorp.omicron.base.bridge.Asset
 
 trait UnitSet {
 
-  def spriteFor( typ:   IUnitType ): Sprite
-  def spriteFor( asset: Asset     ): Sprite = spriteFor( asset.gameObject.getType )
+  def spriteFor( typ:   IUnitType ): UnitGraphics
+  def spriteFor( asset: Asset     ): UnitGraphics = spriteFor( asset.gameObject.getType )
 
+}
+
+case class UnitGraphics(unit: Sprite, shadow: Option[Sprite] = None) {
+  def this(unit: Sprite, shadow: Sprite) = this( unit, Some(shadow) )
 }
