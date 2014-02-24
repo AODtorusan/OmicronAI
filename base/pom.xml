@@ -70,6 +70,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency> <!-- Required for reflections above -->
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
+            <scope>compile</scope>
+        </dependency>
 
         <!--<dependency>
             <artifactId>slick2d-core</artifactId>
