@@ -31,6 +31,12 @@ class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
     events.foreach( event => context.system.eventStream.subscribe(self, event) )
   }
 
+  override def postRestart(reason: Throwable): Unit = {
+    super.postRestart(reason)
+    logger.warn("The world crashed, restarting with full world update!", reason)
+    sz.locations.foreach( l => self ! ReloadLocation(l) )
+  }
+
   private def checkResources(t: Tile) =
     ResourceType.values().map( r => {
       val q = t.checkResourceQuantity( r )
@@ -96,13 +102,22 @@ class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
 
     case UnitMoved(gameObject, location) => player.withSecurity(key) {
       val vr = viewRange(gameObject)
+      val from: Location = location.getFrom
+      val to:   Location = location.getTo
 
-      val couldSee = (location.getFrom: Location).range( vr )
-      val canSee   = (location.getTo:   Location).range( vr )
-      val visibleToInvisible = couldSee.diff(canSee)
-      val invisibleToVisible = canSee.diff(couldSee)
-      visibleToInvisible.foreach( updateLocation )
-      invisibleToVisible.foreach( updateLocation )
+      if (from == null || to == null) {
+        // Full update
+        if (from != null) from.range(vr).foreach( l => updateLocation(l) )
+        if ( to  != null)   to.range(vr).foreach( l => updateLocation(l) )
+      } else {
+        // Incremental update
+        val couldSee = from.range( vr )
+        val canSee   = to.range( vr )
+        val visibleToInvisible = couldSee.diff(canSee)
+        val invisibleToVisible = canSee.diff(couldSee)
+        visibleToInvisible.foreach( updateLocation )
+        invisibleToVisible.foreach( updateLocation )
+      }
     }
 
     case PlayerGainedObject(_, obj) => player.withSecurity(key) {

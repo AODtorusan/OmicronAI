@@ -36,7 +36,7 @@ class AssetImpl( val player: AI, key: PlayerKey, val gameObject: IGameObject) ex
 
   def location: Location  = player.withSecurity(key) { gameObject.checkLocation().get() }
 
-  def observableTiles     = player.withSecurity(key) { gameObject.listObservableTiles().asScala.map( tile => Location.tile2location( tile ) ) }
+  def observableTiles     = player.withSecurity(key) { gameObject.iterateObservableTiles().asScala.map( tile => Location.tile2location( tile ) ) }
 
   lazy val modules        = player.withSecurity(key) { gameObject.listModules().asScala }
 

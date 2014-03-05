@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.GameListener
 import com.lyndir.omicron.api.model._
-import be.angelcorp.omicron.base.Location
+import be.angelcorp.omicron.base.{Present, Location}
 import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.ai.actions.{Action, ActionExecutor}
 import be.angelcorp.omicron.base.bridge._
@@ -17,6 +17,9 @@ import be.angelcorp.omicron.base.world.{WorldBounds, World}
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.noai.gui.NoAiGui
 import scala.concurrent.Await
+import be.angelcorp.omicron.base.Conversions._
+import be.angelcorp.omicron.base.bridge.PlayerGainedObject
+import scala.Some
 
 class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -54,9 +57,13 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
     Await.result(actorSystem.actorSelection(bridge.path).resolveOne(), timeout.duration)
     Await.result(actorSystem.actorSelection(world.path ).resolveOne(), timeout.duration)
 
-    getController.listObjects().asScala.foreach( obj => {
-      units_ += new AssetImpl(this, key, obj)
-      actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
+    getController.iterateObservableObjects().asScala.foreach( obj => {
+      toMaybe( obj.checkOwner() ) match {
+        case Present( owner ) =>
+          if (owner == this) units_ += new AssetImpl(this, key, obj)
+          actorSystem.eventStream.publish( PlayerGainedObject( owner, obj ) )
+        case _ =>
+      }
     })
   }
 

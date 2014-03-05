@@ -6,7 +6,7 @@ import akka.actor.Props
 import de.lessvoid.nifty.Nifty
 import org.newdawn.slick.{Graphics, Color}
 import com.lyndir.omicron.api.model.LevelType
-import be.angelcorp.omicron.base.{HexTile, Location}
+import be.angelcorp.omicron.base.{Present, HexTile, Location}
 import be.angelcorp.omicron.base.bridge.Asset
 import be.angelcorp.omicron.base.gui.{Canvas, GuiInterface, AiGuiOverlay}
 import be.angelcorp.omicron.base.gui.layerRender._
@@ -45,10 +45,16 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
     var tiles: Map[DrawStyle, Iterable[HexTile]] = Map.empty
     override def prepareRender(subWorld: SubWorld, layer: Int) = {
       tiles = subWorld.states.flatten.flatMap {
-        case (loc, KnownState(_,Some(obj),_)) => Some(HexTile(loc) -> (if (obj.getOwner.isPresent )
-          DrawStyle(obj.getOwner.get.getPrimaryColor, 3.0f)
-        else unknown))
-        case (loc, GhostState(_,Some(obj),_)) => Some(HexTile(loc) -> (if (obj.getOwner.isPresent ) DrawStyle(obj.getOwner.get.getPrimaryColor, 3.0f) else unknown))
+        case (loc, KnownState(_,Some(obj),_)) =>
+          Some(HexTile(loc) -> (toMaybe( obj.checkOwner ) match {
+            case Present( owner ) => DrawStyle(owner.getPrimaryColor, 3.0f)
+            case _ => unknown
+          } ) )
+        case (loc, GhostState(_,Some(obj),_)) =>
+          Some(HexTile(loc) -> (toMaybe( obj.checkOwner ) match {
+            case Present( owner ) => DrawStyle(owner.getPrimaryColor, 3.0f)
+            case _ => unknown
+          } ) )
         case _ => None
       }.toList.groupBy( _._2 ).mapValues( _.map( _._1 ) )
     }

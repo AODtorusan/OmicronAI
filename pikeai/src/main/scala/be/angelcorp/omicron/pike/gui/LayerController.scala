@@ -62,8 +62,6 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
 
     val lb = uiScreen.findNiftyControl("layerList", classOf[ListBox[LayerRenderer]])
     lb.addItem( new TexturedWorldRenderer(pike.world) )
-    lb.addItem( new ObjectLayer(pike.world, go => go.getOwner.isPresent  && go.getOwner.get() == pike, "Friendly units", Color.green, Color.transparent ) )
-    lb.addItem( new ObjectLayer(pike.world, go => !go.getOwner.isPresent || go.getOwner.get() != pike, "Enemy units",    Color.red,   Color.transparent ) )
     lb.addItem( new FieldOfView(pike.world)           )
     lb.addItem( new GridRenderer(pike)                )
     lb.addItem( new LayerRenderer {

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.Color.Template._
+import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.bridge.{GameListenerBridge, PlayerGainedObject}
 import be.angelcorp.omicron.base.configuration.Configuration.config
@@ -22,6 +23,7 @@ import be.angelcorp.omicron.pike.agents.Admiral
 import be.angelcorp.omicron.pike.supervisor.GuiSupervisor
 import be.angelcorp.omicron.pike.gui._
 import be.angelcorp.omicron.pike.agents.Self
+import be.angelcorp.omicron.base.Present
 
 class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -56,8 +58,11 @@ class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name:
     Await.result(actorSystem.actorSelection(bridge.path).resolveOne(), timeout.duration)
     Await.result(actorSystem.actorSelection(world.path ).resolveOne(), timeout.duration)
 
-    getController.listObjects().asScala.foreach( obj => {
-      actorSystem.eventStream.publish( PlayerGainedObject( this, obj ) )
+    getController.iterateObservableObjects().asScala.foreach( obj => {
+      toMaybe( obj.checkOwner() ) match {
+        case Present( owner ) => actorSystem.eventStream.publish( PlayerGainedObject( owner, obj ) )
+        case _ =>
+      }
     })
   }
 
