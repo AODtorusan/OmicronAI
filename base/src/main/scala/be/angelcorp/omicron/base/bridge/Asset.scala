@@ -5,16 +5,16 @@ import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import be.angelcorp.omicron.base.Conversions._
-import be.angelcorp.omicron.base.Location
-import be.angelcorp.omicron.base.ai.AI
+import be.angelcorp.omicron.base.{Auth, Location}
+import be.angelcorp.omicron.base.Location._
 import be.angelcorp.omicron.base.world.WorldBounds
 
 trait Asset {
 
-  def player:     Player
   def gameObject: IGameObject
 
-  def location: Location
+  def owner:        Option[IPlayer]
+  def location:     Option[Location]
   def observableTiles: Iterable[Location]
   def modules:      Iterable[IModule]
 
@@ -30,29 +30,30 @@ trait Asset {
   def costForLevelingToLevel(h: Int): Double
 }
 
-class AssetImpl( val player: AI, key: PlayerKey, val gameObject: IGameObject) extends Asset {
+class AssetImpl( val auth: Auth, val gameObject: IGameObject) extends Asset {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  private implicit val game = player.getController.getGameController.getGame
+  private implicit val game = auth.player.getController.getGameController.getGame
 
-  def location: Location  = player.withSecurity(key) { gameObject.checkLocation().get() }
+  def owner: Option[IPlayer]     = toMaybe( auth { gameObject.checkOwner()    }).asOption
+  def location: Option[Location] = toMaybe( auth { gameObject.checkLocation() }).asOption.map( tile2location )
 
-  def observableTiles     = player.withSecurity(key) { gameObject.iterateObservableTiles().asScala.map( tile => Location.tile2location( tile ) ) }
+  def observableTiles     = auth { gameObject.iterateObservableTiles().asScala.map( tile2location ) }
 
-  lazy val modules        = player.withSecurity(key) { gameObject.listModules().asScala }
+  lazy val modules        = auth { gameObject.listModules().asScala }
 
-  lazy val base           = player.withSecurity(key) { gameObject.getModule( ModuleType.BASE, 0 ).get()           }
-  lazy val mobility       = player.withSecurity(key) { toOption( gameObject.getModule( ModuleType.MOBILITY, 0 ) ) }
-  lazy val constructors   = player.withSecurity(key) { gameObject.getModules( ModuleType.CONSTRUCTOR ).asScala    }
-  lazy val containers     = player.withSecurity(key) { gameObject.getModules( ModuleType.CONTAINER   ).asScala    }
-  lazy val extractors     = player.withSecurity(key) { gameObject.getModules( ModuleType.EXTRACTOR   ).asScala    }
-  lazy val weapons        = player.withSecurity(key) { gameObject.getModules( ModuleType.WEAPON      ).asScala    }
+  lazy val base           = auth { gameObject.getModule( ModuleType.BASE, 0 ).get()           }
+  lazy val mobility       = auth { toOption( gameObject.getModule( ModuleType.MOBILITY, 0 ) ) }
+  lazy val constructors   = auth { gameObject.getModules( ModuleType.CONSTRUCTOR ).asScala    }
+  lazy val containers     = auth { gameObject.getModules( ModuleType.CONTAINER   ).asScala    }
+  lazy val extractors     = auth { gameObject.getModules( ModuleType.EXTRACTOR   ).asScala    }
+  lazy val weapons        = auth { gameObject.getModules( ModuleType.WEAPON      ).asScala    }
 
-  private lazy val moveInCosts = player.withSecurity(key) {
+  private lazy val moveInCosts = auth {
     for( h <- 0 until (game.getLevelSize: WorldBounds).hSize) yield
       mobility.map( _.costForMovingInLevel(Location.int2levelType(h)) ).getOrElse(Double.NaN)
   }
 
-  private lazy val moveToCosts = player.withSecurity(key) {
+  private lazy val moveToCosts = auth {
     for( h <- 0 until (game.getLevelSize: WorldBounds).hSize) yield
       mobility.map( _.costForLevelingToLevel(Location.int2levelType(h)) ).getOrElse(Double.NaN)
   }

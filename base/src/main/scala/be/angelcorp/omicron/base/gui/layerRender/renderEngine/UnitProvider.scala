@@ -1,8 +1,8 @@
 package be.angelcorp.omicron.base.gui.layerRender.renderEngine
 
 import scala.Some
-import com.lyndir.omicron.api.model.IGameObject
 import be.angelcorp.omicron.base.Location
+import be.angelcorp.omicron.base.bridge.Asset
 import be.angelcorp.omicron.base.configuration.Configuration._
 import be.angelcorp.omicron.base.gui.Canvas
 import be.angelcorp.omicron.base.gui.layerRender.renderEngine.RenderEngine._
@@ -23,9 +23,9 @@ class UnitProvider extends SpriteProvider {
     sprites.result()
   }
 
-  def generateUnitSprites(loc: Location, obj: IGameObject): Iterable[(SpriteLayer, (Sprite, Float, Float, Float))] = {
+  def generateUnitSprites(loc: Location, obj: Asset): Iterable[(SpriteLayer, (Sprite, Float, Float, Float))] = {
     val (x, y) = Canvas.center(loc)
-    val unitGraphics = unitSet.spriteFor(obj.getType)
+    val unitGraphics = unitSet.spriteFor(obj)
     unitGraphics.shadow match {
       case Some(shadow) =>
         List(

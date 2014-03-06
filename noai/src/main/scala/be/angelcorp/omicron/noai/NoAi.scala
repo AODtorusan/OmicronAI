@@ -24,8 +24,7 @@ import scala.Some
 class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  protected val player    = this
-  protected val playerKey = key
+  protected[noai] val getAuth = auth
 
   implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
 
@@ -33,7 +32,7 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
     override def onPlayerGainedObject(player: IPlayer, gameObject: IGameObject): Unit = {
       if (player == NoAi.this) {
         logger.debug(s"New unit: $gameObject")
-        units_ += new AssetImpl( NoAi.this, NoAi.this.key, gameObject )
+        units_ += new AssetImpl( NoAi.this.auth, gameObject )
       }
     }
     override def onPlayerLostObject(player: IPlayer, gameObject: IGameObject): Unit = {
@@ -48,9 +47,9 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
 
   var world: ActorRef = null
 
-  override def prepare(): Unit = withSecurity(key) {
-    world = actorSystem.actorOf( World(this, key, gameSize) )
-    val bridge = actorSystem.actorOf(Props(classOf[GameListenerBridge], this -> key, gameController), name = "GameListenerBridge")
+  override def prepare(): Unit = auth {
+    world = actorSystem.actorOf( World(auth, gameSize) )
+    val bridge = actorSystem.actorOf(Props(classOf[GameListenerBridge], auth, gameController), name = "GameListenerBridge")
     gameController.addGameListener( assetListUpdater )
 
     // Wait for the actors be become live
@@ -60,14 +59,14 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
     getController.iterateObservableObjects().asScala.foreach( obj => {
       toMaybe( obj.checkOwner() ) match {
         case Present( owner ) =>
-          if (owner == this) units_ += new AssetImpl(this, key, obj)
+          if (owner == this) units_ += new AssetImpl(auth, obj)
           actorSystem.eventStream.publish( PlayerGainedObject( owner, obj ) )
         case _ =>
       }
     })
   }
 
-  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = withSecurity(key) {
+  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = auth {
     new NoAiGui(this, gui, nifty)
   }
 
@@ -85,7 +84,7 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
   protected[noai] def selected = _selected
 
   protected[noai] def endTurn(): Unit =
-    withSecurity(key) { gameController.setReady() }
+    auth { gameController.setReady() }
 
   protected[noai] def select( asset: Asset): Unit =
     _selected = Some(asset)
@@ -111,7 +110,7 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
   }
 
   protected[noai] def unitOn(l: Location) =
-    units_.find( _.location == l )
+    units_.find( _.location.get == l )
 
   protected[noai] def units =
     units_.result()

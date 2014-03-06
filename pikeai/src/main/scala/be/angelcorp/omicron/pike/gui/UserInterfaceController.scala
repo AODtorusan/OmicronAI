@@ -42,7 +42,7 @@ class UserInterfaceController(val pikeInt: PikeInterface, unitController: UnitTr
     case e: ButtonClickedEvent =>
       selectedUnit match {
         case Some(unit) =>
-          for ( asset <- ask(unit, GetAsset()).mapTo[Asset] ) pikeInt.gui.view.centerOn( asset.location )
+          for ( asset <- ask(unit, GetAsset()).mapTo[Asset] ) pikeInt.gui.view.centerOn( asset.location.get )
         case None =>
       }
     case _ =>

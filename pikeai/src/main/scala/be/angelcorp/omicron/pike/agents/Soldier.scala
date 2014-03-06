@@ -10,13 +10,14 @@ import com.lyndir.omicron.api.model.{PlayerKey, IGameObject}
 import be.angelcorp.omicron.base.ai.AI
 import be.angelcorp.omicron.base.ai.actions.{NextTurn, Now, Action, ActionExecutor}
 import be.angelcorp.omicron.base.bridge.{NewTurn, AssetImpl, Asset}
+import be.angelcorp.omicron.base.Auth
 
-class Soldier( val ai: AI, protected val key: PlayerKey, val aiExec: ActionExecutor, obj: IGameObject ) extends Agent {
+class Soldier( protected val auth: Auth, val aiExec: ActionExecutor, obj: IGameObject ) extends Agent {
   implicit val exec = context.dispatcher
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   logger.debug(s"Promoted asset $name to a soldier")
 
-  val asset: Asset = TypedActor(context).typedActorOf(TypedProps(classOf[AssetImpl], new AssetImpl(ai, key, obj)), name="Asset")
+  val asset: Asset = TypedActor(context).typedActorOf(TypedProps(classOf[AssetImpl], new AssetImpl(auth, obj)), name="Asset")
 
   var nextAction: Option[Action] = None
 

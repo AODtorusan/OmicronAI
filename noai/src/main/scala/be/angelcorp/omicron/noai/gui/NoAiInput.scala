@@ -9,6 +9,8 @@ import be.angelcorp.omicron.noai.NoAi
 
 class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
 
+  implicit val game = noai.getController.getGameController.getGame
+
   override def receive = {
     case MouseClicked(x, y, 0, 1) =>
       Location(gui.frame.view.pixelToTile(x, y), gui.frame.view.activeLayer, noai.gameSize).reduce.map {
@@ -44,7 +46,7 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
     case m: GuiInputEvent if config.noai.centerView(m) =>
       val units = noai.units
       val sum = units.foldLeft( (0.0,0.0) )( (loc, unit) => {
-        val l = unit.location
+        val l = unit.location.get
         (loc._1 + l.u, loc._2 + l.v)
       } )
       val u = sum._1 / units.size

@@ -5,13 +5,13 @@ import akka.actor.{ActorRef, Props}
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.PlayerKey
-import be.angelcorp.omicron.base.{HexArea, Namer}
+import be.angelcorp.omicron.base.{Auth, HexArea, Namer}
 import be.angelcorp.omicron.base.ai.AI
 import be.angelcorp.omicron.base.ai.actions.ActionExecutor
 import be.angelcorp.omicron.base.bridge.NewTurn
 import be.angelcorp.omicron.pike.agents.squad.{NewSurveyRoi, SurveySquad, Squad}
 
-class PikeTactical(val ai: AI, protected val key: PlayerKey, val aiExec: ActionExecutor) extends Agent {
+class PikeTactical(protected val auth: Auth, val aiExec: ActionExecutor) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   val namer = new Namer[Class[_ <: Squad]](_.getSimpleName)
@@ -26,10 +26,10 @@ class PikeTactical(val ai: AI, protected val key: PlayerKey, val aiExec: ActionE
     case AddMember(unit) =>
       logger.debug( s"$name was asked to assign unit $unit to a new Squad" )
       val newName = namer.nameFor(classOf[SurveySquad])
-      val squad = context.actorOf(Props(classOf[SurveySquad], ai, key, aiExec ), name = newName)
+      val squad = context.actorOf(Props(classOf[SurveySquad], auth, aiExec ), name = newName)
       squad ! AddMember( unit )
       //TODO: determine roi differently
-      squad ! NewSurveyRoi( withSecurity { new HexArea(unit.checkLocation().get(), 20) } )
+      squad ! NewSurveyRoi( auth { new HexArea(unit.checkLocation().get(), 20) } )
 
     case NewTurn( turn ) =>
       logger.debug( s"$name is starting new turn actions" )

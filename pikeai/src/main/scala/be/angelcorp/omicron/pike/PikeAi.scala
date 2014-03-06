@@ -49,7 +49,7 @@ class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name:
     new PikeInterface(this, gui, nifty)
   }
 
-  override def prepare() = withSecurity(key) {
+  override def prepare() = auth {
     admiralRef = actorSystem.actorOf(Props(classOf[Admiral], this, key), name = "AdmiralPike")
     val bridge = actorSystem.actorOf(Props(classOf[GameListenerBridge], this -> key, getController.getGameController), name = "GameListenerBridge")
     actorSystem.eventStream.setLogLevel(Logging.DebugLevel)

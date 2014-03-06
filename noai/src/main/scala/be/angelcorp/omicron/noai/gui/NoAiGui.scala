@@ -46,13 +46,13 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
     override def prepareRender(subWorld: SubWorld, layer: Int) = {
       tiles = subWorld.states.flatten.flatMap {
         case (loc, KnownState(_,Some(obj),_)) =>
-          Some(HexTile(loc) -> (toMaybe( obj.checkOwner ) match {
-            case Present( owner ) => DrawStyle(owner.getPrimaryColor, 3.0f)
+          Some(HexTile(loc) -> ( obj.owner match {
+            case Some( owner ) => DrawStyle(owner.getPrimaryColor, 3.0f)
             case _ => unknown
           } ) )
         case (loc, GhostState(_,Some(obj),_)) =>
-          Some(HexTile(loc) -> (toMaybe( obj.checkOwner ) match {
-            case Present( owner ) => DrawStyle(owner.getPrimaryColor, 3.0f)
+          Some(HexTile(loc) -> ( obj.owner match {
+            case Some( owner ) => DrawStyle(owner.getPrimaryColor, 3.0f)
             case _ => unknown
           } ) )
         case _ => None
@@ -70,7 +70,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
     override def render(g: Graphics) {
       noai.selected match {
         case Some( unit ) =>
-          Canvas.render(g, unit.location, new DrawStyle(Color.orange, 3.0f), Color.transparent)
+          Canvas.render(g, unit.location.get, new DrawStyle(Color.orange, 3.0f), Color.transparent)
         case _ =>
       }
     }
@@ -81,7 +81,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
     override def run() {
       // TODO: Fix this quickfix : )
       Thread.sleep(1000)
-      frame.view.centerOn( noai.units.head.location )
+      frame.view.centerOn( noai.units.head.location.get )
     }
   }.start()
 
@@ -114,7 +114,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
   }
 
   def moveTo(asset: Asset) {
-    val loc = asset.location
+    val loc = asset.location.get
     moveTo( loc.h )
     frame.view.centerOn( loc )
   }

@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
+import com.lyndir.omicron.api.model.Game
 import be.angelcorp.omicron.base.{Direction, Location}
 import be.angelcorp.omicron.base.bridge.Asset
 import be.angelcorp.omicron.base.configuration.Configuration.config
@@ -15,12 +16,11 @@ import be.angelcorp.omicron.base.world._
 import be.angelcorp.omicron.base.world.KnownState
 import be.angelcorp.omicron.base.world.LocationState
 
-class MovementPathfinder( destination: Location, asset: Asset, world: ActorRef ) extends AStar {
+class MovementPathfinder( destination: Location, asset: Asset, world: ActorRef )(implicit val game: Game) extends AStar {
 
   def heuristic(fromTile: Location) = fromTile δ destination
 
   val costGraph = new  WorldGraph[Null, Double] {
-    implicit val game = asset.player.getController.getGameController.getGame
     implicit val timeout: Timeout = Duration(10, TimeUnit.SECONDS)
     val inaccessible = Double.MaxValue
 

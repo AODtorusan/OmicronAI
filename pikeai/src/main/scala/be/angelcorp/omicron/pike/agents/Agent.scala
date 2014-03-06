@@ -9,17 +9,19 @@ import be.angelcorp.omicron.base.ai.actions.ActionExecutor
 import be.angelcorp.omicron.base.ai.AI
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.pike.supervisor.{SupervisorMessage, AiSupervisor, UnSupervisedMessage}
+import be.angelcorp.omicron.base.Auth
 
 trait Agent extends Actor {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   protected def aiExec: ActionExecutor
-  protected def ai:     AI
-  protected def key:    PlayerKey
+  protected def auth:   Auth
 
   def act:    Actor.Receive
 
   def name = self.path.name
+
+  implicit lazy val game = auth.player.getController.getGameController.getGame
 
   def receive: Actor.Receive = ({
     case UnSupervisedMessage(Self()) | Self() =>
@@ -53,9 +55,6 @@ trait Agent extends Actor {
     logger.warn(s"Agent crashed ${if (message.isDefined) "on " + message.get.toString}", reason)
     super.preRestart(reason, message)
   }
-
-  def withSecurity[T]( body: => T ) =
-    ai.withSecurity(key)(body)
 
 }
 

@@ -10,7 +10,7 @@ import akka.util.Timeout
 import akka.pattern.ask
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.IConstructorModule.IConstructionSite
-import be.angelcorp.omicron.base.{Present, Direction, Location}
+import be.angelcorp.omicron.base.{Auth, Present, Direction, Location}
 import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.ai.AI
 import be.angelcorp.omicron.base.bridge.Asset
@@ -19,15 +19,12 @@ import be.angelcorp.omicron.base.world.{KnownState, WorldState, LocationState, R
 trait ActionExecutor {
   implicit val timeout: Timeout = Duration(1, TimeUnit.MINUTES)
 
-  protected def player:    AI
-  protected def playerKey: PlayerKey
+  protected def auth: Auth
 
   implicit def game: Game
   implicit def executionContext: ExecutionContext
 
   def world: ActorRef
-
-  private def withSecurity[T](body: => T) = player.withSecurity(playerKey)(body)
 
   private def haltTheWorld[T](f: => Try[T] ): Try[T] = {
     waitForWorld()
@@ -51,7 +48,7 @@ trait ActionExecutor {
     Future { haltTheWorld (
       asset.weapons.find( _ == weaponModule ) match {
         case Some(module) =>
-          if ( withSecurity { module.fireAt( target ) } )
+          if ( auth { module.fireAt( target ) } )
             Success()
           else
             Failure( new ActionExecutionException(s"Asset $asset could not successfully fire at $target with $module", Never) )
@@ -63,13 +60,13 @@ trait ActionExecutor {
   def move( asset: Asset, path: Seq[Location]): Future[Try[Unit]] = haltTheWorld {
     if (path.length == 0)
       Future.successful( Success() )
-    else if (asset.location != path.head)
+    else if (asset.location.get != path.head)
       Future.successful( Failure( TooFar(asset, path.head, 0) ) )
     else {
       asset.mobility match {
         case Some(module) =>
           path.drop(1).foldLeft(Future.successful(Success()): Future[Try[Unit]])( (success, target) => success.flatMap( {
-            case Success(_) => withSecurity {
+            case Success(_) => auth {
               val action = module.movement( target )
               if (action.isPossible) {
                 waitForWorld()
@@ -78,14 +75,14 @@ trait ActionExecutor {
               } else {
                 (world ? LocationState(target)).mapTo[WorldState].map( {
                   case KnownState(_, Some(obj), _) =>
-                    toOption( withSecurity { obj.getModule( PublicModuleType.MOBILITY, 0 ) } ) match {
+                    obj.mobility match {
                       case Some( _ ) => Failure( BlockedLocation(target, NextTurn) )
                       case None      => Failure( BlockedLocation(target, Never   ) )
                     }
                   case _ =>
-                    val origin = asset.location
+                    val origin = asset.location.get
                     val cost = (math.abs(origin δu target) + math.abs(origin δv target)) * asset.costForMovingInLevel(origin.h) + (origin δh target) * asset.costForLevelingToLevel( target.h )
-                    val available = withSecurity { module.getRemainingSpeed }
+                    val available = auth { module.getRemainingSpeed }
                     if (available < cost)
                       Failure( OutOfMovementPoints(asset, target, cost, available) )
                     else
@@ -104,7 +101,7 @@ trait ActionExecutor {
     haltTheWorld (
       asset.mobility match {
         case Some(module) =>
-          asset.location neighbour direction match {
+          asset.location.get neighbour direction match {
             case Some(target) =>
               waitForWorld()
               val action = module.movement( target )
@@ -114,7 +111,7 @@ trait ActionExecutor {
               } else {
                 Failure(new ActionExecutionException(s"Cannot move asset $asset to $target", Never))
               }
-            case _ => Failure( OutOfMap( asset.location, direction ) )
+            case _ => Failure( OutOfMap( asset.location.get, direction ) )
           }
         case None =>
           Failure( MissingModule(asset, PublicModuleType.MOBILITY) )
@@ -124,10 +121,10 @@ trait ActionExecutor {
 
   def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[IConstructionSite]] = Future {
     haltTheWorld (
-      if (builder.location adjacentTo destination )
+      if (builder.location.get adjacentTo destination )
         builder.constructors.headOption match {
           case Some(module) =>
-            withSecurity {
+            auth {
               val oldTarget = module.getTarget
               val site      = module.schedule( constructionType, destination )
               if (oldTarget != null) module.setTarget(oldTarget)
@@ -148,7 +145,7 @@ trait ActionExecutor {
         toMaybe(site.checkLocation()) match {
           case Present(loc) =>
             val siteLocation: Location = loc
-            if (siteLocation adjacentTo builder.location) {
+            if (siteLocation adjacentTo builder.location.get) {
               builder.constructors.foreach( _.setTarget(site) )
               Success()
             } else
@@ -172,7 +169,7 @@ case class MissingModule( unit: Asset, typ: PublicModuleType[_<:IModule], cause:
   extends ActionExecutionException(s"$unit is missing a required module; $typ", Never, cause)
 
 case class TooFar( unit: Asset, targetLocation: Location, maxDistance: Int, cause: Throwable = null  )
-  extends ActionExecutionException(s"$unit is too far from $targetLocation to perform the action. distance=${unit.location δ targetLocation}, maximum=$maxDistance", Never, cause)
+  extends ActionExecutionException(s"$unit is too far from $targetLocation to perform the action. distance=${unit.location.get δ targetLocation}, maximum=$maxDistance", Never, cause)
 
 case class BlockedLocation( target: Location, retry: RetryHint, cause: Throwable = null  )
   extends ActionExecutionException(s"Target location $target is blocked.", retry, cause)

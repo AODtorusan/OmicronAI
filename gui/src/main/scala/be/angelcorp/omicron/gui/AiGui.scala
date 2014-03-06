@@ -12,7 +12,7 @@ import com.lyndir.omicron.api.model.{PlayerKey, Game}
 import de.lessvoid.nifty.slick2d.{NiftyOverlayBasicGameState, NiftyStateBasedGame, NiftyOverlayGameState}
 import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.configuration.Configuration.config
-import be.angelcorp.omicron.base.GameListenerLogger
+import be.angelcorp.omicron.base.{Auth, GameListenerLogger}
 import be.angelcorp.omicron.base.gui.AiGuiOverlay
 import be.angelcorp.omicron.base.sprites.Sprites
 import org.lwjgl.opengl.GL11
@@ -53,7 +53,9 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
 
         aiBuilder.apply( actorSystem, key, builder )
       }
-      ai.withSecurity(key) { builder.addGameListener(new GameListenerLogger) }
+      Auth.withSecurity(ai, key) {
+        builder.addGameListener(new GameListenerLogger)
+      }
       builder.addPlayer(ai)
       logger.info("AI build!")
 

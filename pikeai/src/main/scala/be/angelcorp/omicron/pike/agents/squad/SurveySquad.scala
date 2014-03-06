@@ -14,7 +14,7 @@ import org.newdawn.slick.Color
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.{PlayerKey, IGameObject}
 import be.angelcorp.omicron.base.configuration.Configuration.config
-import be.angelcorp.omicron.base.{Location, RegionOfInterest, Namer}
+import be.angelcorp.omicron.base.{Auth, Location, RegionOfInterest, Namer}
 import be.angelcorp.omicron.base.ai.AI
 import be.angelcorp.omicron.base.ai.actions.{SequencedAction, MoveAction, ActionExecutor}
 import be.angelcorp.omicron.base.bridge.{Asset, NewTurn}
@@ -26,7 +26,7 @@ import be.angelcorp.omicron.pike.agents.ActionFailed
 import be.angelcorp.omicron.pike.agents.ActionRequest
 import be.angelcorp.omicron.pike.agents.AddMember
 
-class SurveySquad(val ai: AI, protected val key: PlayerKey, val aiExec: ActionExecutor ) extends Squad {
+class SurveySquad(protected val auth: Auth, val aiExec: ActionExecutor ) extends Squad {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   import context.dispatcher
 
@@ -45,7 +45,7 @@ class SurveySquad(val ai: AI, protected val key: PlayerKey, val aiExec: ActionEx
   def act = {
     case AddMember( unit ) =>
       logger.debug(s"$name was asked to absorb a new member: $unit")
-      context.actorOf(Props(new Soldier(ai, key, aiExec, unit )), name=namer.nameFor(unit) )
+      context.actorOf(Props(new Soldier(auth, aiExec, unit )), name=namer.nameFor(unit) )
 
     case NewSurveyRoi( newRoi ) =>
       logger.debug(s"$name is updating the region of interest to $newRoi")

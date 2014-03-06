@@ -104,6 +104,7 @@ class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenControlle
       if (currentBuilder.isDefined && currentDdestination.isDefined)
         constructionTypeList.getSelection.asScala.headOption match {
           case Some(typ) =>
+            implicit val game = gui.noai.game
             gui.noai.updateOrConfirmAction( ConstructionStartAction(currentBuilder.get, currentDdestination.get, typ, gui.noai.world) )
             gui.gotoUserInterface()
           case _ =>

@@ -1,7 +1,8 @@
 package be.angelcorp.omicron.base.world
 
-import scala.Some
 import java.util.Comparator
+import scala.Some
+import scala.collection.mutable
 import akka.actor.{Props, ActorSystem, Actor}
 import akka.dispatch.{Envelope, UnboundedPriorityMailbox}
 import org.slf4j.LoggerFactory
@@ -9,16 +10,16 @@ import com.typesafe.scalalogging.slf4j.Logger
 import com.typesafe.config.Config
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.util.Maybe.Presence
-import be.angelcorp.omicron.base.ai.AI
 import be.angelcorp.omicron.base.algorithms.Field
 import be.angelcorp.omicron.base.bridge._
-import be.angelcorp.omicron.base.Location
+import be.angelcorp.omicron.base.{Auth, Location}
 
-class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
+class World(auth: Auth, sz: WorldBounds) extends Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  private implicit val game = player.getController.getGameController.getGame
-  private val gameState = Field.fill[WorldState](sz)(UnknownState)
+  private implicit val game = auth.player.getController.getGameController.getGame
+  private val gameState  = Field.fill[WorldState](sz)(UnknownState)
+  private val assetCache = mutable.Map[IGameObject, Asset]()
 
   override def preStart() {
     val events = List(
@@ -51,7 +52,7 @@ class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
     val t = Location.location2tile(l)
     val content   = t.checkContents()
     content.presence() match {
-      case Presence.PRESENT => KnownState(l, Some(content.get), checkResources(t))
+      case Presence.PRESENT => KnownState(l, Some( assetCache.getOrElseUpdate(content.get, new AssetImpl(auth, content.get)) ), checkResources(t))
       case Presence.ABSENT  => KnownState(l, None, checkResources(t))
       case Presence.UNKNOWN => UnknownState
     }
@@ -77,7 +78,7 @@ class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
   def getState(l: Location): WorldState = gameState(l)
 
   def receive: Actor.Receive = {
-    case ReloadLocation(l) => player.withSecurity(key) { updateLocation(l) }
+    case ReloadLocation(l) => auth { updateLocation(l) }
     case ReloadReady()     => sender ! true // True due to priority handling of messages
     case LocationState(l)  => sender ! getState(l)
     case LocationStates(l) => sender ! l.map( loc => getState(loc) )
@@ -97,22 +98,22 @@ class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
     gameObject.getModule(PublicModuleType.BASE, 0).get().getViewRange
 
   def processEvent(m: GameListenerMessage) = m match {
-    case TileContentsChanged(l, _)      => player.withSecurity(key) { updateLocation(l) }
-    case TileResourcesChanged(l, _, _)  => player.withSecurity(key) { updateLocation(l) }
+    case TileContentsChanged(l, _)      => auth { updateLocation(l) }
+    case TileResourcesChanged(l, _, _)  => auth { updateLocation(l) }
 
-    case UnitMoved(gameObject, location) => player.withSecurity(key) {
+    case UnitMoved(gameObject, location) => auth {
       val vr = viewRange(gameObject)
-      val from: Location = location.getFrom
-      val to:   Location = location.getTo
+      val from = location.getFrom
+      val to   = location.getTo
 
       if (from == null || to == null) {
         // Full update
-        if (from != null) from.range(vr).foreach( l => updateLocation(l) )
-        if ( to  != null)   to.range(vr).foreach( l => updateLocation(l) )
+        if (from != null) (from: Location).range(vr).foreach( l => updateLocation(l) )
+        if ( to  != null) (  to: Location).range(vr).foreach( l => updateLocation(l) )
       } else {
         // Incremental update
-        val couldSee = from.range( vr )
-        val canSee   = to.range( vr )
+        val couldSee = (from: Location).range( vr )
+        val canSee   = (to: Location).range( vr )
         val visibleToInvisible = couldSee.diff(canSee)
         val invisibleToVisible = canSee.diff(couldSee)
         visibleToInvisible.foreach( updateLocation )
@@ -120,7 +121,7 @@ class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
       }
     }
 
-    case PlayerGainedObject(_, obj) => player.withSecurity(key) {
+    case PlayerGainedObject(_, obj) => auth {
       val tile = obj.checkLocation()
       tile.presence() match {
         case Presence.PRESENT => (tile.get: Location).range( viewRange(obj) ).foreach( l => updateLocation(l) )
@@ -128,7 +129,7 @@ class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
       }
     }
 
-    case PlayerLostObject(_, obj) => player.withSecurity(key) {
+    case PlayerLostObject(_, obj) => auth {
       val tile = obj.checkLocation()
       tile.presence() match {
         case Presence.PRESENT => (tile.get: Location).range( viewRange(obj) ).foreach( l => updateLocation(l) )
@@ -144,8 +145,8 @@ class World(player: AI, key: PlayerKey, sz: WorldBounds) extends Actor {
 
 object World {
 
-  def apply( player: Player, key: PlayerKey, size: WorldBounds ) =
-    Props(classOf[World], player, key, size).withDispatcher("akka.world-dispatcher")
+  def apply( auth: Auth, size: WorldBounds ) =
+    Props(classOf[World], auth, size).withDispatcher("akka.world-dispatcher")
 
 }
 
@@ -175,8 +176,8 @@ class PrioritizedMailbox(settings: ActorSystem.Settings, cfg: Config) extends Un
 
 sealed abstract class WorldState
 object UnknownState   extends WorldState
-case class GhostState(location: Location, content: Option[IGameObject], resources: Map[ResourceType, Int]) extends WorldState
-case class KnownState(location: Location, content: Option[IGameObject], resources: Map[ResourceType, Int]) extends WorldState {
+case class GhostState(location: Location, content: Option[Asset], resources: Map[ResourceType, Int]) extends WorldState
+case class KnownState(location: Location, content: Option[Asset], resources: Map[ResourceType, Int]) extends WorldState {
   def toGhost = GhostState(location, content, resources)
 }
 

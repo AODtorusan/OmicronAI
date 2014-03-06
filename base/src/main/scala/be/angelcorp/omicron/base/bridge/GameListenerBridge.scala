@@ -7,13 +7,13 @@ import com.lyndir.omicron.api._
 import com.lyndir.omicron.api.model._
 import com.lyndir.omicron.api.model.IConstructorModule.IConstructionSite
 import be.angelcorp.omicron.base.ai.AI
-import be.angelcorp.omicron.base.Location
+import be.angelcorp.omicron.base.{Auth, Location}
 
-class GameListenerBridge( key: (AI, PlayerKey), gameController: GameController ) extends GameListener with Actor {
+class GameListenerBridge( auth: Auth, gameController: GameController ) extends GameListener with Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   override def preStart() {
-    key._1.withSecurity(key._2) {
+    auth {
       gameController.addGameListener( this )
     }
   }

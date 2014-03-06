@@ -14,7 +14,7 @@ case class AttackAction( asset: Asset, module: WeaponModule, destination: Locati
   val preview = new LayerRenderer {
     val (toX, toY) = (destination: HexTile).centerXY
     def render(g: Graphics) {
-      val (fromX, fromY) = (asset.location: HexTile).centerXY
+      val (fromX, fromY) = HexTile(asset.location.get).centerXY
       g.setColor( Color.red )
       g.drawLine(fromX * Canvas.scale, fromY * Canvas.scale, toX * Canvas.scale, toY * Canvas.scale)
     }

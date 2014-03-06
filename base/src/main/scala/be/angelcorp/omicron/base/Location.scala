@@ -412,7 +412,7 @@ object Location {
   implicit def int2level(level: Int)(implicit game: Game): Level = game.getLevel( level )
 
   implicit def tile2location( tile: ITile ) =
-    new Location( tile.getPosition.getX, tile.getPosition.getY, tile.getLevel, tile.getLevel.getSize )
+    if (tile == null) null else new Location( tile.getPosition.getX, tile.getPosition.getY, tile.getLevel, tile.getLevel.getSize )
   implicit def location2tile( l: Location )(implicit game: Game) =
     game.getLevel(l.h).getTile( l: Vec2Hex ).get()
 

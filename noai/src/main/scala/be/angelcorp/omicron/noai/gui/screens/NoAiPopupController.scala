@@ -15,6 +15,7 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
 
   /** Generates the content for the default right-click popup menu  */
   override def defaultMenu = {
+    implicit val game = ui.gui.frame.game
     val entries = List.newBuilder[(String, () => Unit)]
     val location = ui.gui.frame.hoverLocation
     ui.gui.noai.selected match {
@@ -36,7 +37,6 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
                   // Move in the same level
                   entries += ( "Move to", () => ui.gui.noai.updateOrConfirmAction(MoveAction(asset, l, ui.gui.noai.world)) )
                   // Move up or down
-                  implicit val game = ui.gui.frame.game
                   for (d <- Seq(UP(), DOWN()); loc <- l.neighbour(d)) {
                     if (asset.costForLevelingToLevel(loc.h) != Double.MaxValue)
                       entries += (s"Move ${d.toString.toLowerCase}", () => ui.gui.noai.updateOrConfirmAction( MoveAction(asset, loc, ui.gui.noai.world) ))

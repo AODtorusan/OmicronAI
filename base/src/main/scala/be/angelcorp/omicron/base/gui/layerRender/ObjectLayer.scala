@@ -13,9 +13,10 @@ import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.base.gui.Canvas
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
 import be.angelcorp.omicron.base.world.{SubWorld, GhostState, KnownState}
+import be.angelcorp.omicron.base.bridge.Asset
 
 class ObjectLayer(world:  ActorRef,
-                  filter: IGameObject => Boolean,
+                  filter: Asset => Boolean,
                   name:   String,
                   knownFill: Color  = Color.green,
                   ghostFill: Color  = Color.lightGray,
@@ -26,7 +27,7 @@ class ObjectLayer(world:  ActorRef,
   import scala.concurrent.ExecutionContext.Implicits.global
 
   // { object, location, isGhost }
-  var objects = Array.ofDim[(IGameObject, Location, Boolean)](0)
+  var objects = Array.ofDim[(Asset, Location, Boolean)](0)
 
   override def prepareRender(subWorld: SubWorld, layer: Int) {
     objects = subWorld.states(layer).map( {
@@ -50,7 +51,7 @@ class ObjectLayer(world:  ActorRef,
         override def fillColor: Color       = if (entry._3) ghostFill else knownFill
       }.render(g)
       val (centerX, centerY) = Canvas.center( tile )
-      config.gui.unitSet.spriteFor( entry._1.getType ).unit.image.drawCentered( centerX, centerY )
+      config.gui.unitSet.spriteFor( entry._1 ).unit.image.drawCentered( centerX, centerY )
     } )
   }
 

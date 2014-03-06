@@ -5,6 +5,7 @@ import de.lessvoid.nifty.Nifty
 import com.lyndir.omicron.api.model._
 import be.angelcorp.omicron.base.gui.{GuiInterface, AiGuiOverlay}
 import java.util.concurrent.Callable
+import be.angelcorp.omicron.base.Auth
 
 abstract class AI( playerId: Int, key: PlayerKey, name: String, primaryColor: Color, secondaryColor: Color  ) extends Player( playerId, key, name, primaryColor, secondaryColor) {
 
@@ -16,21 +17,10 @@ abstract class AI( playerId: Int, key: PlayerKey, name: String, primaryColor: Co
   def prepare() {}
 
   /** Start playing the game (game and possible gui have been build) */
-  def start() = withSecurity(key) {
+  def start() = auth {
     getController.getGameController.setReady()
   }
 
-  def withSecurity[T](key: PlayerKey)( body: => T ) = {
-    if (Security.isAuthenticatedAs(this)) {
-      body
-    } else {
-      try {
-        Security.authenticate(this, key)
-        body
-      } finally {
-        Security.invalidate()
-      }
-    }
-  }
+  protected val auth = new Auth( this, key )
 
 }

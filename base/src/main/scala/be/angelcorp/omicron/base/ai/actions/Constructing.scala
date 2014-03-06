@@ -11,7 +11,7 @@ import akka.pattern.ask
 import org.slf4j.LoggerFactory
 import org.newdawn.slick.{Color, Graphics}
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.{UnitTypes, UnitType}
+import com.lyndir.omicron.api.model.{UnitTypes, UnitType, Game}
 import be.angelcorp.omicron.base.{HexTile, Location}
 import be.angelcorp.omicron.base.bridge._
 import be.angelcorp.omicron.base.configuration.Configuration.config
@@ -20,7 +20,7 @@ import be.angelcorp.omicron.base.gui.layerRender.{PolyLineRenderer, LayerRendere
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
 import be.angelcorp.omicron.base.world.{KnownState, WorldState, LocationState, SubWorld}
 
-case class ConstructionStartAction( builder: Asset, destination: Location, constructedType: UnitType, world: ActorRef ) extends Action {
+case class ConstructionStartAction( builder: Asset, destination: Location, constructedType: UnitType, world: ActorRef )(implicit val game: Game) extends Action {
   lazy val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   lazy val preview = new LayerRenderer {
@@ -39,7 +39,7 @@ case class ConstructionStartAction( builder: Asset, destination: Location, const
         img.drawFlash( center._1 - img.getWidth/2, center._2 - img.getHeight/2 )
       else
         img.draw( center._1 - img.getWidth/2, center._2 - img.getHeight/2 )
-      Canvas.line( g, builder.location, tile, DrawStyle(Color.blue, 2) )
+      Canvas.line( g, builder.location.get, tile, DrawStyle(Color.blue, 2) )
     }
   }
 
@@ -57,13 +57,13 @@ case class ConstructionStartAction( builder: Asset, destination: Location, const
 
 }
 
-case class ConstructionAssistAction( builder: Asset, destination: Location, world: ActorRef) extends Action {
+case class ConstructionAssistAction( builder: Asset, destination: Location, world: ActorRef)(implicit val game: Game) extends Action {
   implicit val timeout: Timeout = Duration(1, TimeUnit.MINUTES)
-  lazy val preview = new PolyLineRenderer( Seq(builder.location, destination), DrawStyle(Color.blue, 2) )
+  lazy val preview = new PolyLineRenderer( Seq(builder.location.get, destination), DrawStyle(Color.blue, 2) )
 
   override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) = wasSuccess(
     ask(ai.world, LocationState(destination)).mapTo[WorldState].flatMap {
-      case KnownState(_, Some(obj), _) => ai.constructionAssist(builder, obj)
+      case KnownState(_, Some(obj), _) => ai.constructionAssist(builder, obj.gameObject)
       case _ => Future.successful(Failure(InFogOfWar(s"Cannot access the construction site to assist (at $destination)")))
     }
   )

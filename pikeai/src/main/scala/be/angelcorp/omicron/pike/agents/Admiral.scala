@@ -12,26 +12,28 @@ import be.angelcorp.omicron.base.ai.actions.{Action, ActionExecutionException, A
 import be.angelcorp.omicron.base.bridge.{NewTurn, PlayerLostObject, PlayerGainedObject}
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.base.world.World
+import be.angelcorp.omicron.base.Auth
 
-class Admiral(protected val ai: AI, protected[pike] val key: PlayerKey) extends Agent {
+class Admiral(protected val auth: Auth) extends Agent {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit def timeout: Timeout = config.ai.messageTimeout seconds;
 
   protected[pike] val world =
-    context.actorOf(World(ai, key, ai.getController.getGameController.getGame.getLevelSize), name = "World" )
+    context.actorOf(World(auth, game.getLevelSize), name = "World" )
+
+  def ai = auth.player.asInstanceOf[AI]
 
   protected[pike] val aiExec: ActionExecutor =
     TypedActor(context).typedActorOf(TypedProps(classOf[ActionExecutor], new ActionExecutor {
-      override implicit val game = ai.getController.getGameController.getGame
+      override implicit val game = Admiral.this.game
       override implicit def executionContext = context.dispatcher
       override val world     = Admiral.this.world
-      override val playerKey = key
-      override val player    = ai
+      override val auth      = Admiral.this.auth
     } ), name="Ai_Execution_Context")
   private lazy val aiExecActor = TypedActor(context).getActorRefFor(aiExec)
 
   protected[pike] val tacticalGeneral =
-    context.actorOf(Props(classOf[PikeTactical], ai, key, aiExec), name = "TacticalGeneral"   )
+    context.actorOf(Props(classOf[PikeTactical], auth, aiExec), name = "TacticalGeneral"   )
 
   private val readyUnits = mutable.Set[ActorRef]()
 
@@ -68,7 +70,7 @@ class Admiral(protected val ai: AI, protected[pike] val key: PlayerKey) extends 
       if ( context.children.forall( readyUnits.contains ) ) {
         logger.info("All units have reported to be ready, done with this turn.")
         Thread.sleep(1000)
-        withSecurity { ai.getController.getGameController.setReady() }
+        auth { ai.getController.getGameController.setReady() }
       }
 
     case NotReady() =>
