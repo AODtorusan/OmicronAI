@@ -16,7 +16,7 @@ import be.angelcorp.omicron.base.world.SubWorld
 class LayerController(val pikeInt: PikeInterface) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  lazy val uiScreen        = pikeInt.nifty.getScreen(PikeUserInterface.name)
+  lazy val uiScreen        = pikeInt.nifty.getScreen(PikeUserInterface.screenId)
   lazy val layerUpButton   = uiScreen.findNiftyControl("layerUpButton",   classOf[Button])
   lazy val layerLabel      = uiScreen.findNiftyControl("layerLabel",      classOf[Label])
   lazy val layerDownButton = uiScreen.findNiftyControl("layerDownButton", classOf[Button])

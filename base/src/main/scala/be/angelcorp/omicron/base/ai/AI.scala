@@ -23,4 +23,6 @@ abstract class AI( playerId: Int, key: PlayerKey, name: String, primaryColor: Co
 
   protected val auth = new Auth( this, key )
 
+  override val toString: String = s"<AI: $name>"
+
 }

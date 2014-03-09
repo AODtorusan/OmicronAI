@@ -2,39 +2,73 @@ package be.angelcorp.omicron.noai.gui
 
 import scala.Some
 import scala.collection.mutable
-import akka.actor.Props
+import akka.actor.{ActorRef, Actor, Props}
+import akka.event.{SubchannelClassification, EventBus}
+import akka.util.Subclassification
 import de.lessvoid.nifty.Nifty
 import org.newdawn.slick.{Graphics, Color}
+import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.LevelType
 import be.angelcorp.omicron.base.{Present, HexTile, Location}
 import be.angelcorp.omicron.base.bridge.Asset
-import be.angelcorp.omicron.base.gui.{Canvas, GuiInterface, AiGuiOverlay}
+import be.angelcorp.omicron.base.gui._
 import be.angelcorp.omicron.base.gui.layerRender._
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
 import be.angelcorp.omicron.base.world.{GhostState, KnownState, SubWorld}
 import be.angelcorp.omicron.base.Conversions._
-import be.angelcorp.omicron.noai.{NoAiGameListener, NoAi}
+import be.angelcorp.omicron.noai.{GuiMessage, NoAiGameListener, NoAi}
 import be.angelcorp.omicron.noai.gui.screens.{NoAiUserInterfaceController, NoAiConstructionScreenController}
 import be.angelcorp.omicron.base.gui.layerRender.renderEngine.RenderEngine
+import be.angelcorp.omicron.base.world.GhostState
+import be.angelcorp.omicron.base.world.SubWorld
+import scala.Some
+import be.angelcorp.omicron.base.world.KnownState
 
-class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
+class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends NiftyGuiInterface {
+  private val logger = Logger( LoggerFactory.getLogger( getClass ) )
   val listener = new NoAiGameListener( this )
   frame.game.getController.addGameListener( listener )
   noai.actorSystem.actorOf( Props(classOf[NoAiInput], noai, this), name = "NoAI_input" )
 
+  val guiMessageBus = new EventBus with SubchannelClassification {
+    type Event = AnyRef
+    type Classifier = Class[_]
+    type Subscriber = ActorRef
+    override protected implicit val subclassification = new Subclassification[Class[_]] {
+      def isEqual(x: Class[_], y: Class[_]) = x == y
+      def isSubclass(x: Class[_], y: Class[_]) = y isAssignableFrom x
+    }
+    override protected def classify(event: AnyRef): Class[_] = event.getClass
+    override protected def publish(event: AnyRef, subscriber: ActorRef): Unit = subscriber ! event
+  }
+
   private val uiScreen = screens.NoAiUserInterface.screen(this)
   private val constructionScreen = screens.NoAiConstructionScreen.screen(this)
+  private val messagesScreen = screens.NoAiMessagesScreen.screen(this)
   nifty.addScreen( uiScreen.getScreenId, uiScreen )
   nifty.addScreen( constructionScreen.getScreenId, constructionScreen )
+  nifty.addScreen( messagesScreen.getScreenId, messagesScreen )
   nifty.gotoScreen( uiScreen.getScreenId )
 
   private val messages = mutable.ListBuffer[String]()
   private val messageLabel = uiScreen.findNiftyControl("messages", classOf[de.lessvoid.nifty.controls.Label])
 
+  noai.actorSystem.actorOf( Props( new Actor {
+    override def preStart() {
+      guiMessageBus.subscribe(context.self, classOf[GuiMessage])
+    }
+    override def receive = {
+      case m: GuiMessage =>
+        messages.prepend( m.message )
+        if (messages.size > 10) messages.remove(messages.size - 1)
+        messageLabel.setText( messages.mkString("\n") )
+    }
+  } ) )
+
   private val gridRenderer      = new GridRenderer(noai)
   private val resourceRenderer  = new ResourceRenderer(noai.world)
 
-  protected[gui] var hideGame     = false
   protected[gui] var gridOn       = true
   protected[gui] var resourcesOn  = false
 
@@ -84,26 +118,6 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
       frame.view.centerOn( noai.units.head.location.get )
     }
   }.start()
-
-  def gotoConstructionScreen(builder: Asset, target: Location) {
-    nifty.gotoScreen( constructionScreen.getScreenId )
-    constructionScreen.getScreenController.asInstanceOf[NoAiConstructionScreenController].populate(builder, target)
-    new Thread { override def run(): Unit = {
-      Thread.sleep(1000)
-      hideGame = true
-    } }.start()
-  }
-
-  def gotoUserInterface() {
-    hideGame = false
-    nifty.gotoScreen( uiScreen.getScreenId )
-  }
-  
-  def message( msg: String ) {
-    messages.prepend( msg )
-    if (messages.size > 10) messages.remove(messages.size - 1)
-    messageLabel.setText( messages.mkString("\n") )
-  }
 
   def activeLayers: Seq[LayerRenderer] = if (hideGame) Nil else {
     val layers = mutable.ListBuffer[LayerRenderer]( staticLayers: _* )

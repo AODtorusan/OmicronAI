@@ -21,7 +21,7 @@ class UnitTreeController(val pikeInt: PikeInterface) extends GuiController {
   implicit val timeout: Timeout = config.gui.messageTimeout seconds;
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  lazy val uiScreen       = pikeInt.nifty.getScreen(PikeUserInterface.name)
+  lazy val uiScreen       = pikeInt.nifty.getScreen(PikeUserInterface.screenId)
   lazy val unitTree       = uiScreen.findNiftyControl("unitTree",       classOf[TreeBox[ActorRef]])
   lazy val unitTreeUpdate = uiScreen.findNiftyControl("unitTreeUpdate", classOf[Button])
 

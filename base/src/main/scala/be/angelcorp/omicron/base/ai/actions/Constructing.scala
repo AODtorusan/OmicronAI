@@ -63,7 +63,7 @@ case class ConstructionAssistAction( builder: Asset, destination: Location, worl
 
   override def execute(ai: ActionExecutor)(implicit context: ExecutionContext = ai.executionContext) = wasSuccess(
     ask(ai.world, LocationState(destination)).mapTo[WorldState].flatMap {
-      case KnownState(_, Some(obj), _) => ai.constructionAssist(builder, obj.gameObject)
+      case KnownState(_, Some(obj), _) => ai.constructionAssist(builder, obj)
       case _ => Future.successful(Failure(InFogOfWar(s"Cannot access the construction site to assist (at $destination)")))
     }
   )

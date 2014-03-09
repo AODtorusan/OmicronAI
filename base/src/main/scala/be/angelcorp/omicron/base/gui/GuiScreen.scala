@@ -11,7 +11,9 @@ import org.slf4j.LoggerFactory
 trait GuiScreen {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  val name: String
+  val screenId: String
+
+  val screenType: ScreenType
 
   def loadNiftyXml(nifty: Nifty, xml: Elem, controller: ScreenController*) {
     val xmlStream = new ByteArrayInputStream( xml.toString().getBytes )
@@ -34,5 +36,10 @@ trait GuiScreen {
     nifty.addXml( xmlStream )
   }
 
-
 }
+
+sealed abstract class ScreenType
+/** Screen that completely fill the monitor (game not visible) */
+object ScreenFill    extends ScreenType
+/** Screen that partially overlays the monitor (game still visible) */
+object ScreenOverlay extends ScreenType

@@ -12,17 +12,17 @@ import be.angelcorp.omicron.base.ai.actions.ConstructionStartAction
 import be.angelcorp.omicron.base.bridge.Asset
 import be.angelcorp.omicron.base.gui.nifty.NiftyConstants._
 import be.angelcorp.omicron.noai.gui.NoAiGui
-import be.angelcorp.omicron.base.gui.GuiScreen
+import be.angelcorp.omicron.base.gui.{ScreenFill, ScreenType, GuiScreen}
 
 object NoAiConstructionScreen extends GuiScreen {
-  val name = "buildScreen"
-
+  override val screenId   = "buildScreen"
+  override val screenType = ScreenFill
   def screen(noaiGui: NoAiGui) = {
     val xml =
     //<?xml version="1.0" encoding="UTF-8"?>
       <nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
         <useControls filename="nifty-default-controls.xml"/>
-        <screen id={name} controller={classOf[NoAiConstructionScreenController].getName}>
+        <screen id={screenId} controller={classOf[NoAiConstructionScreenController].getName}>
           <layer id="contentLayer" childLayout="vertical" backgroundColor={black}>
             <panel id="panels" childLayout="horizontal" width="*" height="*" >
               <panel id="leftPanel" childLayout="vertical" width="50%" height="*" padding="10px">
@@ -43,9 +43,8 @@ object NoAiConstructionScreen extends GuiScreen {
       </nifty>;
 
     loadNiftyXml( noaiGui.nifty, xml, new NoAiConstructionScreenController(noaiGui) )
-    noaiGui.nifty.getScreen( name )
+    noaiGui.nifty.getScreen( screenId )
   }
-
 }
 
 class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenController {
@@ -55,7 +54,7 @@ class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenControlle
   var currentBuilder:      Option[Asset]    = None
   var currentDdestination: Option[Location] = None
 
-  lazy val constructionScreen   = nifty.getScreen(NoAiConstructionScreen.name)
+  lazy val constructionScreen   = nifty.getScreen(NoAiConstructionScreen.screenId)
   lazy val constructionTypeList = constructionScreen.findNiftyControl("constructionTypeList", classOf[ListBox[UnitType]])
 
   override def onStartScreen() {
@@ -94,7 +93,7 @@ class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenControlle
 
   @NiftyEventSubscriber(id = "backButton")
   def backButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => gui.gotoUserInterface()
+    case e: ButtonClickedEvent => gui.gotoScreen( NoAiUserInterface )
     case _ =>
   }
 
@@ -106,11 +105,11 @@ class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenControlle
           case Some(typ) =>
             implicit val game = gui.noai.game
             gui.noai.updateOrConfirmAction( ConstructionStartAction(currentBuilder.get, currentDdestination.get, typ, gui.noai.world) )
-            gui.gotoUserInterface()
+            gui.gotoScreen( NoAiUserInterface )
           case _ =>
             logger.info(s"No construction type selected for ${currentBuilder.get} on ${currentDdestination.get}")
         }
-      else gui.gotoUserInterface()
+      else gui.gotoScreen( NoAiUserInterface )
     case _ =>
   }
 

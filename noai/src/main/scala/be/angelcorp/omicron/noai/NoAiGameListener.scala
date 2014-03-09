@@ -9,88 +9,91 @@ import be.angelcorp.omicron.noai.gui.NoAiGui
 
 class NoAiGameListener( gui: NoAiGui ) extends GameListener {
 
+  lazy val messageBus = gui.guiMessageBus
+  implicit def game = gui.noai.game
+
   override def onPlayerReady(readyPlayer: IPlayer) {
-    gui.message( s"Player ${readyPlayer.getName} (${readyPlayer.getPlayerID}) is ready." )
+    messageBus.publish( new PlainMessage( s"Player ${readyPlayer.getName} (${readyPlayer.getPlayerID}) is ready." ) )
   }
 
   override def onNewTurn(currentTurn: Turn) {
-    gui.message( s"Starting turn ${currentTurn.getNumber}." )
+    messageBus.publish( new PlainMessage( s"Starting turn ${currentTurn.getNumber}." ) )
   }
 
   override def onBaseDamaged(baseModule: IBaseModule, damage: ChangeInt) {
-    gui.message( s"Base building (${baseModule}) damaged (-$damage)." )
+    messageBus.publish( new LocatedMessage( s"Base building ($baseModule) damaged (-$damage).", baseModule.getGameObject.checkLocation().get ) )
   }
 
   override def onTileContents(tile: ITile, contents: Change[IGameObject]) {
-    gui.message( s"Contents of ${tile: Location} changed to ${contents}." )
+    messageBus.publish( new LocatedMessage( s"Contents of ${tile: Location} changed to ${contents}.", tile ) )
   }
 
   override def onTileResources(tile: ITile, resourceType: ResourceType, resourceQuantity: ChangeInt) {
-    gui.message( s"Resources of ${tile: Location} changed to $resourceQuantity of $resourceType." )
+    messageBus.publish( new LocatedMessage( s"Resources of ${tile: Location} changed to $resourceQuantity of $resourceType.", tile ) )
   }
 
   override def onPlayerScore(player: IPlayer, score: ChangeInt) {
-    gui.message( s"Score of player ${player.getName} (${player.getPlayerID}) changed to ${score.getTo}." )
+    messageBus.publish( new PlainMessage( s"Score of player ${player.getName} (${player.getPlayerID}) changed to ${score.getTo}." ) )
   }
 
   override def onPlayerGainedObject(player: IPlayer, gameObject: IGameObject) {
-    gui.message( s"New object for player ${player.getName} (${player.getPlayerID}): ${gameObject.getType.getTypeName}." )
+    messageBus.publish( new LocatedMessage( s"New object for player ${player.getName} (${player.getPlayerID}): ${gameObject.getType.getTypeName}.", gameObject.checkLocation().get ) )
   }
 
   override def onPlayerLostObject(player: IPlayer, gameObject: IGameObject) {
-    gui.message( s"Player ${player.getName} (${player.getPlayerID}) lost object: ${gameObject.getType.getTypeName}." )
+    messageBus.publish( new PlainMessage( s"Player ${player.getName} (${player.getPlayerID}) lost object: ${gameObject.getType.getTypeName}." ) )
   }
 
   override def onUnitCaptured(gameObject: IGameObject, owner: Change[IPlayer]) {
-    gui.message( s"${gameObject.getType.getTypeName} of ${owner.getFrom.getName} (${owner.getFrom.getPlayerID}) captured by ${owner.getTo.getName} (${owner.getTo.getPlayerID})." )
+    messageBus.publish( new LocatedMessage( s"${gameObject.getType.getTypeName} of ${owner.getFrom.getName} (${owner.getFrom.getPlayerID}) captured by ${owner.getTo.getName} (${owner.getTo.getPlayerID}).", gameObject.checkLocation().get() ) )
   }
 
   override def onUnitMoved(gameObject: IGameObject, location: Change[ITile]) {
-    gui.message( s"${gameObject.getType.getTypeName} moved from ${location.getFrom: Location} to ${location.getTo: Location}." )
+    messageBus.publish( new LocatedMessage( s"${gameObject.getType.getTypeName} moved from ${location.getFrom: Location} to ${location.getTo: Location}.", location.getTo ) )
   }
 
   override def onUnitDied(gameObject: IGameObject) {
-    gui.message( s"Unit died: ${gameObject.getType.getTypeName}." )
+    messageBus.publish( new PlainMessage( s"Unit died: ${gameObject.getType.getTypeName}." ) )
   }
 
   override def onContainerStockChanged(containerModule: IContainerModule, stock: ChangeInt) {
-    gui.message( s"${containerModule.getGameObject.getType.getTypeName} is now storing ${stock.getTo} units of ${containerModule.getResourceType}." )
+    messageBus.publish( new LocatedMessage( s"${containerModule.getGameObject.getType.getTypeName} is now storing ${stock.getTo} units of ${containerModule.getResourceType}.", containerModule.getGameObject.checkLocation().get ) )
   }
 
   override def onMobilityLeveled(mobilityModule: IMobilityModule, location: Change[ITile], remainingSpeed: ChangeDbl) {
-    gui.message( s"${mobilityModule.getGameObject.getType.getTypeName} level to ${location.getTo: Location}." )
+    messageBus.publish( new LocatedMessage( s"${mobilityModule.getGameObject.getType.getTypeName} level to ${location.getTo: Location}.", location.getTo ) )
   }
 
   override def onMobilityMoved(mobilityModule: IMobilityModule, location: Change[ITile], remainingSpeed: ChangeDbl) {
-    gui.message( s"${mobilityModule.getGameObject.getType.getTypeName} moved to ${location.getTo: Location}." )
+    messageBus.publish( new LocatedMessage( s"${mobilityModule.getGameObject.getType.getTypeName} moved to ${location.getTo: Location}.", location.getTo ) )
   }
 
   override def onConstructorWorked(constructorModule: IConstructorModule, remainingSpeed: ChangeInt) {
-    gui.message( s"${constructorModule.getGameObject.getType.getTypeName} is building. ${remainingSpeed.getTo} build units remaining." )
+    messageBus.publish( new LocatedMessage( s"${constructorModule.getGameObject.getType.getTypeName} is building. ${remainingSpeed.getTo} build units remaining.", constructorModule.getGameObject.checkLocation().get() ) )
   }
 
   override def onConstructorTargeted(constructorModule: IConstructorModule, target: Change[IGameObject]) {
-    gui.message( s"${constructorModule.getGameObject.getType.getTypeName} is now building on ${target.getTo.getType.getTypeName}." )
+    messageBus.publish( new LocatedMessage( s"${constructorModule.getGameObject.getType.getTypeName} is now building on ${target.getTo.getType.getTypeName}.", target.getTo.checkLocation().get ) )
   }
 
   override def onConstructionSiteWorked(constructionSite: IConstructionSite, moduleType: PublicModuleType[_], remainingWork: ChangeInt): Unit = {
-    gui.message( s"Construction site at ${(constructionSite.checkLocation: Maybe[_ <: ITile]) match {
+    messageBus.publish( new LocatedMessage( s"Construction site at ${(constructionSite.checkLocation: Maybe[_ <: ITile]) match {
       case Present( l ) => l: Location
       case Absent => "<missing>"
       case Unknown => "<unknown>"
-    }} only requires ${remainingWork.getTo} build units." )
+    }} only requires ${remainingWork.getTo} build units.", constructionSite.checkLocation().get ) )
   }
 
   override def onWeaponFired(weaponModule: IWeaponModule, target: ITile, repeated: ChangeInt, ammunition: ChangeInt) {
-    gui.message( s"Weapon ${weaponModule} fired site at ${target: Location}." )
+    messageBus.publish( new LocatedMessage( s"Weapon ${weaponModule} fired site at ${target: Location}.", target ) )
   }
 
   override def onGameStarted(game: IGame) {
-    gui.message( s"Game started." )
+    messageBus.publish( new PlainMessage( s"Game started." ) )
   }
 
   override def onGameEnded(game: IGame, victoryCondition: PublicVictoryConditionType, victor: IPlayer) {
-    gui.message( s"Game ended, ${victor.getName} (${victor.getPlayerID}) won." )
+    messageBus.publish( new PlainMessage( s"Game ended, ${victor.getName} (${victor.getPlayerID}) won." ) )
   }
 
 }

@@ -79,7 +79,7 @@ object PikeAi extends AIBuilder {
 }
 
 class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
-  nifty.addScreen( PikeUserInterface.name, PikeUserInterface.screen(nifty, gui) )
+  nifty.addScreen( PikeUserInterface.screenId, PikeUserInterface.screen(nifty, gui) )
 
   val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
 
@@ -95,7 +95,7 @@ class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) e
     controller.populate()
   }
 
-  nifty.gotoScreen( PikeUserInterface.name )
+  nifty.gotoScreen( PikeUserInterface.screenId )
 
   def updateUI() {
     controllers.foreach( _.updateUI() )

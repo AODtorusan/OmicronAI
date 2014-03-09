@@ -5,12 +5,13 @@ import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.controls._
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber}
 import be.angelcorp.omicron.base.gui.GuiController
+import be.angelcorp.omicron.noai.PlainMessage
 
 
 class NoAiSideBarController(ui: NoAiUserInterfaceController) extends GuiController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  lazy val uiScreen         = ui.nifty.getScreen(NoAiUserInterface.name)
+  lazy val uiScreen         = ui.nifty.getScreen(NoAiUserInterface.screenId)
   lazy val menuButton       = uiScreen.findNiftyControl("menuButton",       classOf[Button])
   lazy val endTurnButton    = uiScreen.findNiftyControl("endTurnButton",    classOf[Button])
   lazy val layerUpButton    = uiScreen.findNiftyControl("layerUpButton",    classOf[Button])
@@ -19,7 +20,13 @@ class NoAiSideBarController(ui: NoAiUserInterfaceController) extends GuiControll
 
   @NiftyEventSubscriber(id = "menuButton")
   def menuButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.gui.message("Main menu not yet implemented!")
+    case e: ButtonClickedEvent => ui.gui.guiMessageBus.publish( new PlainMessage("Main menu not yet implemented!") )
+    case _ =>
+  }
+
+  @NiftyEventSubscriber(id = "messagesButton")
+  def messagesAction(id: String, event: NiftyEvent) = event match {
+    case e: ButtonClickedEvent => ui.gui.gotoScreen( NoAiMessagesScreen )
     case _ =>
   }
 

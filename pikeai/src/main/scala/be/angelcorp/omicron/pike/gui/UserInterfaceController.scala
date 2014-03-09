@@ -19,7 +19,7 @@ class UserInterfaceController(val pikeInt: PikeInterface, unitController: UnitTr
   implicit val timeout: Timeout = config.gui.messageTimeout seconds;
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  lazy val uiScreen     = pikeInt.nifty.getScreen(PikeUserInterface.name)
+  lazy val uiScreen     = pikeInt.nifty.getScreen(PikeUserInterface.screenId)
   lazy val autoButton   = uiScreen.findNiftyControl("autoButton",   classOf[Button])
   lazy val centerButton = uiScreen.findNiftyControl("centerButton", classOf[Button])
 

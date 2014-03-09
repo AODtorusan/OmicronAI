@@ -23,7 +23,7 @@ class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeCon
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   implicit val timeout: Timeout = config.gui.messageTimeout seconds;
 
-  lazy val uiScreen   = pikeInt.nifty.getScreen(PikeUserInterface.name)
+  lazy val uiScreen   = pikeInt.nifty.getScreen(PikeUserInterface.screenId)
   lazy val probesTree = uiScreen.findNiftyControl("probesTree", classOf[TreeBox[LayerRenderer]])
 
   def selectedUnit    = unitController.selectedUnit

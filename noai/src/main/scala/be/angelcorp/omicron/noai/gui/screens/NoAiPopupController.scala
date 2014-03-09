@@ -26,7 +26,9 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
             case base: BaseModule =>
             case constr: ConstructorModule if !entries.result().exists( _._1 == "Build") =>
               entries += ("Build", () => location match {
-                case Some(target) => ui.gui.gotoConstructionScreen( asset, target )
+                case Some(target) =>
+                  val constr = ui.gui.gotoScreen( NoAiConstructionScreen )
+                  constr.getScreenController.asInstanceOf[NoAiConstructionScreenController].populate( asset, target )
                 case _ =>  logger.info(s"Cannot open build menu for $asset, not hovering over any target build tile!")
               } )
             case cont: ContainerModule =>

@@ -13,7 +13,7 @@ import com.lyndir.omicron.api.model.IConstructorModule.IConstructionSite
 import be.angelcorp.omicron.base.{Auth, Present, Direction, Location}
 import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.ai.AI
-import be.angelcorp.omicron.base.bridge.Asset
+import be.angelcorp.omicron.base.bridge.{AssetImpl, Asset}
 import be.angelcorp.omicron.base.world.{KnownState, WorldState, LocationState, ReloadReady}
 
 trait ActionExecutor {
@@ -119,7 +119,7 @@ trait ActionExecutor {
     )
   }
 
-  def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[IConstructionSite]] = Future {
+  def constructionStart( builder: Asset, constructionType: UnitType, destination: Location ): Future[Try[Asset]] = Future {
     haltTheWorld (
       if (builder.location.get adjacentTo destination )
         builder.constructors.headOption match {
@@ -128,7 +128,7 @@ trait ActionExecutor {
               val oldTarget = module.getTarget
               val site      = module.schedule( constructionType, destination )
               if (oldTarget != null) module.setTarget(oldTarget)
-              Success(site)
+              Success(new AssetImpl(auth, site))
             }
           case _ =>
             Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
@@ -137,19 +137,18 @@ trait ActionExecutor {
     )
   }
 
-  def constructionAssist( builder: Asset, site: IGameObject ): Future[Try[Unit]] = Future {
+  def constructionAssist( builder: Asset, site: Asset ): Future[Try[Unit]] = Future {
     haltTheWorld (
       if (builder.constructors.isEmpty)
         Failure( MissingModule(builder, PublicModuleType.CONSTRUCTOR) )
       else {
-        toMaybe(site.checkLocation()) match {
-          case Present(loc) =>
-            val siteLocation: Location = loc
-            if (siteLocation adjacentTo builder.location.get) {
-              builder.constructors.foreach( _.setTarget(site) )
+        site.location match {
+          case Some(loc) =>
+            if (loc adjacentTo builder.location.get) {
+              builder.constructors.foreach( _.setTarget(site.gameObject) )
               Success()
             } else
-              Failure( TooFar(builder, siteLocation, 1) )
+              Failure( TooFar(builder, loc, 1) )
           case _ =>
             Failure( InFogOfWar(s"Cannot get the location of the target work site of $site") )
         }

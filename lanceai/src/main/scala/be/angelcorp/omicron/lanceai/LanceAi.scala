@@ -26,9 +26,9 @@ class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name
   val world = actorSystem.actorOf(Props.empty)
 
   def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty): GuiInterface = new GuiInterface {
-    nifty.addScreen( LanceUserInterface.name, LanceUserInterface.screen(nifty, gui) )
+    nifty.addScreen( LanceUserInterface.screenId, LanceUserInterface.screen(nifty, gui) )
 
-    nifty.gotoScreen( LanceUserInterface.name )
+    nifty.gotoScreen( LanceUserInterface.screenId )
 
     var fromTile: Option[HexTile] = None
     var toTile: Option[HexTile] = None

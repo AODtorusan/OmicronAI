@@ -6,13 +6,14 @@ import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
 import com.typesafe.scalalogging.slf4j.Logger
-import be.angelcorp.omicron.base.gui.{GuiScreen, AiGuiOverlay}
+import be.angelcorp.omicron.base.gui.{ScreenOverlay, GuiScreen, AiGuiOverlay}
 import be.angelcorp.omicron.base.gui.layerRender.LayerRenderer
 import be.angelcorp.omicron.base.gui.nifty.TreeBoxViewController
 import be.angelcorp.omicron.base.gui.nifty.NiftyConstants._
 
 object PikeUserInterface extends GuiScreen {
-  val name = "userInterface"
+  override val screenId   = "userInterface"
+  override val screenType = ScreenOverlay
   def screen(nifty: Nifty, gui: AiGuiOverlay) = {
     class ActorConverter extends TreeBoxViewController[ActorRef] {
       def stringify(item: ActorRef) = item.path.name
@@ -25,7 +26,7 @@ object PikeUserInterface extends GuiScreen {
     val xml =
     //<?xml version="1.0" encoding="UTF-8"?>
       <nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
-        <screen id={name} controller={classOf[PikeUserInterfaceScreenController].getName}>
+        <screen id={screenId} controller={classOf[PikeUserInterfaceScreenController].getName}>
           <layer id="contentLayer" childLayout="horizontal" backgroundColor={transparent}>
 
             <panel id="globalControls" backgroundColor={black(200)} valign="bottom" childLayout="horizontal" height="25%">
@@ -81,9 +82,8 @@ object PikeUserInterface extends GuiScreen {
       </nifty>;
 
     loadNiftyXml( nifty, xml, new PikeUserInterfaceScreenController(gui) )
-    nifty.getScreen( name )
+    nifty.getScreen( screenId )
   }
-
 }
 
 class PikeUserInterfaceScreenController(gui: AiGuiOverlay) extends ScreenController {

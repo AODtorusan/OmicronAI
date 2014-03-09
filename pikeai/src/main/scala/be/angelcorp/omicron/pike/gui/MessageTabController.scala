@@ -12,7 +12,7 @@ import be.angelcorp.omicron.pike.supervisor.{SupervisorMessage, GuiSupervisorInt
 class MessageTabController(val pikeInt: PikeInterface, unitController: UnitTreeController) extends GuiController with GuiSupervisorInterface {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
-  lazy val uiScreen     = pikeInt.nifty.getScreen(PikeUserInterface.name)
+  lazy val uiScreen     = pikeInt.nifty.getScreen(PikeUserInterface.screenId)
   lazy val messageList  = uiScreen.findNiftyControl("messageList",  classOf[ListBox[SupervisorMessage]])
   lazy val acceptButton = uiScreen.findNiftyControl("acceptButton", classOf[Button])
   lazy val rejectButton = uiScreen.findNiftyControl("rejectButton", classOf[Button])
