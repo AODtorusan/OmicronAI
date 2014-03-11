@@ -1,7 +1,7 @@
 package be.angelcorp.omicron.base.gui.nifty
 
 import scala.concurrent.{ExecutionContext, Future}
-import akka.actor.Props
+import akka.actor.Actor
 import de.lessvoid.nifty.elements.Element
 import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.controls.{Menu, MenuItemActivatedEvent}
@@ -9,10 +9,9 @@ import de.lessvoid.nifty.tools.SizeValue
 import org.bushe.swing.event.EventTopicSubscriber
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
-import be.angelcorp.omicron.base.gui.GuiController
-import be.angelcorp.omicron.base.gui.input.{MouseClicked, InputHandler}
+import be.angelcorp.omicron.base.gui.input.{GuiInputEvent, MouseClicked}
 
-trait PopupController extends GuiController {
+trait PopupController extends Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   /** Nifty gui */
@@ -46,14 +45,16 @@ trait PopupController extends GuiController {
     nifty.showPopup( nifty.getCurrentScreen, popup.getId, null )
   }
 
-  def inputHandler = Props( new InputHandler {
-    override def receive = {
-      case MouseClicked(x, y, 1, 1) =>
-        Future {
-          showMenu( defaultMenu )
-        }(openGL /*exec in opengl*/)
-    }
-  } )
+  override def preStart() {
+    context.system.eventStream.subscribe(self, classOf[GuiInputEvent])
+  }
+
+  override def receive = {
+    case MouseClicked(x, y, 1, 1) =>
+      Future {
+        showMenu( defaultMenu )
+      }(openGL /*exec in opengl*/)
+  }
 
 }
 

@@ -1,23 +1,19 @@
 package be.angelcorp.omicron.noai.gui.screens
 
-import com.typesafe.scalalogging.slf4j.Logger
-import org.slf4j.LoggerFactory
+import scala.Some
+import akka.actor.Actor
 import de.lessvoid.nifty.controls._
-import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber}
-import be.angelcorp.omicron.base.gui.GuiController
-import be.angelcorp.omicron.noai.PlainMessage
+import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import be.angelcorp.omicron.base.Auth
-import be.angelcorp.omicron.noai.PlainMessage
-import scala.Some
-import akka.actor.{Actor, Props}
-import akka.event.EventBus
-import be.angelcorp.omicron.base.util.GenericEventBus
-import be.angelcorp.omicron.noai.gui.{LevelChanged, SelectionChanged}
 import be.angelcorp.omicron.base.bridge.GameListenerMessage
+import be.angelcorp.omicron.base.util.GenericEventBus
+import be.angelcorp.omicron.noai.PlainMessage
+import be.angelcorp.omicron.noai.gui.{LevelChanged, SelectionChanged}
 
 
-class NoAiSideBarController(ui: NoAiUserInterfaceController, protected val guiBus: GenericEventBus) extends GuiController with Actor {
+class NoAiSideBarController(ui: NoAiUserInterfaceController, protected val guiBus: GenericEventBus) extends Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   lazy val uiScreen         = ui.nifty.getScreen(NoAiUserInterface.screenId)

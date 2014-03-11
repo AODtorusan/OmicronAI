@@ -20,6 +20,7 @@ import scala.concurrent.Await
 import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.bridge.PlayerGainedObject
 import scala.Some
+import be.angelcorp.omicron.base.util.GenericEventBus
 
 class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -66,8 +67,8 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
     })
   }
 
-  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = auth {
-    new GuiController(this, gui, nifty)
+  def buildGuiInterface(gui: AiGuiOverlay, guiBus: GenericEventBus, nifty: Nifty) = auth {
+    new GuiController(this, gui, guiBus, nifty)
   }
 
   private def gameController = getController.getGameController

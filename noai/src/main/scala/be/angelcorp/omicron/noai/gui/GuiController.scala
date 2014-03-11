@@ -8,9 +8,7 @@ import be.angelcorp.omicron.base.gui.{AiGuiOverlay, GuiInterface}
 import be.angelcorp.omicron.base.util.GenericEventBus
 import be.angelcorp.omicron.noai.NoAi
 
-class GuiController(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
-
-  val guiMessages = new GenericEventBus
+class GuiController(val noai: NoAi, val frame: AiGuiOverlay, val guiMessages: GenericEventBus, val nifty: Nifty) extends GuiInterface {
 
   protected[noai] val _plannedActions = mutable.Map[Asset, Option[Action]]()
   protected[noai] def plannedAction = (selected flatMap _plannedActions.get).flatten

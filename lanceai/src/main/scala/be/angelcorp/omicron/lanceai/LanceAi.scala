@@ -17,6 +17,7 @@ import be.angelcorp.omicron.base.gui.input.{MouseClicked, InputHandler}
 import be.angelcorp.omicron.base.gui.layerRender.{GridRenderer, LayerRenderer}
 import be.angelcorp.omicron.base.world.SubWorld
 import be.angelcorp.omicron.lanceai.gui.LanceUserInterface
+import be.angelcorp.omicron.base.util.GenericEventBus
 
 class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -25,7 +26,7 @@ class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name
   implicit val context = actorSystem.dispatcher
   val world = actorSystem.actorOf(Props.empty)
 
-  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty): GuiInterface = new GuiInterface {
+  def buildGuiInterface(gui: AiGuiOverlay, guiBus: GenericEventBus, nifty: Nifty): GuiInterface = new GuiInterface {
     nifty.addScreen( LanceUserInterface.screenId, LanceUserInterface.screen(nifty, gui) )
 
     nifty.gotoScreen( LanceUserInterface.screenId )
@@ -35,6 +36,7 @@ class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name
 
     actorSystem.actorOf( Props(
       new InputHandler {
+        override protected def guiEventBus = guiBus
         override def receive = {
           case MouseClicked(x, y, 0, 1) =>
             val tile = gui.view.pixelToTile(x, y)

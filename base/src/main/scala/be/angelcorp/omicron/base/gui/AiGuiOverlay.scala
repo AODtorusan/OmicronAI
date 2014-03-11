@@ -1,5 +1,6 @@
 package be.angelcorp.omicron.base.gui
 
+import scala.Some
 import scala.concurrent.{ExecutionContext, Await}
 import scala.concurrent.duration.Duration
 import java.util.concurrent.{TimeoutException, TimeUnit}
@@ -8,10 +9,11 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.lyndir.omicron.api.model.Game
 import com.typesafe.scalalogging.slf4j.Logger
+import org.bushe.swing.event.{EventTopicSubscriber, EventServiceLocator}
 import org.slf4j.LoggerFactory
 import org.newdawn.slick._
 import org.newdawn.slick.state.StateBasedGame
-import org.newdawn.slick.util.{ResourceLoader, FontUtils}
+import org.newdawn.slick.util.FontUtils
 import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.loaderv2.types.NiftyType
 import be.angelcorp.omicron.base.ai.AI
@@ -19,10 +21,7 @@ import be.angelcorp.omicron.base.gui.input.{AiGuiInput, InputSystem, GameOverlay
 import be.angelcorp.omicron.base.{Location, HexTile}
 import be.angelcorp.omicron.base.world.{SubWorld, GetSubWorld}
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
-import be.angelcorp.omicron.base.world.SubWorld
-import scala.Some
-import be.angelcorp.omicron.base.world.GetSubWorld
-import org.lwjgl.opengl.GL11
+import be.angelcorp.omicron.base.util.GenericEventBus
 
 class AiGuiOverlay(val game: Game, val system: ActorSystem, val opengl: ExecutionContext, val ai: AI) extends GameOverlay {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -31,9 +30,20 @@ class AiGuiOverlay(val game: Game, val system: ActorSystem, val opengl: Executio
   val getTitle = "PikeAi gui"
   val id       = 1
 
+  // Akka event bus for all gui related events and messages
+  val guiBus = new GenericEventBus
+  // Listens to the nifty bus and forwards all messages to the guiBus
+  val niftyBusBridge = new EventTopicSubscriber[AnyRef] {
+    override def onEvent(topic: String, event: AnyRef): Unit =
+      guiBus.publish( event )
+  }
+  // Input system that handles unhandled nifty gui events (all input actions not relating to the hud)
+  val input = new InputSystem( guiBus )
+  // Basic viewport input handler
+  system.actorOf( Props(classOf[AiGuiInput], this, guiBus), name = "GuiFrameInput" )
+
+  // Interface object that renders the interface that the user sees
   var guiInterface: GuiInterface = null
-  val input = new InputSystem( system.eventStream )
-  system.actorOf( Props(classOf[AiGuiInput], this), name = "GuiFrameInput" )
 
   def initGameAndGUI(container: GameContainer, game: StateBasedGame) {
     this.container = container
@@ -52,7 +62,10 @@ class AiGuiOverlay(val game: Game, val system: ActorSystem, val opengl: Executio
     niftyLoader.loadControlFile("nifty-controls.nxs", "nifty-default-controls.xml", niftyType)
     niftyType.create(nifty, nifty.getTimeProvider)
 
-    guiInterface = ai.buildGuiInterface(this, nifty)
+    val niftyBus = EventServiceLocator.getEventService("NiftyEventBus")
+    niftyBus.subscribe(""".*""".r.pattern, niftyBusBridge )
+
+    guiInterface = ai.buildGuiInterface(this, guiBus, nifty)
   }
 
   var container: GameContainer = null

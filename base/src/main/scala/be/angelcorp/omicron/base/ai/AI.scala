@@ -4,14 +4,14 @@ import akka.actor.ActorRef
 import de.lessvoid.nifty.Nifty
 import com.lyndir.omicron.api.model._
 import be.angelcorp.omicron.base.gui.{GuiInterface, AiGuiOverlay}
-import java.util.concurrent.Callable
 import be.angelcorp.omicron.base.Auth
+import be.angelcorp.omicron.base.util.GenericEventBus
 
 abstract class AI( playerId: Int, key: PlayerKey, name: String, primaryColor: Color, secondaryColor: Color  ) extends Player( playerId, key, name, primaryColor, secondaryColor) {
 
   def world: ActorRef
 
-  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty): GuiInterface
+  def buildGuiInterface(gui: AiGuiOverlay, guiBus: GenericEventBus, nifty: Nifty): GuiInterface
 
   /** The game has been build, prepare to start playing (game has been build, gui has not) */
   def prepare() {}

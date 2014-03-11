@@ -37,12 +37,6 @@ class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
   nifty.addScreen( messagesScreen.getScreenId, messagesScreen )
   nifty.gotoScreen( uiScreen.getScreenId )
 
-  val niftybus = EventServiceLocator.getEventService("NiftyEventBus")
-  niftybus.subscribeStrongly(""".*""".r.pattern, new EventTopicSubscriber[AnyRef] {
-    override def onEvent(topic: String, event: AnyRef): Unit =
-      controller.guiMessages.publish( event )
-  } )
-
   private val messages = mutable.ListBuffer[String]()
   private val messageLabel = uiScreen.findNiftyControl("messages", classOf[de.lessvoid.nifty.controls.Label])
 

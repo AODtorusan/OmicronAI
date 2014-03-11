@@ -1,11 +1,11 @@
 package be.angelcorp.omicron.base.gui.input
 
-import akka.event.EventStream
 import de.lessvoid.nifty.slick2d.input.AbstractSlickInputSystem
 import de.lessvoid.nifty.slick2d.input.events._
 import org.lwjgl.input.Keyboard._
+import be.angelcorp.omicron.base.util.GenericEventBus
 
-class InputSystem(val eventStream: EventStream) extends AbstractSlickInputSystem {
+class InputSystem(val eventStream: GenericEventBus) extends AbstractSlickInputSystem {
 
   def isAltDown = isKeyDown( KEY_LMENU ) || isKeyDown( KEY_RMENU )
 

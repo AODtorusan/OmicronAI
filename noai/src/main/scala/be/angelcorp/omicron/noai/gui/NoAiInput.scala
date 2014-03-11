@@ -9,6 +9,8 @@ import be.angelcorp.omicron.noai.NoAi
 
 class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
 
+  def guiEventBus = gui.controller.guiMessages
+
   implicit val game = noai.getController.getGameController.getGame
 
   override def receive = {

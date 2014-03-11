@@ -24,6 +24,7 @@ import be.angelcorp.omicron.pike.supervisor.GuiSupervisor
 import be.angelcorp.omicron.pike.gui._
 import be.angelcorp.omicron.pike.agents.Self
 import be.angelcorp.omicron.base.Present
+import be.angelcorp.omicron.base.util.GenericEventBus
 
 class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -45,8 +46,8 @@ class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name:
   }
   //AiSupervisor.omicron.base = Some(supervisorRef)
 
-  def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = {
-    new PikeInterface(this, gui, nifty)
+  def buildGuiInterface(gui: AiGuiOverlay, guiBus: GenericEventBus, nifty: Nifty) = {
+    new PikeInterface(this, gui, guiBus, nifty)
   }
 
   override def prepare() = auth {
@@ -78,7 +79,7 @@ object PikeAi extends AIBuilder {
 
 }
 
-class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val nifty: Nifty) extends GuiInterface {
+class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val guiBus: GenericEventBus, val nifty: Nifty) extends GuiInterface {
   nifty.addScreen( PikeUserInterface.screenId, PikeUserInterface.screen(nifty, gui) )
 
   val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
