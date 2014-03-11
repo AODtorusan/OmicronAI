@@ -10,55 +10,54 @@ import com.lyndir.omicron.api.model._
 import be.angelcorp.omicron.base.Auth
 import be.angelcorp.omicron.noai.PlainMessage
 import scala.Some
+import akka.actor.{Actor, Props}
+import akka.event.EventBus
+import be.angelcorp.omicron.base.util.GenericEventBus
+import be.angelcorp.omicron.noai.gui.{LevelChanged, SelectionChanged}
+import be.angelcorp.omicron.base.bridge.GameListenerMessage
 
 
-class NoAiSideBarController(ui: NoAiUserInterfaceController) extends GuiController {
+class NoAiSideBarController(ui: NoAiUserInterfaceController, protected val guiBus: GenericEventBus) extends GuiController with Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   lazy val uiScreen         = ui.nifty.getScreen(NoAiUserInterface.screenId)
-  lazy val layerLabel       = uiScreen.findNiftyControl("layerLabel",      classOf[Label])
-  lazy val unitDescription  = uiScreen.findNiftyControl("unitDescription", classOf[Label])
+  lazy val menu             = uiScreen.findNiftyControl("menuButton",      classOf[Button])
+  lazy val messages         = uiScreen.findNiftyControl("messagesButton",  classOf[Button])
+  lazy val gridButton       = uiScreen.findNiftyControl("gridButton",      classOf[Button])
+  lazy val resourceButton   = uiScreen.findNiftyControl("resourceButton",  classOf[Button])
+  lazy val layerUp          = uiScreen.findNiftyControl("layerUpButton",   classOf[Button])
+  lazy val layerDown        = uiScreen.findNiftyControl("layerDownButton", classOf[Button])
+  lazy val layerLabel       = uiScreen.findNiftyControl("layerLabel",      classOf[Label] )
+  lazy val unitDescription  = uiScreen.findNiftyControl("unitDescription", classOf[Label] )
+  lazy val endTurn          = uiScreen.findNiftyControl("endTurnButton",   classOf[Button])
 
-  @NiftyEventSubscriber(id = "menuButton")
-  def menuButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.gui.controller.guiMessages.publish( new PlainMessage("Main menu not yet implemented!") )
-    case _ =>
+
+  override def preStart() = {
+    context.system.eventStream.subscribe( context.self, classOf[GameListenerMessage] )
+    guiBus.subscribe( context.self, classOf[ButtonClickedEvent] )
+    guiBus.subscribe( context.self, classOf[SelectionChanged]   )
+    guiBus.subscribe( context.self, classOf[LevelChanged]       )
   }
 
-  @NiftyEventSubscriber(id = "messagesButton")
-  def messagesAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.gui.gotoScreen( NoAiMessagesScreen )
-    case _ =>
-  }
+  override def receive = {
+    case m: GameListenerMessage => updateSelectedUnitStats()
+    case m: SelectionChanged    => updateSelectedUnitStats()
+    case LevelChanged(_, h)     => layerLabel.setText( LevelType.values()(h).getName )
 
-  @NiftyEventSubscriber(id = "layerUpButton")
-  def layerUpButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.gui.moveUp()
-    case _ =>
-  }
-
-  @NiftyEventSubscriber(id = "layerDownButton")
-  def layerDownButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.gui.moveDown()
-    case _ =>
-  }
-
-  @NiftyEventSubscriber(id = "endTurnButton")
-  def centerButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.gui.noai.endTurn()
-    case _ =>
-  }
-
-  @NiftyEventSubscriber(id = "gridButton")
-  def gridButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.gui.gridOn = !ui.gui.gridOn
-    case _ =>
-  }
-
-  @NiftyEventSubscriber(id = "resourceButton")
-  def resourceButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => ui.gui.resourcesOn = !ui.gui.resourcesOn
-    case _ =>
+    case b: ButtonClickedEvent if b.getButton == menu =>
+      ui.gui.controller.guiMessages.publish( new PlainMessage("Main menu not yet implemented!") )
+    case b: ButtonClickedEvent if b.getButton == messages =>
+      ui.gui.gotoScreen( NoAiMessagesScreen )
+    case b: ButtonClickedEvent if b.getButton == layerUp =>
+      ui.gui.moveUp()
+    case b: ButtonClickedEvent if b.getButton == layerDown =>
+      ui.gui.moveDown()
+    case b: ButtonClickedEvent if b.getButton == endTurn =>
+      ui.gui.noai.endTurn()
+    case b: ButtonClickedEvent if b.getButton == gridButton =>
+      ui.gui.gridOn = !ui.gui.gridOn
+    case b: ButtonClickedEvent if b.getButton == resourceButton =>
+      ui.gui.resourcesOn = !ui.gui.resourcesOn
   }
 
   def updateSelectedUnitStats() {

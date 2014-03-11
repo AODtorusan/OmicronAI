@@ -1,30 +1,22 @@
 package be.angelcorp.omicron.noai.gui
 
-import scala.Some
 import scala.collection.mutable
-import akka.actor.{ActorRef, Actor, Props}
-import akka.event.{SubchannelClassification, EventBus}
-import akka.util.Subclassification
-import de.lessvoid.nifty.Nifty
+import akka.actor.{Actor, Props}
 import org.newdawn.slick.{Graphics, Color}
 import org.slf4j.LoggerFactory
+import org.bushe.swing.event.{EventTopicSubscriber, EventServiceLocator}
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.LevelType
-import be.angelcorp.omicron.base.{Present, HexTile, Location}
+import be.angelcorp.omicron.base.HexTile
+import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.bridge.Asset
 import be.angelcorp.omicron.base.gui._
 import be.angelcorp.omicron.base.gui.layerRender._
+import be.angelcorp.omicron.base.gui.layerRender.renderEngine.RenderEngine
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
 import be.angelcorp.omicron.base.world.{GhostState, KnownState, SubWorld}
-import be.angelcorp.omicron.base.Conversions._
-import be.angelcorp.omicron.noai.{GuiMessage, NoAiGameListener, NoAi}
-import be.angelcorp.omicron.noai.gui.screens.{NoAiUserInterfaceController, NoAiConstructionScreenController}
-import be.angelcorp.omicron.base.gui.layerRender.renderEngine.RenderEngine
-import be.angelcorp.omicron.base.world.GhostState
-import be.angelcorp.omicron.base.world.SubWorld
-import scala.Some
-import be.angelcorp.omicron.base.world.KnownState
-import be.angelcorp.omicron.base.util.GenericEventBus
+import be.angelcorp.omicron.noai.{GuiMessage, NoAiGameListener}
+import be.angelcorp.omicron.noai.gui.screens.NoAiUserInterfaceController
 
 class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -44,6 +36,12 @@ class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
   nifty.addScreen( constructionScreen.getScreenId, constructionScreen )
   nifty.addScreen( messagesScreen.getScreenId, messagesScreen )
   nifty.gotoScreen( uiScreen.getScreenId )
+
+  val niftybus = EventServiceLocator.getEventService("NiftyEventBus")
+  niftybus.subscribeStrongly(""".*""".r.pattern, new EventTopicSubscriber[AnyRef] {
+    override def onEvent(topic: String, event: AnyRef): Unit =
+      controller.guiMessages.publish( event )
+  } )
 
   private val messages = mutable.ListBuffer[String]()
   private val messageLabel = uiScreen.findNiftyControl("messages", classOf[de.lessvoid.nifty.controls.Label])
@@ -128,10 +126,9 @@ class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
   }
 
   def moveTo(h: Int) {
+    val fromLayer = frame.view.activeLayer
     frame.view.activeLayer = h
-    uiScreen.getScreenController.asInstanceOf[NoAiUserInterfaceController].sidebarController.layerLabel.setText(
-      LevelType.values()(h).getName
-    )
+    controller.guiMessages.publish( LevelChanged(fromLayer, h) )
   }
 
   def moveUp()   = moveTo( math.min( frame.view.activeLayer + 1, noai.gameSize.hSize - 1) )

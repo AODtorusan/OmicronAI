@@ -61,3 +61,4 @@ class GuiController(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) e
 }
 
 case class SelectionChanged( from: Option[Asset], to: Option[Asset] )
+case class LevelChanged( from: Int, to: Int )
