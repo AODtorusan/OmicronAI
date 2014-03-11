@@ -4,19 +4,16 @@ import scala.collection.mutable
 import akka.actor.{Actor, Props}
 import org.newdawn.slick.{Graphics, Color}
 import org.slf4j.LoggerFactory
-import org.bushe.swing.event.{EventTopicSubscriber, EventServiceLocator}
 import com.typesafe.scalalogging.slf4j.Logger
-import com.lyndir.omicron.api.model.LevelType
 import be.angelcorp.omicron.base.HexTile
 import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.bridge.Asset
 import be.angelcorp.omicron.base.gui._
 import be.angelcorp.omicron.base.gui.layerRender._
-import be.angelcorp.omicron.base.gui.layerRender.renderEngine.RenderEngine
+import be.angelcorp.omicron.base.gui.layerRender.renderEngine.{UnitProvider, TerrainProvider, RenderEngine}
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
 import be.angelcorp.omicron.base.world.{GhostState, KnownState, SubWorld}
 import be.angelcorp.omicron.noai.{GuiMessage, NoAiGameListener}
-import be.angelcorp.omicron.noai.gui.screens.NoAiUserInterfaceController
 
 class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -52,15 +49,16 @@ class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
     }
   } ) )
 
-  private val gridRenderer      = new GridRenderer(noai)
-  private val resourceRenderer  = new ResourceRenderer(noai.world)
+  protected[noai] val gridRenderer      = new TogglableLayerRenderer(new GridRenderer(noai))
+  protected[noai] val resourceRenderer  = new TogglableLayerRenderer(new ResourceRenderer(noai.world), false)
 
-  protected[gui] var gridOn       = true
-  protected[gui] var resourcesOn  = false
+  frame.renderer.spriteProvider += new TerrainProvider
+  frame.renderer.spriteProvider += new UnitProvider
 
-  private val staticLayers = mutable.ListBuffer[ LayerRenderer ]()
-  staticLayers += new RenderEngine()
-  staticLayers += new LayerRenderer {
+  val overlays = frame.renderer.overlays.getOrElseUpdate( RenderEngine.AboveSpace, mutable.ListBuffer[LayerRenderer]() )
+  overlays += gridRenderer
+  overlays += new LayerRenderer {
+    // Renders a border around the units
     val unknown = new DrawStyle(Color.white, 3.0f)
     var tiles: Map[DrawStyle, Iterable[HexTile]] = Map.empty
     override def prepareRender(subWorld: SubWorld, layer: Int) = {
@@ -81,21 +79,28 @@ class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
     override def render(g: Graphics) = {
       for ((color, locations) <- tiles)
         Canvas.render(g, locations, color)
-
     }
   }
-  staticLayers += new LayerRenderer {
+  overlays += resourceRenderer
+  overlays += new LayerRenderer {
+    // Renders the currently selected unit proposed action
+    override def viewChanged(view: ViewPort): Unit =
+      controller.plannedAction.foreach( _.preview.viewChanged(view) )
+    override def prepareRender(subWorld: SubWorld, layer: Int) =
+      controller.plannedAction.foreach( _.preview.prepareRender(subWorld, layer) )
+    override def render(g: Graphics) =
+      controller.plannedAction.foreach( _.preview.render(g) )
+  }
+  overlays += new LayerRenderer {
     // Renders the currently selected unit
     override def prepareRender(subWorld: SubWorld, layer: Int) {}
     override def render(g: Graphics) {
-      controller.selected match {
-        case Some( unit ) =>
-          Canvas.render(g, unit.location.get, new DrawStyle(Color.orange, 3.0f), Color.transparent)
-        case _ =>
-      }
+      controller.selected.foreach( unit =>
+        Canvas.render(g, unit.location.get, new DrawStyle(Color.orange, 3.0f), Color.transparent)
+      )
     }
   }
-  staticLayers += new FieldOfView( noai.world )
+  overlays += new FieldOfView( noai.world )
 
   new Thread {
     override def run() {
@@ -104,14 +109,6 @@ class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
       frame.view.centerOn( noai.units.head.location.get )
     }
   }.start()
-
-  def activeLayers: Seq[LayerRenderer] = if (hideGame) Nil else {
-    val layers = mutable.ListBuffer[LayerRenderer]( staticLayers: _* )
-    if (gridOn) layers += gridRenderer
-    controller.plannedAction.foreach( plan => layers += plan.preview )
-    if (resourcesOn) layers += resourceRenderer
-    layers
-  }
 
   def moveTo(asset: Asset) {
     val loc = asset.location.get

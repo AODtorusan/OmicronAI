@@ -12,7 +12,7 @@ import be.angelcorp.omicron.base.{Present, Location}
 import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.ai.actions.{Action, ActionExecutor}
 import be.angelcorp.omicron.base.bridge._
-import be.angelcorp.omicron.base.gui.AiGuiOverlay
+import be.angelcorp.omicron.base.gui.ActiveGameMode
 import be.angelcorp.omicron.base.world.{WorldBounds, World}
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.noai.gui.{GuiController, NoAiGui}
@@ -67,7 +67,7 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
     })
   }
 
-  def buildGuiInterface(gui: AiGuiOverlay, guiBus: GenericEventBus, nifty: Nifty) = auth {
+  def buildGuiInterface(gui: ActiveGameMode, guiBus: GenericEventBus, nifty: Nifty) = auth {
     new GuiController(this, gui, guiBus, nifty)
   }
 

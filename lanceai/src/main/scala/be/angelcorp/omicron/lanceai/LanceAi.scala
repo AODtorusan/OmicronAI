@@ -12,12 +12,13 @@ import com.lyndir.omicron.api.model.Color.Template._
 import be.angelcorp.omicron.base.HexTile
 import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.configuration.Configuration._
-import be.angelcorp.omicron.base.gui.{Canvas, GuiInterface, AiGuiOverlay}
+import be.angelcorp.omicron.base.gui.{Canvas, GuiInterface, ActiveGameMode}
 import be.angelcorp.omicron.base.gui.input.{MouseClicked, InputHandler}
 import be.angelcorp.omicron.base.gui.layerRender.{GridRenderer, LayerRenderer}
 import be.angelcorp.omicron.base.world.SubWorld
 import be.angelcorp.omicron.lanceai.gui.LanceUserInterface
 import be.angelcorp.omicron.base.util.GenericEventBus
+import be.angelcorp.omicron.base.gui.layerRender.renderEngine.RenderEngine
 
 class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -26,7 +27,7 @@ class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name
   implicit val context = actorSystem.dispatcher
   val world = actorSystem.actorOf(Props.empty)
 
-  def buildGuiInterface(gui: AiGuiOverlay, guiBus: GenericEventBus, nifty: Nifty): GuiInterface = new GuiInterface {
+  def buildGuiInterface(gui: ActiveGameMode, guiBus: GenericEventBus, nifty: Nifty): GuiInterface = new GuiInterface {
     nifty.addScreen( LanceUserInterface.screenId, LanceUserInterface.screen(nifty, gui) )
 
     nifty.gotoScreen( LanceUserInterface.screenId )
@@ -46,9 +47,9 @@ class LanceAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name
       }
     ) )
 
-    val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
-    activeLayers += new GridRenderer(LanceAi.this)
-    activeLayers += new LayerRenderer {
+    val overlays = gui.renderer.overlays.getOrElseUpdate( RenderEngine.AboveSpace, mutable.ListBuffer[LayerRenderer]() )
+    overlays += new GridRenderer(LanceAi.this)
+    overlays += new LayerRenderer {
       val  sz = gui.game.getLevelSize
       override def prepareRender(subWorld: SubWorld, layer: Int) {}
       override def render(g: Graphics) {

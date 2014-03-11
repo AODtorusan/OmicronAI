@@ -7,6 +7,7 @@ import be.angelcorp.omicron.base.gui.layerRender.LayerRenderer
 import be.angelcorp.omicron.base.gui.slick.SpriteBatch
 import be.angelcorp.omicron.base.world._
 import be.angelcorp.omicron.base.sprites.Sprite
+import be.angelcorp.omicron.base.gui.ViewPort
 
 class RenderEngine extends LayerRenderer {
   type SpriteLayer = Int
@@ -18,13 +19,17 @@ class RenderEngine extends LayerRenderer {
 
   /** Engine sprite providers */
   val spriteProvider = mutable.ListBuffer[SpriteProvider]()
-  /** Engine plugins */
-  val plugins = mutable.ListBuffer[RenderEnginePlugin]()
 
-  spriteProvider += new TerrainProvider
-  spriteProvider += new UnitProvider
+  // LayerRenderer's that are rendered after  the sprite layers
+  val overlays = mutable.Map[SpriteLayer, mutable.ListBuffer[LayerRenderer]]()
+
+  override def viewChanged(view: ViewPort) = {
+    overlays.values.flatten.par.foreach( _.viewChanged(view) )
+  }
 
   override def prepareRender(subWorld: SubWorld, layer: Int) = {
+    overlays.values.flatten.par.foreach( _.prepareRender(subWorld, layer) )
+
     val states  = subWorld.states.flatten.toList
     val sprites = mutable.ListBuffer[(SpriteLayer, (Sprite, Float, Float, Float))]()
     spriteProvider.foreach( provider =>
@@ -40,14 +45,15 @@ class RenderEngine extends LayerRenderer {
   }
 
   override def render(g: Graphics) {
-    for ((layer, batch) <- batches) {
-      plugins.foreach( _.preSpriteLayerRender(g, layer) )
-      for (list <- batch; (sprite, x, y, theta) <- list) {
+    val layers = (batches.keys ++ overlays.keys).toList.distinct.sorted
+    for (layer <- layers) {
+      val layerBatches = batches.getOrElse(layer, Nil)
+      for (list <- layerBatches; (sprite, x, y, theta) <- list) {
         val img = sprite.image
         openglRenderer.drawImage( img, x - img.getWidth/2, y - img.getHeight/2, theta)
       }
       openglRenderer.flush()
-      plugins.foreach( _.postSpriteLayerRender(g, layer) )
+      overlays.getOrElse(layer, Nil).foreach( _.render(g) )
     }
   }
 

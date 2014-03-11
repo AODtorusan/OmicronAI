@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
 import com.typesafe.scalalogging.slf4j.Logger
-import be.angelcorp.omicron.base.gui.{ScreenOverlay, GuiScreen, AiGuiOverlay}
+import be.angelcorp.omicron.base.gui.{ScreenOverlay, GuiScreen, ActiveGameMode}
 import be.angelcorp.omicron.base.gui.layerRender.LayerRenderer
 import be.angelcorp.omicron.base.gui.nifty.TreeBoxViewController
 import be.angelcorp.omicron.base.gui.nifty.NiftyConstants._
@@ -14,7 +14,7 @@ import be.angelcorp.omicron.base.gui.nifty.NiftyConstants._
 object PikeUserInterface extends GuiScreen {
   override val screenId   = "userInterface"
   override val screenType = ScreenOverlay
-  def screen(nifty: Nifty, gui: AiGuiOverlay) = {
+  def screen(nifty: Nifty, gui: ActiveGameMode) = {
     class ActorConverter extends TreeBoxViewController[ActorRef] {
       def stringify(item: ActorRef) = item.path.name
     }
@@ -86,7 +86,7 @@ object PikeUserInterface extends GuiScreen {
   }
 }
 
-class PikeUserInterfaceScreenController(gui: AiGuiOverlay) extends ScreenController {
+class PikeUserInterfaceScreenController(gui: ActiveGameMode) extends ScreenController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   var nifty: Nifty = null

@@ -14,13 +14,13 @@ import de.lessvoid.nifty.slick2d.{NiftyOverlayGameState, NiftyOverlayBasicGameSt
 import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.base.{Auth, GameListenerLogger}
-import be.angelcorp.omicron.base.gui.AiGuiOverlay
+import be.angelcorp.omicron.base.gui.ActiveGameMode
 import be.angelcorp.omicron.base.sprites.Sprites
 
 
 class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
-  val splash = new SplashOverlay()
+  val splash = new SplashMode()
 
   val workList = new LinkedBlockingDeque[Runnable]()
 
@@ -84,7 +84,7 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
 
       splash.progress(0.8f, "Finalizing GUI ...")
       logger.info("Building AI gui")
-      val aiGui = new AiGuiOverlay(game, actorSystem, AiGui.this, ai)
+      val aiGui = new ActiveGameMode(game, actorSystem, AiGui.this, ai)
       Await.result( Future{ add(aiGui) }, 1 minute )
       logger.info("AI gui build!")
 

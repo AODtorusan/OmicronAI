@@ -4,13 +4,13 @@ import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
-import be.angelcorp.omicron.base.gui.{ScreenOverlay, ScreenType, GuiScreen, AiGuiOverlay}
+import be.angelcorp.omicron.base.gui.{ScreenOverlay, ScreenType, GuiScreen, ActiveGameMode}
 import be.angelcorp.omicron.base.gui.nifty.NiftyConstants._
 
 object LanceUserInterface extends GuiScreen {
   override val screenId   = "userInterface"
   override val screenType = ScreenOverlay
-  def screen(nifty: Nifty, gui: AiGuiOverlay) = {
+  def screen(nifty: Nifty, gui: ActiveGameMode) = {
     val xml =
     //<?xml version="1.0" encoding="UTF-8"?>
       <nifty xmlns="http://nifty-gui.lessvoid.com/nifty-gui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
@@ -74,7 +74,7 @@ object LanceUserInterface extends GuiScreen {
   }
 }
 
-class LanceUserInterfaceScreenController(gui: AiGuiOverlay) extends ScreenController {
+class LanceUserInterfaceScreenController(gui: ActiveGameMode) extends ScreenController {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   var nifty: Nifty = null

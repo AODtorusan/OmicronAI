@@ -4,10 +4,10 @@ import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.newdawn.slick.Input._
 import be.angelcorp.omicron.base.configuration.Configuration.config
-import be.angelcorp.omicron.base.gui.AiGuiOverlay
+import be.angelcorp.omicron.base.gui.ActiveGameMode
 import be.angelcorp.omicron.base.util.GenericEventBus
 
-class AiGuiInput(gui: AiGuiOverlay, protected val guiEventBus: GenericEventBus) extends InputHandler {
+class AiGuiInput(gui: ActiveGameMode, protected val guiEventBus: GenericEventBus) extends InputHandler {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
 
   override def receive = {

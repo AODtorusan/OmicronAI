@@ -34,12 +34,12 @@ class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeCon
   @NiftyEventSubscriber(id = "probesTree")
   def updateProbesTree(id: String, event: TreeItemSelectionChangedEvent[LayerRenderer]) {
     event.getTreeBoxControl.getItems.asScala.foreach( p => {
-      val i = pikeInt.activeLayers.indexOf(p.getValue)
-      if (i != -1) pikeInt.activeLayers.remove( i )
+      val i = pikeInt.overlays.indexOf(p.getValue)
+      if (i != -1) pikeInt.overlays.remove( i )
     } )
     selectedProbe match {
       case Some(probe) =>
-        pikeInt.activeLayers.append( probe )
+        pikeInt.overlays.append( probe )
         probe.viewChanged( pikeInt.gui.view )
       case None =>
     }
@@ -76,8 +76,8 @@ class ProbeTabController(val pikeInt: PikeInterface, unitController: UnitTreeCon
 
   override def updateUI() {
     probesTree.getItems.asScala.foreach( p => {
-      val i = pikeInt.activeLayers.indexOf(p.getValue)
-      if (i != -1) pikeInt.activeLayers.remove( i )
+      val i = pikeInt.overlays.indexOf(p.getValue)
+      if (i != -1) pikeInt.overlays.remove( i )
     } )
     selectedUnit match {
       case Some(unit) =>

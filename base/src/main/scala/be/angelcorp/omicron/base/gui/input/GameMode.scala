@@ -4,7 +4,7 @@ import org.newdawn.slick.{GameContainer, Input}
 import de.lessvoid.nifty.slick2d.NiftyOverlayGameState
 import org.newdawn.slick.state.StateBasedGame
 
-trait GameOverlay extends NiftyOverlayGameState {
+trait GameMode extends NiftyOverlayGameState {
 
   def id: Int
   protected var renderPaused = false

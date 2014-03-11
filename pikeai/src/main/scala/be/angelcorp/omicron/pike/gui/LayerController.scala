@@ -43,15 +43,15 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
       val renderer = entry._1
       val index    = entry._2
       if ( event.getSelectionIndices.contains(index) ) {
-        if (!pikeInt.activeLayers.contains(renderer)) {
+        if (!pikeInt.overlays.contains(renderer)) {
           logger.info("Enabling extra layer info: " + renderer.toString )
-          pikeInt.activeLayers.append( renderer )
+          pikeInt.overlays.append( renderer )
           renderer.viewChanged( pikeInt.gui.view )
         }
       } else {
-        if (pikeInt.activeLayers.contains(renderer)) {
+        if (pikeInt.overlays.contains(renderer)) {
           logger.info("Disabling extra layer info: " + renderer.toString )
-          pikeInt.activeLayers.remove( pikeInt.activeLayers.indexOf(renderer) )
+          pikeInt.overlays.remove( pikeInt.overlays.indexOf(renderer) )
         }
       }
     } )
@@ -88,7 +88,7 @@ class LayerController(val pikeInt: PikeInterface) extends GuiController {
     lb.changeSelectionMode( SelectionMode.Multiple, false )
     for (layer <- lb.getItems.asScala) {
       lb.selectItem( layer )
-      pikeInt.activeLayers.append(layer)
+      pikeInt.overlays.append(layer)
     }
   }
 }

@@ -8,7 +8,7 @@ import be.angelcorp.omicron.base.{HexTile, Location}
 import be.angelcorp.omicron.base.Location._
 import be.angelcorp.omicron.base.world.WorldBounds
 
-class ViewPort(gui: AiGuiOverlay,
+class ViewPort(gui: ActiveGameMode,
                private var _activeLayer: Int       = LevelType.GROUND,
                private var _scale:   Float         = 1f,
                private var _offset: (Float, Float) = (0, 0),

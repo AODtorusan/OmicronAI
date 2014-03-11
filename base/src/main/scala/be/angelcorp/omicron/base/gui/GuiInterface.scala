@@ -4,6 +4,6 @@ import be.angelcorp.omicron.base.gui.layerRender.LayerRenderer
 
 trait GuiInterface {
 
-  def activeLayers: Seq[ LayerRenderer ]
+  private def activeLayers: Seq[ LayerRenderer ] = Nil
 
 }

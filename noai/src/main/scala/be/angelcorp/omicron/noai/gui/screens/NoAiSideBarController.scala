@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model._
 import be.angelcorp.omicron.base.Auth
 import be.angelcorp.omicron.base.bridge.GameListenerMessage
+import be.angelcorp.omicron.base.gui.nifty.NiftyConstants
 import be.angelcorp.omicron.base.util.GenericEventBus
 import be.angelcorp.omicron.noai.PlainMessage
 import be.angelcorp.omicron.noai.gui.{LevelChanged, SelectionChanged}
@@ -51,22 +52,29 @@ class NoAiSideBarController(ui: NoAiUserInterfaceController, protected val guiBu
     case b: ButtonClickedEvent if b.getButton == endTurn =>
       ui.gui.noai.endTurn()
     case b: ButtonClickedEvent if b.getButton == gridButton =>
-      ui.gui.gridOn = !ui.gui.gridOn
+      ui.gui.gridRenderer.enabled = !ui.gui.gridRenderer.enabled
     case b: ButtonClickedEvent if b.getButton == resourceButton =>
-      ui.gui.resourcesOn = !ui.gui.resourcesOn
+      ui.gui.resourceRenderer.enabled = !ui.gui.resourceRenderer.enabled
   }
 
   def updateSelectedUnitStats() {
     val descr = new StringBuilder
     ui.gui.controller.selected match {
       case Some(unit) =>
+        val auth = ui.gui.controller.noai.getAuth
+        unitDescription.setColor( new de.lessvoid.nifty.tools.Color( {
+          if (unit.owner == auth.player)
+            NiftyConstants.white
+          else
+            NiftyConstants.red
+        } ) )
         val name = unit.name
         descr ++= name
         descr ++= (if (name == unit.gameObject.getType.getTypeName) "\n" else s" (${unit.gameObject.getType.getTypeName})\n")
         val modules = unit.modules.toList.sortBy( _.getType.getModuleType.getName )
-        val auth = ui.gui.controller.noai.getAuth
         modules.foreach( module => descr ++= moduleInfo(auth, module) + "\n" )
       case _ =>
+        unitDescription.setColor( new de.lessvoid.nifty.tools.Color( NiftyConstants.white ) )
         descr ++= "No unit selected"
     }
     unitDescription.setText(descr.result())

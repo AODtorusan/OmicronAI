@@ -4,11 +4,11 @@ import scala.collection.mutable
 import de.lessvoid.nifty.Nifty
 import be.angelcorp.omicron.base.ai.actions.Action
 import be.angelcorp.omicron.base.bridge.Asset
-import be.angelcorp.omicron.base.gui.{AiGuiOverlay, GuiInterface}
+import be.angelcorp.omicron.base.gui.{ActiveGameMode, GuiInterface}
 import be.angelcorp.omicron.base.util.GenericEventBus
 import be.angelcorp.omicron.noai.NoAi
 
-class GuiController(val noai: NoAi, val frame: AiGuiOverlay, val guiMessages: GenericEventBus, val nifty: Nifty) extends GuiInterface {
+class GuiController(val noai: NoAi, val frame: ActiveGameMode, val guiMessages: GenericEventBus, val nifty: Nifty) extends GuiInterface {
 
   protected[noai] val _plannedActions = mutable.Map[Asset, Option[Action]]()
   protected[noai] def plannedAction = (selected flatMap _plannedActions.get).flatten
@@ -17,8 +17,6 @@ class GuiController(val noai: NoAi, val frame: AiGuiOverlay, val guiMessages: Ge
   protected[noai] def selected = _selected
 
   val gui = new NoAiGui( this )
-
-  override def activeLayers = gui.activeLayers
 
   protected[noai] def select( asset: Asset): Unit = {
     val from = _selected

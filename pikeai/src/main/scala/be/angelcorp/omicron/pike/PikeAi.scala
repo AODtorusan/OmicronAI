@@ -17,7 +17,7 @@ import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.bridge.{GameListenerBridge, PlayerGainedObject}
 import be.angelcorp.omicron.base.configuration.Configuration.config
-import be.angelcorp.omicron.base.gui.{GuiInterface, AiGuiOverlay}
+import be.angelcorp.omicron.base.gui.{GuiInterface, ActiveGameMode}
 import be.angelcorp.omicron.base.gui.layerRender.LayerRenderer
 import be.angelcorp.omicron.pike.agents.Admiral
 import be.angelcorp.omicron.pike.supervisor.GuiSupervisor
@@ -25,6 +25,7 @@ import be.angelcorp.omicron.pike.gui._
 import be.angelcorp.omicron.pike.agents.Self
 import be.angelcorp.omicron.base.Present
 import be.angelcorp.omicron.base.util.GenericEventBus
+import be.angelcorp.omicron.base.gui.layerRender.renderEngine.RenderEngine
 
 class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color) extends AI( playerId, key, name, color, color ) {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -46,7 +47,7 @@ class PikeAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name:
   }
   //AiSupervisor.omicron.base = Some(supervisorRef)
 
-  def buildGuiInterface(gui: AiGuiOverlay, guiBus: GenericEventBus, nifty: Nifty) = {
+  def buildGuiInterface(gui: ActiveGameMode, guiBus: GenericEventBus, nifty: Nifty) = {
     new PikeInterface(this, gui, guiBus, nifty)
   }
 
@@ -79,10 +80,10 @@ object PikeAi extends AIBuilder {
 
 }
 
-class PikeInterface(val pike: PikeAi, val gui: AiGuiOverlay, val guiBus: GenericEventBus, val nifty: Nifty) extends GuiInterface {
+class PikeInterface(val pike: PikeAi, val gui: ActiveGameMode, val guiBus: GenericEventBus, val nifty: Nifty) extends GuiInterface {
   nifty.addScreen( PikeUserInterface.screenId, PikeUserInterface.screen(nifty, gui) )
 
-  val activeLayers = mutable.ListBuffer[ LayerRenderer ]()
+  val overlays = gui.renderer.overlays.getOrElseUpdate( RenderEngine.AboveSpace, mutable.ListBuffer[LayerRenderer]() )
 
   val lc  = new LayerController(this)
   val utc = new UnitTreeController(this)
