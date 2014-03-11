@@ -18,7 +18,7 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
     implicit val game = ui.gui.frame.game
     val entries = List.newBuilder[(String, () => Unit)]
     val location = ui.gui.frame.hoverLocation
-    ui.gui.noai.selected match {
+    ui.gui.controller.selected match {
       case Some(asset) =>
         // Module related actions
         for (module <- asset.modules) {
@@ -37,17 +37,17 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
               location match {
                 case Some(l) =>
                   // Move in the same level
-                  entries += ( "Move to", () => ui.gui.noai.updateOrConfirmAction(MoveAction(asset, l, ui.gui.noai.world)) )
+                  entries += ( "Move to", () => ui.gui.controller.updateOrConfirmAction(MoveAction(asset, l, ui.gui.noai.world)) )
                   // Move up or down
                   for (d <- Seq(UP(), DOWN()); loc <- l.neighbour(d)) {
                     if (asset.costForLevelingToLevel(loc.h) != Double.MaxValue)
-                      entries += (s"Move ${d.toString.toLowerCase}", () => ui.gui.noai.updateOrConfirmAction( MoveAction(asset, loc, ui.gui.noai.world) ))
+                      entries += (s"Move ${d.toString.toLowerCase}", () => ui.gui.controller.updateOrConfirmAction( MoveAction(asset, loc, ui.gui.noai.world) ))
                   }
                 case _ => logger.info(s"Cannot move $asset to that tile, not hovering over any tile!")
               }
             case weapon: WeaponModule =>
               entries += ( s"Fire at (${weapon.getAmmunition}/${weapon.getAmmunitionLoad})", () => { location match  {
-                case Some(destination) => ui.gui.noai.updateOrConfirmAction( AttackAction(asset, weapon, destination) )
+                case Some(destination) => ui.gui.controller.updateOrConfirmAction( AttackAction(asset, weapon, destination) )
                 case _ => logger.info("Cannot shoot at that tile, not hovering over any tile!")
               } } )
             case _ => // Already in list or no action known
@@ -57,7 +57,7 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
         location.map( hover => ui.gui.noai.unitOn( hover ).map( hoverAsset => {
           hoverAsset.gameObject.getType match {
             case UnitTypes.CONSTRUCTION =>
-              entries += ("Assist construction", () => ui.gui.noai.updateOrConfirmAction( ConstructionAssistAction(asset, hover, ui.gui.noai.world) ) )
+              entries += ("Assist construction", () => ui.gui.controller.updateOrConfirmAction( ConstructionAssistAction(asset, hover, ui.gui.noai.world) ) )
             case _ =>
           }
         } ) )

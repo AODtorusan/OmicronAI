@@ -24,24 +24,18 @@ import be.angelcorp.omicron.base.world.GhostState
 import be.angelcorp.omicron.base.world.SubWorld
 import scala.Some
 import be.angelcorp.omicron.base.world.KnownState
+import be.angelcorp.omicron.base.util.GenericEventBus
 
-class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends NiftyGuiInterface {
+class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
   private val logger = Logger( LoggerFactory.getLogger( getClass ) )
+
+  def noai  = controller.noai
+  def frame = controller.frame
+  def nifty = controller.nifty
+
   val listener = new NoAiGameListener( this )
   frame.game.getController.addGameListener( listener )
   noai.actorSystem.actorOf( Props(classOf[NoAiInput], noai, this), name = "NoAI_input" )
-
-  val guiMessageBus = new EventBus with SubchannelClassification {
-    type Event = AnyRef
-    type Classifier = Class[_]
-    type Subscriber = ActorRef
-    override protected implicit val subclassification = new Subclassification[Class[_]] {
-      def isEqual(x: Class[_], y: Class[_]) = x == y
-      def isSubclass(x: Class[_], y: Class[_]) = y isAssignableFrom x
-    }
-    override protected def classify(event: AnyRef): Class[_] = event.getClass
-    override protected def publish(event: AnyRef, subscriber: ActorRef): Unit = subscriber ! event
-  }
 
   private val uiScreen = screens.NoAiUserInterface.screen(this)
   private val constructionScreen = screens.NoAiConstructionScreen.screen(this)
@@ -56,7 +50,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
 
   noai.actorSystem.actorOf( Props( new Actor {
     override def preStart() {
-      guiMessageBus.subscribe(context.self, classOf[GuiMessage])
+      controller.guiMessages.subscribe(context.self, classOf[GuiMessage])
     }
     override def receive = {
       case m: GuiMessage =>
@@ -102,7 +96,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
     // Renders the currently selected unit
     override def prepareRender(subWorld: SubWorld, layer: Int) {}
     override def render(g: Graphics) {
-      noai.selected match {
+      controller.selected match {
         case Some( unit ) =>
           Canvas.render(g, unit.location.get, new DrawStyle(Color.orange, 3.0f), Color.transparent)
         case _ =>
@@ -122,7 +116,7 @@ class NoAiGui(val noai: NoAi, val frame: AiGuiOverlay, val nifty: Nifty) extends
   def activeLayers: Seq[LayerRenderer] = if (hideGame) Nil else {
     val layers = mutable.ListBuffer[LayerRenderer]( staticLayers: _* )
     if (gridOn) layers += gridRenderer
-    noai.plannedAction.foreach( plan => layers += plan.preview )
+    controller.plannedAction.foreach( plan => layers += plan.preview )
     if (resourcesOn) layers += resourceRenderer
     layers
   }

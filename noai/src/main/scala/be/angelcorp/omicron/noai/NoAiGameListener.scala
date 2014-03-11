@@ -9,7 +9,7 @@ import be.angelcorp.omicron.noai.gui.NoAiGui
 
 class NoAiGameListener( gui: NoAiGui ) extends GameListener {
 
-  lazy val messageBus = gui.guiMessageBus
+  lazy val messageBus = gui.controller.guiMessages
   implicit def game = gui.noai.game
 
   override def onPlayerReady(readyPlayer: IPlayer) {

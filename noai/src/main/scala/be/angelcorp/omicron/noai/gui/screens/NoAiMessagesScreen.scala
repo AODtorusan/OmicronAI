@@ -10,7 +10,7 @@ import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicron.base.gui.{ScreenFill, GuiScreen}
 import be.angelcorp.omicron.base.gui.nifty.NiftyConstants._
 import be.angelcorp.omicron.noai.GuiMessage
-import be.angelcorp.omicron.noai.gui.NoAiGui
+import be.angelcorp.omicron.noai.gui.{SelectionChanged, NoAiGui}
 
 object NoAiMessagesScreen extends GuiScreen {
   override val screenId   = "messagesScreen"
@@ -52,12 +52,9 @@ class NoAiMessagesScreenController(val gui: NoAiGui) extends ScreenController {
 
   val listener = gui.noai.actorSystem.actorOf( Props( new Actor {
     override def preStart(): Unit =
-      gui.guiMessageBus.subscribe(context.self, classOf[AnyRef])
+      gui.controller.guiMessages.subscribe(context.self, classOf[AnyRef])
     override def receive = {
-      case m: GuiMessage =>
-        messagesList.addItem( m )
-      case m =>
-      logger.warn(s"m")
+      case m: GuiMessage => messagesList.addItem( m )
     }
   } ) )
 

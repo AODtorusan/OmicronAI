@@ -13,6 +13,8 @@ trait Asset {
 
   def gameObject: IGameObject
 
+  def name:         String
+
   def owner:        Option[IPlayer]
   def location:     Option[Location]
   def observableTiles: Iterable[Location]
@@ -33,6 +35,8 @@ trait Asset {
 class AssetImpl( val auth: Auth, val gameObject: IGameObject) extends Asset {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
   private implicit val game = auth.player.getController.getGameController.getGame
+
+  def name                = gameObject.getType.getTypeName
 
   def owner: Option[IPlayer]     = toMaybe( auth { gameObject.checkOwner()    }).asOption
   def location: Option[Location] = toMaybe( auth { gameObject.checkLocation() }).asOption.map( tile2location )

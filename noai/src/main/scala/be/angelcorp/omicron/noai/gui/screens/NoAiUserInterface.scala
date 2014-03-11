@@ -16,7 +16,7 @@ object NoAiUserInterface extends GuiScreen {
         <screen id={screenId} controller={classOf[NoAiUserInterfaceController].getName}>
           <layer id="contentLayer" childLayout="horizontal" backgroundColor={transparent}>
 
-            <panel id="controlPanel" backgroundColor={black(200)} align="left" valign="bottom" childLayout="vertical" height="*" width="20%">
+            <panel id="controlPanel" backgroundColor={black(200)} align="left" padding="5px" valign="bottom" childLayout="vertical" height="*" width="20%">
               <!-- <effect>
                 <onStartScreen name="move" mode="in"  direction="left" length="1000" inherit="true" />
                 <onEndScreen   name="move" mode="out" direction="left" length="1000" inherit="true" />
@@ -26,23 +26,27 @@ object NoAiUserInterface extends GuiScreen {
               <control name="label"  text=""  width="*" color={transparent} />
 
               <panel id="genericButtons" childLayout="horizontal" width="100%" >
-                <control id="messagesButton" name="button" label="Messages" width="30%" focusable="false" />
-                <control id="foo1"           name="label"  text="???"       width="40%" color={white} />
-                <control id="foo2"           name="button" label="???"      width="30%" focusable="false" />
+                <control id="messagesButton" name="button" label="msg log" width="33%" focusable="false" />
+                <control id="foo1"           name="label"  text="???"      width="*"   color={white} />
+                <control id="foo2"           name="button" label="???"     width="33%" focusable="false" />
               </panel>
 
               <control name="label"  text=""  width="*" color={transparent} />
 
               <panel id="renderLayerControlPanel" childLayout="horizontal" width="100%" >
-                <control id="layerUpButton"   name="button" label="up"     width="30%" focusable="false" />
-                <control id="layerLabel"      name="label"  text="GROUND"  width="40%" color={white} />
-                <control id="layerDownButton" name="button" label="down"   width="30%" focusable="false" />
+                <control id="layerUpButton"   name="button" label="up"     width="33%" focusable="false" />
+                <control id="layerLabel"      name="label"  text="GROUND"  width="*"   color={white} />
+                <control id="layerDownButton" name="button" label="down"   width="33%" focusable="false" />
               </panel>
               <panel id="layersControlPanel" childLayout="horizontal" width="100%" >
                 <control id="gridButton"      name="button" label="grid"      width="33%" focusable="false" />
-                <control id="resourceButton"  name="button" label="resources" width="34%" focusable="false" />
+                <control id="resourceButton"  name="button" label="resources" width="*"   focusable="false" />
                 <control id="errr2"           name="button" label="???"       width="33%" focusable="false" />
               </panel>
+
+              <control name="label"  text=""  width="*" color={transparent} />
+
+              <control id="unitDescription" textVAlign="top" textHAlign="left" name="label" text=""  height="*" width="*" color={white} />
 
               <control name="label"  text=""  width="*" color={transparent} />
 

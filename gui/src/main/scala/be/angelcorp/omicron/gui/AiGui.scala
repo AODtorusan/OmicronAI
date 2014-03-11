@@ -7,15 +7,16 @@ import akka.actor.ActorSystem
 import org.slf4j.LoggerFactory
 import org.newdawn.slick._
 import org.newdawn.slick.state.GameState
+import org.newdawn.slick.util.ResourceLoader
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.{PlayerKey, Game}
-import de.lessvoid.nifty.slick2d.{NiftyOverlayBasicGameState, NiftyStateBasedGame, NiftyOverlayGameState}
+import de.lessvoid.nifty.slick2d.{NiftyOverlayGameState, NiftyOverlayBasicGameState, NiftyStateBasedGame}
 import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.base.{Auth, GameListenerLogger}
 import be.angelcorp.omicron.base.gui.AiGuiOverlay
 import be.angelcorp.omicron.base.sprites.Sprites
-import org.lwjgl.opengl.GL11
+
 
 class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -23,7 +24,7 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
 
   val workList = new LinkedBlockingDeque[Runnable]()
 
-  val loadThread = new Thread {
+  def loadThread( container: GameContainer ) = new Thread {
     override def run() {
       implicit val openglContext: ExecutionContext = AiGui.this
 
@@ -98,7 +99,7 @@ class AiGui extends NiftyStateBasedGame("Omicron AI gui") with ExecutionContext 
   override def initStatesList(container: GameContainer) {
     addState( splash )
     enterState( splash.getID )
-    loadThread.start()
+    loadThread(container).start()
   }
 
   override def preUpdateState(container: GameContainer, delta: Int) {

@@ -15,7 +15,7 @@ import be.angelcorp.omicron.base.bridge._
 import be.angelcorp.omicron.base.gui.AiGuiOverlay
 import be.angelcorp.omicron.base.world.{WorldBounds, World}
 import be.angelcorp.omicron.base.configuration.Configuration.config
-import be.angelcorp.omicron.noai.gui.NoAiGui
+import be.angelcorp.omicron.noai.gui.{GuiController, NoAiGui}
 import scala.concurrent.Await
 import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.bridge.PlayerGainedObject
@@ -67,7 +67,7 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
   }
 
   def buildGuiInterface(gui: AiGuiOverlay, nifty: Nifty) = auth {
-    new NoAiGui(this, gui, nifty)
+    new GuiController(this, gui, nifty)
   }
 
   private def gameController = getController.getGameController
@@ -77,37 +77,8 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
 
   private val units_ = mutable.ListBuffer[Asset]()
 
-  protected[noai] val _plannedActions = mutable.Map[Asset, Option[Action]]()
-  protected[noai] def plannedAction = (selected flatMap _plannedActions.get).flatten
-
-  protected[noai] var _selected: Option[Asset] = None
-  protected[noai] def selected = _selected
-
   protected[noai] def endTurn(): Unit =
     auth { gameController.setReady() }
-
-  protected[noai] def select( asset: Asset): Unit =
-    _selected = Some(asset)
-
-  protected[noai] def selectNext(): Unit = {
-    _selected match {
-      case Some(unit) =>
-        val idx = (units_.indexOf( unit ) + 1) % units.size
-        select( units_(idx) )
-      case None =>
-        units_.headOption.map( select )
-    }
-  }
-
-  protected[noai] def selectPrevious(): Unit = {
-    _selected match {
-      case Some(unit) =>
-        val idx = (units_.indexOf( unit ) - 1 + units.size) % units.size
-        select( units_(idx) )
-      case None =>
-        units_.headOption.map( select )
-    }
-  }
 
   protected[noai] def unitOn(l: Location) =
     units_.find( _.location.get == l )
@@ -115,27 +86,15 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
   protected[noai] def units =
     units_.result()
 
-  protected[noai] def updateOrConfirmAction( action: Action) =
-    plannedAction match {
-      // Execute the plan (the same plan was passed in)
-      case Some(plan) if plan == action =>
-        for( result <- plan.execute(this) ) result match {
-          case Some( err ) =>
-            lazy val msg = s"Could not finish action $plan successfully: ${err.getMessage}"
-            if (err.getCause != null && err.getCause.isInstanceOf[RuntimeException] )
-              logger.warn(msg, err )
-            else
-              logger.info(msg)
-
-            _plannedActions.update( selected.get, plan.recover( err ))
-          case None =>
-            logger.info(s"Action $plan finished successfully")
-            _plannedActions.update( selected.get, None )
-        }
-      // Update the plan
-      case _ =>
-        _plannedActions.update( selected.get, Some(action))
-    }
+  protected[noai] def execute( plan: Action ) =
+    for( result <- plan.execute(this) ) result.map( err => {
+        lazy val msg = s"Could not finish action $plan successfully: ${err.getMessage}"
+        if (err.getCause != null && err.getCause.isInstanceOf[RuntimeException] )
+          logger.warn(msg, err )
+        else
+          logger.info(msg)
+        plan.recover( err )
+    } )
 
 }
 

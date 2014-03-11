@@ -16,12 +16,12 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
       Location(gui.frame.view.pixelToTile(x, y), gui.frame.view.activeLayer, noai.gameSize).reduce.map {
         case selectedLocation =>
           noai.unitOn( selectedLocation ) match {
-            case Some( asset ) => noai.select( asset )
+            case Some( asset ) => gui.controller.select( asset )
             case None =>
-              noai.plannedAction match {
-                case Some(mv: MoveAction) if mv.destination == selectedLocation => noai.updateOrConfirmAction(mv)
-                case _ => noai.selected match {
-                  case Some(asset) => noai.updateOrConfirmAction( new MoveAction(asset, selectedLocation, noai.world) )
+              gui.controller.plannedAction match {
+                case Some(mv: MoveAction) if mv.destination == selectedLocation => gui.controller.updateOrConfirmAction(mv)
+                case _ => gui.controller.selected match {
+                  case Some(asset) => gui.controller.updateOrConfirmAction( new MoveAction(asset, selectedLocation, noai.world) )
                   case _ =>
                 }
               }
@@ -30,18 +30,18 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
 
 
     case m: GuiInputEvent if config.noai.updateOrConfirmAction(m) =>
-      noai.plannedAction.map( a => noai.updateOrConfirmAction( a ) )
+      gui.controller.plannedAction.map( a => gui.controller.updateOrConfirmAction( a ) )
 
     case m: GuiInputEvent if config.noai.endTurn(m) =>
       noai.endTurn()
 
     case m: GuiInputEvent if config.noai.nextUnit(m) =>
-      noai.selectNext()
-      noai.selected.map( gui.moveTo )
+      gui.controller.selectNext()
+      gui.controller.selected.map( gui.moveTo )
 
     case m: GuiInputEvent if config.noai.previousUnit(m) =>
-      noai.selectPrevious()
-      noai.selected.map( gui.moveTo )
+      gui.controller.selectPrevious()
+      gui.controller.selected.map( gui.moveTo )
 
     case m: GuiInputEvent if config.noai.centerView(m) =>
       val units = noai.units

@@ -9,9 +9,9 @@ import akka.util.Timeout
 import com.lyndir.omicron.api.model.Game
 import com.typesafe.scalalogging.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.newdawn.slick.{Color, Graphics, GameContainer}
+import org.newdawn.slick._
 import org.newdawn.slick.state.StateBasedGame
-import org.newdawn.slick.util.FontUtils
+import org.newdawn.slick.util.{ResourceLoader, FontUtils}
 import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.loaderv2.types.NiftyType
 import be.angelcorp.omicron.base.ai.AI
@@ -19,6 +19,10 @@ import be.angelcorp.omicron.base.gui.input.{AiGuiInput, InputSystem, GameOverlay
 import be.angelcorp.omicron.base.{Location, HexTile}
 import be.angelcorp.omicron.base.world.{SubWorld, GetSubWorld}
 import be.angelcorp.omicron.base.gui.slick.DrawStyle
+import be.angelcorp.omicron.base.world.SubWorld
+import scala.Some
+import be.angelcorp.omicron.base.world.GetSubWorld
+import org.lwjgl.opengl.GL11
 
 class AiGuiOverlay(val game: Game, val system: ActorSystem, val opengl: ExecutionContext, val ai: AI) extends GameOverlay {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -33,8 +37,9 @@ class AiGuiOverlay(val game: Game, val system: ActorSystem, val opengl: Executio
 
   def initGameAndGUI(container: GameContainer, game: StateBasedGame) {
     this.container = container
-    initNifty(container, game, input )
     this.container.setShowFPS(false)
+
+    initNifty(container, game, input )
     ai.start()
   }
 
