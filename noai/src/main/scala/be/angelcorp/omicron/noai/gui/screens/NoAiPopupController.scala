@@ -7,6 +7,7 @@ import be.angelcorp.omicron.base.{DOWN, UP}
 import be.angelcorp.omicron.base.ai.actions.{ConstructionAssistAction, AttackAction, MoveAction}
 import be.angelcorp.omicron.base.gui.nifty.PopupController
 import scala.concurrent.ExecutionContext
+import be.angelcorp.omicron.base.util.GenericEventBus
 
 class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupController {
 
@@ -68,5 +69,8 @@ class NoAiPopupController(ui: NoAiUserInterfaceController) extends PopupControll
 
   /** OpenGL ExecutionContext */
   override def openGL: ExecutionContext = ui.gui.frame.opengl
+
+  /** Gui message bus for used detecting the right-click */
+  override def guiBus: GenericEventBus = ui.gui.controller.guiMessages
 
 }

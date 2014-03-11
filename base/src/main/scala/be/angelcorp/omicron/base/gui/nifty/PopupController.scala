@@ -10,6 +10,7 @@ import org.bushe.swing.event.EventTopicSubscriber
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicron.base.gui.input.{GuiInputEvent, MouseClicked}
+import be.angelcorp.omicron.base.util.GenericEventBus
 
 trait PopupController extends Actor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -20,6 +21,8 @@ trait PopupController extends Actor {
   def defaultMenu: Iterable[(String, () => Unit)]
   /** OpenGL ExecutionContext */
   def openGL: ExecutionContext
+  /** Gui message bus for used detecting the right-click */
+  def guiBus: GenericEventBus
 
   private var popup: Element = null
 
@@ -46,7 +49,7 @@ trait PopupController extends Actor {
   }
 
   override def preStart() {
-    context.system.eventStream.subscribe(self, classOf[GuiInputEvent])
+    guiBus.subscribe(self, classOf[GuiInputEvent])
   }
 
   override def receive = {

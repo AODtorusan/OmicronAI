@@ -26,9 +26,9 @@ class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
   frame.game.getController.addGameListener( listener )
   noai.actorSystem.actorOf( Props(classOf[NoAiInput], noai, this), name = "NoAI_input" )
 
-  private val uiScreen = screens.NoAiUserInterface.screen(this)
-  private val constructionScreen = screens.NoAiConstructionScreen.screen(this)
-  private val messagesScreen = screens.NoAiMessagesScreen.screen(this)
+  val uiScreen = screens.NoAiUserInterface.screen(this)
+  val constructionScreen = screens.NoAiConstructionScreen.screen(this)
+  val messagesScreen = screens.NoAiMessagesScreen.screen(this)
   nifty.addScreen( uiScreen.getScreenId, uiScreen )
   nifty.addScreen( constructionScreen.getScreenId, constructionScreen )
   nifty.addScreen( messagesScreen.getScreenId, messagesScreen )

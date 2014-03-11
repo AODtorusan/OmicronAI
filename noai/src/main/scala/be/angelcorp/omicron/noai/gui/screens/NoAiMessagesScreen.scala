@@ -4,7 +4,7 @@ import scala.collection.JavaConverters._
 import akka.actor.{Actor, Props}
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
 import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber, Nifty}
-import de.lessvoid.nifty.controls.{ButtonClickedEvent, ListBox}
+import de.lessvoid.nifty.controls.{Button, ButtonClickedEvent, ListBox}
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
 import be.angelcorp.omicron.base.gui.{ScreenFill, GuiScreen}
@@ -49,35 +49,31 @@ class NoAiMessagesScreenController(val gui: NoAiGui) extends ScreenController {
 
   lazy val messagesScreen = nifty.getScreen(NoAiMessagesScreen.screenId)
   lazy val messagesList   = messagesScreen.findNiftyControl("messagesList", classOf[ListBox[GuiMessage]])
+  lazy val back           = messagesScreen.findNiftyControl("back",     classOf[Button])
+  lazy val activate       = messagesScreen.findNiftyControl("activate", classOf[Button])
 
-  val listener = gui.noai.actorSystem.actorOf( Props( new Actor {
-    override def preStart(): Unit =
-      gui.controller.guiMessages.subscribe(context.self, classOf[AnyRef])
+  gui.noai.actorSystem.actorOf( Props( new Actor {
+    override def preStart() {
+      gui.controller.guiMessages.subscribe(context.self, classOf[GuiMessage])
+      gui.controller.guiMessages.subscribe(context.self, classOf[ButtonClickedEvent])
+    }
     override def receive = {
-      case m: GuiMessage => messagesList.addItem( m )
+      case m: GuiMessage =>
+        messagesList.addItem( m )
+      case b: ButtonClickedEvent if b.getButton == back =>
+        gui.gotoScreen( NoAiUserInterface )
+      case b: ButtonClickedEvent if b.getButton == activate =>
+        messagesList.getSelection.asScala.headOption match {
+          case Some( selected ) => selected.onClick( gui )
+          case None => logger.info("Clicked on activate message, but no message was selected.")
+        }
+      case m =>
+        logger.info(s"$m")
     }
   } ) )
-
 
   override def bind(nifty: Nifty, screen: Screen) {}
   override def onEndScreen() {}
   override def onStartScreen() {}
-
-  @NiftyEventSubscriber(id = "back")
-  def backButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent =>
-      gui.gotoScreen( NoAiUserInterface )
-    case _ =>
-  }
-
-  @NiftyEventSubscriber(id = "activate")
-  def buildButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent =>
-      messagesList.getSelection.asScala.headOption match {
-        case Some( selected ) => selected.onClick( gui )
-        case None => logger.info("Clicked on activate message, but no message was selected.")
-      }
-    case _ =>
-  }
 
 }

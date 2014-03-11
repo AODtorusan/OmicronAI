@@ -1,10 +1,11 @@
 package be.angelcorp.omicron.noai.gui.screens
 
 import scala.collection.JavaConverters._
+import akka.actor.{Actor, Props}
 import org.slf4j.LoggerFactory
-import de.lessvoid.nifty.{NiftyEvent, NiftyEventSubscriber, Nifty}
+import de.lessvoid.nifty.Nifty
 import de.lessvoid.nifty.screen.{Screen, ScreenController}
-import de.lessvoid.nifty.controls.{ListBox, ButtonClickedEvent}
+import de.lessvoid.nifty.controls.{Button, ListBox, ButtonClickedEvent}
 import com.typesafe.scalalogging.slf4j.Logger
 import com.lyndir.omicron.api.model.{UnitTypes, UnitType}
 import be.angelcorp.omicron.base.Location
@@ -12,7 +13,8 @@ import be.angelcorp.omicron.base.ai.actions.ConstructionStartAction
 import be.angelcorp.omicron.base.bridge.Asset
 import be.angelcorp.omicron.base.gui.nifty.NiftyConstants._
 import be.angelcorp.omicron.noai.gui.NoAiGui
-import be.angelcorp.omicron.base.gui.{ScreenFill, ScreenType, GuiScreen}
+import be.angelcorp.omicron.base.gui.{ScreenFill, GuiScreen}
+import be.angelcorp.omicron.base.gui.input.InputHandler
 
 object NoAiConstructionScreen extends GuiScreen {
   override val screenId   = "buildScreen"
@@ -56,6 +58,8 @@ class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenControlle
 
   lazy val constructionScreen   = nifty.getScreen(NoAiConstructionScreen.screenId)
   lazy val constructionTypeList = constructionScreen.findNiftyControl("constructionTypeList", classOf[ListBox[UnitType]])
+  lazy val back                 = constructionScreen.findNiftyControl("backButton",  classOf[Button])
+  lazy val build                = constructionScreen.findNiftyControl("buildButton", classOf[Button])
 
   override def onStartScreen() {
     for (i <- constructionTypeList.itemCount()-1 to 0 by -1 )
@@ -77,6 +81,7 @@ class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenControlle
       case _ => logger.info("Opened construction menu, but no builder asset was bound!")
     }
   }
+
   override def onEndScreen() {
     currentBuilder      = None
     currentDdestination = None
@@ -91,26 +96,23 @@ class NoAiConstructionScreenController(val gui: NoAiGui) extends ScreenControlle
     currentDdestination = Some(target)
   }
 
-  @NiftyEventSubscriber(id = "backButton")
-  def backButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent => gui.gotoScreen( NoAiUserInterface )
-    case _ =>
-  }
-
-  @NiftyEventSubscriber(id = "buildButton")
-  def buildButtonAction(id: String, event: NiftyEvent) = event match {
-    case e: ButtonClickedEvent =>
-      if (currentBuilder.isDefined && currentDdestination.isDefined)
-        constructionTypeList.getSelection.asScala.headOption match {
-          case Some(typ) =>
-            implicit val game = gui.noai.game
-            gui.controller.updateOrConfirmAction( ConstructionStartAction(currentBuilder.get, currentDdestination.get, typ, gui.noai.world) )
-            gui.gotoScreen( NoAiUserInterface )
-          case _ =>
-            logger.info(s"No construction type selected for ${currentBuilder.get} on ${currentDdestination.get}")
-        }
-      else gui.gotoScreen( NoAiUserInterface )
-    case _ =>
-  }
+  gui.controller.noai.actorSystem.actorOf( Props( new Actor {
+    override def preStart(): Unit = gui.controller.guiMessages.subscribe( context.self, classOf[ButtonClickedEvent ] )
+    override def receive = {
+      case b: ButtonClickedEvent if b.getButton == back =>
+        gui.gotoScreen( NoAiUserInterface )
+      case b: ButtonClickedEvent if b.getButton == build =>
+        if (currentBuilder.isDefined && currentDdestination.isDefined)
+          constructionTypeList.getSelection.asScala.headOption match {
+            case Some(typ) =>
+              implicit val game = gui.noai.game
+              gui.controller.updateOrConfirmAction( ConstructionStartAction(currentBuilder.get, currentDdestination.get, typ, gui.noai.world) )
+              gui.gotoScreen( NoAiUserInterface )
+            case _ =>
+              logger.info(s"No construction type selected for ${currentBuilder.get} on ${currentDdestination.get}")
+          }
+        else gui.gotoScreen( NoAiUserInterface )
+    }
+  } ) )
 
 }
