@@ -63,7 +63,7 @@ class NoAiSideBarController(ui: NoAiUserInterfaceController, protected val guiBu
       case Some(unit) =>
         val auth = ui.gui.controller.noai.getAuth
         unitDescription.setColor( new de.lessvoid.nifty.tools.Color( {
-          if (unit.owner == auth.player)
+          if (unit.owner.exists(_ == auth.player))
             NiftyConstants.white
           else
             NiftyConstants.red

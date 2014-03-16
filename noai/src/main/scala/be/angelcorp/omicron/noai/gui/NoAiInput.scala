@@ -18,7 +18,8 @@ class NoAiInput(noai: NoAi, gui: NoAiGui) extends InputHandler {
       Location(gui.frame.view.pixelToTile(x, y), gui.frame.view.activeLayer, noai.gameSize).reduce.map {
         case selectedLocation =>
           noai.unitOn( selectedLocation ) match {
-            case Some( asset ) => gui.controller.select( asset )
+            case Some( asset ) =>
+              gui.controller.select( asset )
             case None =>
               gui.controller.plannedAction match {
                 case Some(mv: MoveAction) if mv.destination == selectedLocation => gui.controller.updateOrConfirmAction(mv)

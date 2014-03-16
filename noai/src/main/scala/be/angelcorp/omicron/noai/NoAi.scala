@@ -3,6 +3,7 @@ package be.angelcorp.omicron.noai
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 import akka.actor.{Props, ActorRef, ActorSystem}
+import akka.pattern.ask
 import de.lessvoid.nifty.Nifty
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.slf4j.Logger
@@ -13,14 +14,18 @@ import be.angelcorp.omicron.base.ai.{AIBuilder, AI}
 import be.angelcorp.omicron.base.ai.actions.{Action, ActionExecutor}
 import be.angelcorp.omicron.base.bridge._
 import be.angelcorp.omicron.base.gui.ActiveGameMode
-import be.angelcorp.omicron.base.world.{WorldBounds, World}
+import be.angelcorp.omicron.base.world._
 import be.angelcorp.omicron.base.configuration.Configuration.config
 import be.angelcorp.omicron.noai.gui.{GuiController, NoAiGui}
 import scala.concurrent.Await
 import be.angelcorp.omicron.base.Conversions._
 import be.angelcorp.omicron.base.bridge.PlayerGainedObject
-import scala.Some
 import be.angelcorp.omicron.base.util.GenericEventBus
+import be.angelcorp.omicron.base.bridge.PlayerGainedObject
+import be.angelcorp.omicron.base.Present
+import be.angelcorp.omicron.base.world.LocationState
+import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
 
 class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: String, color: Color ) extends AI( playerId, key, name, color, color ) with ActionExecutor {
   val logger = Logger( LoggerFactory.getLogger( getClass ) )
@@ -81,8 +86,16 @@ class NoAi( val actorSystem: ActorSystem, playerId: Int, key: PlayerKey, name: S
   protected[noai] def endTurn(): Unit =
     auth { gameController.setReady() }
 
-  protected[noai] def unitOn(l: Location) =
-    units_.find( _.location.get == l )
+  protected[noai] def unitOn(l: Location) = {
+    units_.find( _.location.get == l ).orElse( {
+      val futureAsset = for (state <- ask(world, LocationState(l)).mapTo[WorldState]) yield state match {
+        case KnownState(_, asset, _) =>
+          asset
+        case _ => None
+      }
+      Await.result(futureAsset, Duration(1, TimeUnit.MINUTES) )
+    } )
+  }
 
   protected[noai] def units =
     units_.result()

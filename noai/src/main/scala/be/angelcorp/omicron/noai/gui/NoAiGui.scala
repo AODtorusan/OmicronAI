@@ -63,12 +63,12 @@ class NoAiGui(val controller: GuiController) extends NiftyGuiInterface {
     var tiles: Map[DrawStyle, Iterable[HexTile]] = Map.empty
     override def prepareRender(subWorld: SubWorld, layer: Int) = {
       tiles = subWorld.states.flatten.flatMap {
-        case (loc, KnownState(_,Some(obj),_)) =>
+        case (loc, KnownState(_,Some(obj),_)) if loc.h == layer =>
           Some(HexTile(loc) -> ( obj.owner match {
             case Some( owner ) => DrawStyle(owner.getPrimaryColor, 3.0f)
             case _ => unknown
           } ) )
-        case (loc, GhostState(_,Some(obj),_)) =>
+        case (loc, GhostState(_,Some(obj),_)) if loc.h == layer =>
           Some(HexTile(loc) -> ( obj.owner match {
             case Some( owner ) => DrawStyle(owner.getPrimaryColor, 3.0f)
             case _ => unknown

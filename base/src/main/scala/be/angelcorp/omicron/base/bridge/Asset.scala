@@ -66,8 +66,10 @@ class AssetImpl( val auth: Auth, val gameObject: IGameObject) extends Asset {
   def costForLevelingToLevel(h: Int) = moveToCosts(h)
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case asset: Asset => asset.gameObject == gameObject
-    case _ => false
+    case asset: Asset =>
+      asset.gameObject == gameObject
+    case _ =>
+      false
   }
 
 }

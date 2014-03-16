@@ -47,12 +47,18 @@ class World(auth: Auth, sz: WorldBounds) extends Actor {
       } )
     } ).toMap
 
+  private def toAsset(go: IGameObject) =
+    assetCache.getOrElseUpdate(go, {
+      new AssetImpl(auth, go)
+    } )
+
+
   // Current state as known bu the game
   private def realState(l: Location) = {
     val t = Location.location2tile(l)
     val content   = t.checkContents()
     content.presence() match {
-      case Presence.PRESENT => KnownState(l, Some( assetCache.getOrElseUpdate(content.get, new AssetImpl(auth, content.get)) ), checkResources(t))
+      case Presence.PRESENT => KnownState(l, Some( toAsset(content.get()) ), checkResources(t))
       case Presence.ABSENT  => KnownState(l, None, checkResources(t))
       case Presence.UNKNOWN => UnknownState
     }
